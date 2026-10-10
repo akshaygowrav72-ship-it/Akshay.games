@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Draw Logos - One at a Time</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    background: #f5f5f5;
+    text-align: center;
+  }
+
+  h1 {
+    margin-top: 20px;
+    font-size: 42px;
+  }
+
+  #logoName {
+    font-size: 32px;
+    font-weight: 600;
+    margin: 10px 0;
+  }
+
+  #timer {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  canvas {
+    background: #fff;
+    border: 3px solid #000;
+    border-radius: 12px;
+    cursor: crosshair;
+    display: block;
+    margin: 0 auto;
+  }
+
+  button, select {
+    margin: 10px 5px;
+    padding: 12px 20px;
+    font-size: 18px;
+    border-radius: 10px;
+    border: 2px solid #000;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  button:hover, select:hover {
+    background: #eee;
+  }
+
+  #realLogo img {
+    max-width: 250px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Draw a Logo</h1>
+<div id="logoName"></div>
+<div id="timer">Time: 30</div>
+
+<canvas id="canvas" width="500" height="400"></canvas><br>
+
+<label>Pen color: 
+  <select id="color">
+    <option value="#000000">Black</option>
+    <option value="#ff0000">Red</option>
+    <option value="#0000ff">Blue</option>
+    <option value="#00cc00">Green</option>
+    <option value="#ffa500">Orange</option>
+  </select>
+</label>
+
+<div>
+  <button onclick="clearCanvas()">Clear</button>
+  <button onclick="giveUp()">Give Up</button>
+  <button onclick="nextLogo()" id="nextBtn" style="display:none;">Next Logo</button>
+</div>
+
+<div id="realLogo" style="display:none;">
+  <h2>Actual Logo</h2>
+  <img id="logoImage">
+</div>
+
+<script>
+const logos = [
+  { name: "Apple", img: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" },
+  { name: "Nike", img: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" },
+  { name: "McDonald's", img: "https://upload.wikimedia.org/wikipedia/commons/4/4b/McDonald%27s_logo.svg" },
+  { name: "Twitter (X)", img: "https://upload.wikimedia.org/wikipedia/commons/6/6f/Logo_of_Twitter.svg" },
+  { name: "Starbucks", img: "https://upload.wikimedia.org/wikipedia/sco/d/d3/Starbucks_Corporation_Logo_2011.svg" },
+  { name: "Google", img: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
+  { name: "YouTube", img: "https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg" },
+  { name: "Coca-Cola", img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Coca-Cola_logo.svg" },
+  { name: "Pepsi", img: "https://upload.wikimedia.org/wikipedia/commons/a/a2/Pepsi_logo_2014.svg" },
+  { name: "Adidas", img: "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg" },
+  { name: "Amazon", img: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" },
+  { name: "Facebook (Meta)", img: "https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" },
+  { name: "Microsoft", img: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" },
+  { name: "Intel", img: "https://upload.wikimedia.org/wikipedia/commons/c/c9/Intel_logo_%282020%29.svg" },
+  { name: "Tesla", img: "https://upload.wikimedia.org/wikipedia/commons/b/bd/Tesla_Motors.svg" },
+  { name: "Sony", img: "https://upload.wikimedia.org/wikipedia/commons/2/2e/Sony_Logo.svg" },
+  { name: "Disney", img: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Walt_Disney_Pictures_logo.svg" },
+  { name: "Burger King", img: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Burger_King_Logo.svg" },
+  { name: "Lego", img: "https://upload.wikimedia.org/wikipedia/commons/6/6b/LEGO_logo.svg" },
+  { name: "Instagram", img: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" },
+  { name: "Snapchat", img: "https://upload.wikimedia.org/wikipedia/en/thumb/c/c4/Snapchat_logo.svg/1200px-Snapchat_logo.svg.png" },
+  { name: "Netflix", img: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" },
+  { name: "Red Bull", img: "https://upload.wikimedia.org/wikipedia/commons/f/f8/Red_Bull_logo.svg" },
+  { name: "Visa", img: "https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.svg" }
+];
+
+let currentLogo = 0;
+let time = 30;
+let timerInterval;
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function startLogo(index) {
+  document.getElementById("logoName").textContent = logos[index].name;
+  document.getElementById("realLogo").style.display = "none";
+  document.getElementById("nextBtn").style.display = "none";
+  clearCanvas();
+  canvas.style.display = "block";
+  canvas.style.pointerEvents = "auto";
+
+  time = 30;
+  document.getElementById("timer").textContent = `Time: ${time}`;
+  timerInterval = setInterval(() => {
+    time--;
+    document.getElementById("timer").textContent = `Time: ${time}`;
+    if (time <= 0) showRealLogo();
+  }, 1000);
+}
+
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function showRealLogo() {
+  clearInterval(timerInterval);
+  document.getElementById("logoImage").src = logos[currentLogo].img;
+  document.getElementById("realLogo").style.display = "block";
+  document.getElementById("nextBtn").style.display = "inline-block";
+  canvas.style.pointerEvents = "none";
+}
+
+function giveUp() {
+  showRealLogo();
+}
+
+function nextLogo() {
+  currentLogo++;
+  if (currentLogo >= logos.length) {
+    alert("You finished all logos!");
+    currentLogo = 0; // restart
+  }
+  startLogo(currentLogo);
+}
+
+// Drawing
+let drawing = false;
+canvas.addEventListener("mousedown", () => drawing = true);
+canvas.addEventListener("mouseup", () => { drawing = false; ctx.beginPath(); });
+canvas.addEventListener("mouseleave", () => { drawing = false; ctx.beginPath(); });
+canvas.addEventListener("mousemove", e => {
+  if (!drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = document.getElementById("color").value;
+  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+// Start first logo
+startLogo(currentLogo);
+</script>
+
+</body>
+</html>
+
+
+
