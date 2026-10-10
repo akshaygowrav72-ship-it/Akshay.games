@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Progress Tracker</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .wrapper { width: 100%; max-width: 500px; }
+        h1 { font-size: 32px; font-weight: 800; margin-bottom: 40px; text-align: center; }
+        h2 { font-size: 14px; text-transform: uppercase; color: #888; letter-spacing: 1px; margin: 40px 0 20px 0; }
+        
+        .progress-item { margin-bottom: 25px; }
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .bar-container {
+            background-color: #f2f2f7;
+            height: 16px;
+            border-radius: 8px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .bar-fill {
+            background-color: #34c759;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease-out;
+        }
+        .percentage { font-variant-numeric: tabular-nums; font-weight: 400; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <h1>Progress</h1>
+
+    <div id="time-list"></div>
+
+    <h2>Holidays & Events</h2>
+    <div id="holiday-list"></div>
+
+    <h2>Deep Time</h2>
+    <div id="cosmic-list"></div>
+</div>
+
+<script>
+    function updateProgress() {
+        const now = new Date();
+        const year = 2026;
+
+        const getP = (start, end) => Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
+
+        // 1. STANDARD TIME
+        const timeData = [
+            { label: "⏲️ Minute", p: (now.getSeconds() / 60) * 100 },
+            { label: "🕒 Hour", p: (now.getMinutes() / 60) * 100 },
+            { label: "☀️ Day", p: (((now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds()) / 86400) * 100 },
+            { label: "📅 Month", p: getP(new Date(year, now.getMonth(), 1), new Date(year, now.getMonth() + 1, 1)) },
+            { label: "🌍 Year 2026", p: getP(new Date(year, 0, 1), new Date(year + 1, 0, 1)) }
+        ];
+
+        // 2. HOLIDAYS (2026 specific dates)
+        const holidayData = [
+            { label: "💖 Valentine's Day", date: new Date(year, 1, 14) },
+            { label: "🐰 Easter Sunday", date: new Date(year, 3, 5) },
+            { label: "🌸 Mother's Day", date: new Date(year, 4, 10) },
+            { label: "🎖️ Memorial Day", date: new Date(year, 4, 25) },
+            { label: "👨 Father's Day", date: new Date(year, 5, 21) },
+            { label: "🇺🇸 Independence Day", date: new Date(year, 6, 4) },
+            { label: "🎃 Halloween", date: new Date(year, 9, 31) },
+            { label: "🦃 Thanksgiving", date: new Date(year, 10, 26) },
+            { label: "🎄 Christmas", date: new Date(year, 11, 25) }
+        ].map(h => ({
+            label: h.label,
+            p: getP(new Date(year, 0, 1), h.date) // Progress through the year toward the holiday
+        }));
+
+        // 3. COSMIC
+        const cosmicData = [
+            { label: "🔟 Next Decade (2030)", p: getP(new Date(2020, 0, 1), new Date(2030, 0, 1)) },
+            { label: "🏛️ Next Century (2101)", p: getP(new Date(2001, 0, 1), new Date(2101, 0, 1)) },
+            { label: "☄️ Halley's Comet Return", p: getP(new Date(1986, 1, 9), new Date(2061, 6, 28)) },
+            { label: "💥 The Sun dies", p: 46.0000 },
+            { label: "🌌 Heat death of the universe", p: 0.0000000000001 }
+        ];
+
+        render('time-list', timeData);
+        render('holiday-list', holidayData);
+        render('cosmic-list', cosmicData);
+    }
+
+    function render(id, data) {
+        const container = document.getElementById(id);
+        container.innerHTML = data.map(item => `
+            <div class="progress-item">
+                <div class="label-row">
+                    <span>${item.label}</span>
+                    <span class="percentage">${item.p.toFixed(4)}%</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: ${item.p}%"></div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    setInterval(updateProgress, 1000);
+    updateProgress();
+</script>
+
+</body>
+</html>
