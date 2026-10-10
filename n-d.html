@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Weirdly Named Cities Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #f7f7f7;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+header {
+  background: #ffffff;
+  padding: 16px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+  border-bottom: 1px solid #ddd;
+}
+
+#map {
+  height: calc(100% - 70px);
+}
+
+.leaflet-popup-content-wrapper {
+  background: #ffffff;
+  color: #000;
+}
+
+.leaflet-popup-tip {
+  background: #ffffff;
+}
+</style>
+</head>
+
+<body>
+
+<header>🗺️ Weirdly Named Cities Around the World</header>
+<div id="map"></div>
+
+<script>
+const map = L.map("map").setView([25, 0], 2);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 18,   // allow much closer zoom
+  attribution: "© OpenStreetMap"
+}).addTo(map);
+
+const places = [
+  { name: "Accident, Maryland", desc: "Named due to a surveying mishap in the 1700s.", lat: 39.63, lon: -79.32 },
+  { name: "Bacon, Indiana", desc: "A town that pork lovers might enjoy.", lat: 38.87, lon: -85.49 },
+  { name: "Chicken, Alaska", desc: "Early residents wanted to name it after the local bird, the ptarmigan, but couldn't spell it, so they settled on \"Chicken\".", lat: 64.07, lon: -141.93 },
+  { name: "Ding Dong, Texas", desc: "Named when a painter drew two bells on a store sign as a joke.", lat: 31.27, lon: -97.72 },
+  { name: "Fart, Virginia", desc: "An unincorporated community that often makes lists of unusual names.", lat: 37.54, lon: -78.86 },
+  { name: "Hell, Michigan", desc: "A town that fully embraces its name with themed attractions and merchandise.", lat: 42.43, lon: -84.00 },
+  { name: "Monkey's Eyebrow, Kentucky", desc: "A community whose name's origin is mysterious, but may relate to its shape when viewed from above.", lat: 36.63, lon: -88.32 },
+  { name: "No Name, Colorado", desc: "Reportedly got its name because developers constructing I-70 left the exit signs blank.", lat: 39.46, lon: -107.24 },
+  { name: "Peculiar, Missouri", desc: "A place for those who enjoy the wonderfully odd.", lat: 38.72, lon: -94.46 },
+  { name: "Toad Suck, Arkansas", desc: "The name comes from a time when steamboat captains would \"suck on the bottle\" (drink) at a local tavern while waiting for the river to be deep enough.", lat: 35.10, lon: -92.44 },
+  { name: "Boring, Oregon", desc: "Twinned with Dull, Scotland to form the 'League of Extraordinary Communities'.", lat: 45.47, lon: -122.39 },
+
+  { name: "Å, Norway / Sweden / Estonia", desc: "A common name in Scandinavia that simply means \"river\".", lat: 67.88, lon: 12.98 },
+  { name: "Båstad, Sweden & Bastardo, Italy", desc: "Towns with names that sound like insults in English.", lat: 56.42, lon: 12.85 },
+  { name: "Batman, Turkey", desc: "The mayor once reportedly threatened to sue the director of Batman Begins for using the city's name.", lat: 37.88, lon: 41.13 },
+  { name: "Beer, England", desc: "A village in Devon whose name comes from an Old English word for \"forest\".", lat: 50.70, lon: -3.09 },
+  { name: "Dull, Scotland", desc: "Twinned with Boring, Oregon to form the 'League of Extraordinary Communities'.", lat: 56.56, lon: -3.23 },
+  { name: "Condom, France", desc: "A small town in the Gers department.", lat: 43.96, lon: 0.37 },
+  { name: "Dildo, Canada", desc: "One of many Newfoundland towns with unique names, such as Come By Chance and Tickle Bay.", lat: 47.57, lon: -53.55 },
+  { name: "Gogogogo, Madagascar", desc: "A place whose name might make you want to stop running.", lat: -18.77, lon: 46.87 },
+  { name: "Middelfart, Denmark", desc: "A town in Denmark with a name that is often misread.", lat: 55.50, lon: 9.73 },
+  { name: "Penistone, England", desc: "A town in Yorkshire whose name causes issues for automated censorship software.", lat: 53.53, lon: -1.63 },
+  { name: "Shitterton, England", desc: "A small hamlet in Dorset, which residents have gone to great lengths to protect its sign from thieves.", lat: 50.74, lon: -2.21 },
+  { name: "Useless Loop, Australia", desc: "A remote community in Western Australia with an unfortunate name.", lat: -26.13, lon: 113.40 },
+  { name: "Westward Ho!, England", desc: "The only town in the UK with an exclamation mark in its name.", lat: 51.04, lon: -4.23 },
+  { name: "Y, France", desc: "A village in the Somme region, known for having the shortest name possible.", lat: 49.91, lon: 2.90 }
+];
+
+places.forEach(p => {
+  L.circleMarker([p.lat, p.lon], {
+    radius: 7,
+    color: "#2563eb",
+    fillColor: "#60a5fa",
+    fillOpacity: 0.9
+  })
+  .addTo(map)
+  .bindPopup(`<b>${p.name}</b><br>${p.desc}`);
+});
+</script>
+
+</body>
+</html>
