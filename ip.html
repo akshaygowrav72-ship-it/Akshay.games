@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Periodic Table Craft</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container { display: flex; height: 100vh; }
+
+        .sidebar {
+            width: 280px;
+            background: #fff;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(255,255,255,0.1);
+            border-right: 2px solid #000;
+        }
+
+        .section { margin-bottom: 30px; }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon { width: 20px; height: 20px; }
+
+        .element-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .element {
+            background: #000;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: grab;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            border: 2px solid #fff;
+        }
+
+        .element:hover { transform: scale(1.05); }
+
+        .compound { background: #fff; color: #000; border: 2px solid #000; }
+        .isotope { background: #666; color: #fff; border: 2px solid #666; }
+
+        .craft-area { flex: 1; position: relative; overflow: auto; }
+
+        .draggable {
+            position: absolute;
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: grab;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(255,255,255,0.3);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            white-space: nowrap;
+            z-index: 1;
+        }
+
+        .draggable.element { background: #000; color: #fff; border: 2px solid #fff; }
+        .draggable.compound { background: #fff; color: #000; border: 2px solid #000; }
+        .draggable.isotope { background: #666; color: #fff; border: 2px solid #fff; }
+
+        .draggable.dragging { opacity: 0.8; cursor: grabbing; z-index: 100000 !important; }
+        .draggable.selected { outline: 3px solid #4da3ff; outline-offset: 2px; }
+        .draggable.drop-target { outline: 3px dashed #ffd400; outline-offset: 2px; }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            color: #000;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(255,255,255,0.3);
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+            z-index: 200000;
+            border: 2px solid #000;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .title {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            background: #000;
+            border-bottom: 2px solid #fff;
+        }
+
+        .hint {
+            text-align: center;
+            color: #aaa;
+            font-size: 12px;
+            padding: 6px;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="section">
+                <div class="section-title">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/></svg>
+                    Elements
+                </div>
+                <div class="element-list" id="elementList"></div>
+            </div>
+            <div class="section">
+                <div class="section-title">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24"><path d="M7 2v2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1V2h-2v2H9V2H7zm0 6h10v10H7V8z"/></svg>
+                    Compounds
+                </div>
+                <div class="element-list" id="compoundList"></div>
+            </div>
+            <div class="section">
+                <div class="section-title">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+                    Isotopes
+                </div>
+                <div class="element-list" id="isotopeList"></div>
+            </div>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+            <div class="title">⚛️ Periodic Table Craft ⚛️</div>
+            <div class="hint">Drag tiles from the sidebar · drop one on another to combine · click a tile + Backspace/Delete to remove · drop on sidebar to discard</div>
+            <div class="craft-area" id="craftArea"></div>
+        </div>
+    </div>
+
+    <script>
+        const periodicElements = [
+            ['H','Hydrogen'],['He','Helium'],['Li','Lithium'],['Be','Beryllium'],['B','Boron'],['C','Carbon'],
+            ['N','Nitrogen'],['O','Oxygen'],['F','Fluorine'],['Ne','Neon'],['Na','Sodium'],['Mg','Magnesium'],
+            ['Al','Aluminum'],['Si','Silicon'],['P','Phosphorus'],['S','Sulfur'],['Cl','Chlorine'],['Ar','Argon'],
+            ['K','Potassium'],['Ca','Calcium'],['Sc','Scandium'],['Ti','Titanium'],['V','Vanadium'],['Cr','Chromium'],
+            ['Mn','Manganese'],['Fe','Iron'],['Co','Cobalt'],['Ni','Nickel'],['Cu','Copper'],['Zn','Zinc'],
+            ['Ga','Gallium'],['Ge','Germanium'],['As','Arsenic'],['Se','Selenium'],['Br','Bromine'],['Kr','Krypton'],
+            ['Rb','Rubidium'],['Sr','Strontium'],['Y','Yttrium'],['Zr','Zirconium'],['Nb','Niobium'],['Mo','Molybdenum'],
+            ['Tc','Technetium'],['Ru','Ruthenium'],['Rh','Rhodium'],['Pd','Palladium'],['Ag','Silver'],['Cd','Cadmium'],
+            ['In','Indium'],['Sn','Tin'],['Sb','Antimony'],['Te','Tellurium'],['I','Iodine'],['Xe','Xenon'],
+            ['Cs','Cesium'],['Ba','Barium'],['La','Lanthanum'],['Ce','Cerium'],['Pr','Praseodymium'],['Nd','Neodymium'],
+            ['Pm','Promethium'],['Sm','Samarium'],['Eu','Europium'],['Gd','Gadolinium'],['Tb','Terbium'],['Dy','Dysprosium'],
+            ['Ho','Holmium'],['Er','Erbium'],['Tm','Thulium'],['Yb','Ytterbium'],['Lu','Lutetium'],['Hf','Hafnium'],
+            ['Ta','Tantalum'],['W','Tungsten'],['Re','Rhenium'],['Os','Osmium'],['Ir','Iridium'],['Pt','Platinum'],
+            ['Au','Gold'],['Hg','Mercury'],['Tl','Thallium'],['Pb','Lead'],['Bi','Bismuth'],['Po','Polonium'],
+            ['At','Astatine'],['Rn','Radon'],['Fr','Francium'],['Ra','Radium'],['Ac','Actinium'],['Th','Thorium'],
+            ['Pa','Protactinium'],['U','Uranium'],['Np','Neptunium'],['Pu','Plutonium'],['Am','Americium'],['Cm','Curium'],
+            ['Bk','Berkelium'],['Cf','Californium'],['Es','Einsteinium'],['Fm','Fermium'],['Md','Mendelevium'],['No','Nobelium'],
+            ['Lr','Lawrencium'],['Rf','Rutherfordium'],['Db','Dubnium'],['Sg','Seaborgium'],['Bh','Bohrium'],['Hs','Hassium'],
+            ['Mt','Meitnerium'],['Ds','Darmstadtium'],['Rg','Roentgenium'],['Cn','Copernicium'],['Nh','Nihonium'],['Fl','Flerovium'],
+            ['Mc','Moscovium'],['Lv','Livermorium'],['Ts','Tennessine'],['Og','Oganesson']
+        ].map(([name, full]) => ({ name, full }));
+
+        // Each recipe is written once; the reverse order (B+A) is added automatically below.
+        // If a pair appears twice, the later entry wins (same as before).
+        const baseRecipes = {
+            'H+O': 'H₂O (Water)',
+            'Na+Cl': 'NaCl (Salt)',
+            'C+O': 'CO₂ (Carbon Dioxide)',
+            'Ca+C': 'CaCO₃ (Limestone)',
+            'Fe+O': 'Fe₂O₃ (Rust)',
+            'H+N': 'NH₃ (Ammonia)',
+            'S+O': 'SO₂ (Sulfur Dioxide)',
+            'H+S': 'H₂S (Hydrogen Sulfide)',
+            'Cu+Zn': 'Brass',
+            'Fe+U': 'Nuclear Reactor',
+            'Ca+O': 'CaO (Quicklime)',
+            'Mg+O': 'MgO (Magnesia)',
+            'Al+O': 'Al₂O₃ (Alumina)',
+            'Si+O': 'SiO₂ (Silica)',
+            'H+Cl': 'HCl (Hydrochloric Acid)',
+            'K+Cl': 'KCl (Potassium Chloride)',
+            'N+O': 'NO₂ (Nitrogen Dioxide)',
+            'P+O': 'P₂O₅ (Phosphorus Pentoxide)',
+            'Au+Cu': 'Rose Gold',
+            'Ag+Cu': 'Sterling Silver',
+
+            // Acids
+            'H+F': 'HF (Hydrofluoric Acid)',
+            'H+Br': 'HBr (Hydrobromic Acid)',
+            'H+I': 'HI (Hydroiodic Acid)',
+            'H+P': 'H₃PO₄ (Phosphoric Acid)',
+
+            // Bases & Hydroxides
+            'Na+O': 'NaOH (Sodium Hydroxide)',
+            'K+O': 'KOH (Potassium Hydroxide)',
+            'Ca+H': 'Ca(OH)₂ (Slaked Lime)',
+            'Mg+H': 'Mg(OH)₂ (Milk of Magnesia)',
+            'Al+H': 'Al(OH)₃ (Aluminum Hydroxide)',
+            'Ba+O': 'BaO (Barium Oxide)',
+            'Li+O': 'Li₂O (Lithium Oxide)',
+            'H+H': 'D₂O (Heavy Water)',
+
+            // Salts
+            'K+Br': 'KBr (Potassium Bromide)',
+            'Na+Br': 'NaBr (Sodium Bromide)',
+            'Na+I': 'NaI (Sodium Iodide)',
+            'K+I': 'KI (Potassium Iodide)',
+            'Ca+Cl': 'CaCl₂ (Calcium Chloride)',
+            'Mg+Cl': 'MgCl₂ (Magnesium Chloride)',
+            'Na+F': 'NaF (Sodium Fluoride)',
+            'Ca+F': 'CaF₂ (Fluorite)',
+            'Ba+S': 'BaS (Barium Sulfide)',
+            'Ag+Cl': 'AgCl (Silver Chloride)',
+            'Ag+Br': 'AgBr (Silver Bromide)',
+            'Ag+I': 'AgI (Silver Iodide)',
+            'Cu+Cl': 'CuCl₂ (Copper Chloride)',
+            'Fe+Cl': 'FeCl₃ (Iron Chloride)',
+            'Zn+Cl': 'ZnCl₂ (Zinc Chloride)',
+            'Al+Cl': 'AlCl₃ (Aluminum Chloride)',
+            'Pb+Cl': 'PbCl₂ (Lead Chloride)',
+            'Hg+Cl': 'HgCl₂ (Mercury Chloride)',
+
+            // Sulfates
+            'Ca+S': 'CaSO₄ (Gypsum)',
+            'Mg+S': 'MgSO₄ (Epsom Salt)',
+            'Na+S': 'Na₂SO₄ (Sodium Sulfate)',
+            'K+S': 'K₂SO₄ (Potassium Sulfate)',
+            'Cu+S': 'CuSO₄ (Copper Sulfate)',
+            'Fe+S': 'FeSO₄ (Iron Sulfate)',
+            'Zn+S': 'ZnSO₄ (Zinc Sulfate)',
+            'Al+S': 'Al₂(SO₄)₃ (Aluminum Sulfate)',
+            'Ba+S': 'BaSO₄ (Barium Sulfate)',
+
+            // Carbonates
+            'Na+C': 'Na₂CO₃ (Soda Ash)',
+            'K+C': 'K₂CO₃ (Potash)',
+            'Mg+C': 'MgCO₃ (Magnesite)',
+            'Ba+C': 'BaCO₃ (Barium Carbonate)',
+            'Sr+C': 'SrCO₃ (Strontium Carbonate)',
+            'Zn+C': 'ZnCO₃ (Smithsonite)',
+            'Cu+C': 'CuCO₃ (Copper Carbonate)',
+            'Pb+C': 'PbCO₃ (Lead Carbonate)',
+
+            // Nitrates
+            'Na+N': 'NaNO₃ (Sodium Nitrate)',
+            'K+N': 'KNO₃ (Saltpeter)',
+            'Ca+N': 'Ca(NO₃)₂ (Calcium Nitrate)',
+            'Mg+N': 'Mg(NO₃)₂ (Magnesium Nitrate)',
+            'Ag+N': 'AgNO₃ (Silver Nitrate)',
+            'Cu+N': 'Cu(NO₃)₂ (Copper Nitrate)',
+            'Pb+N': 'Pb(NO₃)₂ (Lead Nitrate)',
+            'Ba+N': 'Ba(NO₃)₂ (Barium Nitrate)',
+
+            // Phosphates
+            'Ca+P': 'Ca₃(PO₄)₂ (Calcium Phosphate)',
+            'Na+P': 'Na₃PO₄ (Sodium Phosphate)',
+            'K+P': 'K₃PO₄ (Potassium Phosphate)',
+            'Mg+P': 'Mg₃(PO₄)₂ (Magnesium Phosphate)',
+            'Al+P': 'AlPO₄ (Aluminum Phosphate)',
+            'Fe+P': 'FePO₄ (Iron Phosphate)',
+
+            // Metal Oxides
+            'Ti+O': 'TiO₂ (Titanium Dioxide)',
+            'Zn+O': 'ZnO (Zinc Oxide)',
+            'Cu+O': 'CuO (Copper Oxide)',
+            'Pb+O': 'PbO (Lead Oxide)',
+            'Mn+O': 'MnO₂ (Manganese Dioxide)',
+            'Cr+O': 'Cr₂O₃ (Chromium Oxide)',
+            'Co+O': 'CoO (Cobalt Oxide)',
+            'Ni+O': 'NiO (Nickel Oxide)',
+            'Sn+O': 'SnO₂ (Tin Oxide)',
+            'V+O': 'V₂O₅ (Vanadium Pentoxide)',
+            'W+O': 'WO₃ (Tungsten Oxide)',
+            'Mo+O': 'MoO₃ (Molybdenum Oxide)',
+            'Cd+O': 'CdO (Cadmium Oxide)',
+            'Hg+O': 'HgO (Mercury Oxide)',
+
+            // Alloys & Metals
+            'Fe+C': 'Steel',
+            'Fe+Cr': 'Stainless Steel',
+            'Fe+Ni': 'Invar',
+            'Cu+Sn': 'Bronze',
+            'Cu+Al': 'Aluminum Bronze',
+            'Cu+Ni': 'Cupronickel',
+            'Ni+Cr': 'Nichrome',
+            'Ni+Ti': 'Nitinol',
+            'Au+Ag': 'Electrum',
+            'Pb+Sn': 'Solder',
+            'Zn+Al': 'Zamak',
+            'Mg+Al': 'Magnalium',
+            'Co+Cr': 'Stellite',
+            'W+C': 'Tungsten Carbide',
+
+            // Sulfides
+            'Zn+S': 'ZnS (Zinc Sulfide)',
+            'Pb+S': 'PbS (Galena)',
+            'Ag+S': 'Ag₂S (Silver Sulfide)',
+            'Hg+S': 'HgS (Cinnabar)',
+            'Cd+S': 'CdS (Cadmium Sulfide)',
+            'Mo+S': 'MoS₂ (Molybdenum Disulfide)',
+            'As+S': 'As₂S₃ (Orpiment)',
+            'Sb+S': 'Sb₂S₃ (Antimony Sulfide)',
+
+            // Halides
+            'Ca+Br': 'CaBr₂ (Calcium Bromide)',
+            'Li+Cl': 'LiCl (Lithium Chloride)',
+            'Li+F': 'LiF (Lithium Fluoride)',
+            'Be+F': 'BeF₂ (Beryllium Fluoride)',
+            'Ti+Cl': 'TiCl₄ (Titanium Tetrachloride)',
+            'Si+Cl': 'SiCl₄ (Silicon Tetrachloride)',
+            'P+Cl': 'PCl₃ (Phosphorus Trichloride)',
+            'S+Cl': 'S₂Cl₂ (Sulfur Dichloride)',
+
+            // Hydrides
+            'Li+H': 'LiH (Lithium Hydride)',
+            'Na+H': 'NaH (Sodium Hydride)',
+            'K+H': 'KH (Potassium Hydride)',
+            'B+H': 'B₂H₆ (Diborane)',
+            'Si+H': 'SiH₄ (Silane)',
+            'Ge+H': 'GeH₄ (Germane)',
+            'As+H': 'AsH₃ (Arsine)',
+
+            // Peroxides
+            'Na+O': 'Na₂O₂ (Sodium Peroxide)',
+            'Ba+O': 'BaO₂ (Barium Peroxide)',
+
+            // Cyanides
+            'C+N': 'CN (Cyanide)',
+
+            // Silicates
+            'Na+Si': 'Na₂SiO₃ (Sodium Silicate)',
+            'Ca+Si': 'CaSiO₃ (Calcium Silicate)',
+            'Mg+Si': 'MgSiO₃ (Magnesium Silicate)',
+            'Al+Si': 'Al₂SiO₅ (Aluminum Silicate)',
+            'Zn+Si': 'Zn₂SiO₄ (Zinc Silicate)',
+
+            // Borates
+            'B+O': 'B₂O₃ (Boron Oxide)',
+            'Na+B': 'Na₂B₄O₇ (Borax)',
+
+            // Chromates
+            'Cr+O': 'CrO₃ (Chromium Trioxide)',
+            'Na+Cr': 'Na₂CrO₄ (Sodium Chromate)',
+            'K+Cr': 'K₂CrO₄ (Potassium Chromate)',
+            'Ba+Cr': 'BaCrO₄ (Barium Chromate)',
+            'Pb+Cr': 'PbCrO₄ (Lead Chromate)',
+
+            // Permanganates
+            'K+Mn': 'KMnO₄ (Potassium Permanganate)',
+
+            // Rare Earth Compounds
+            'La+O': 'La₂O₃ (Lanthanum Oxide)',
+            'Ce+O': 'CeO₂ (Cerium Oxide)',
+            'Nd+O': 'Nd₂O₃ (Neodymium Oxide)',
+            'Pr+O': 'Pr₂O₃ (Praseodymium Oxide)',
+            'Sm+O': 'Sm₂O₃ (Samarium Oxide)',
+            'Eu+O': 'Eu₂O₃ (Europium Oxide)',
+            'Gd+O': 'Gd₂O₃ (Gadolinium Oxide)',
+            'Tb+O': 'Tb₂O₃ (Terbium Oxide)',
+            'Dy+O': 'Dy₂O₃ (Dysprosium Oxide)',
+            'Ho+O': 'Ho₂O₃ (Holmium Oxide)',
+            'Er+O': 'Er₂O₃ (Erbium Oxide)',
+            'Tm+O': 'Tm₂O₃ (Thulium Oxide)',
+            'Yb+O': 'Yb₂O₃ (Ytterbium Oxide)',
+            'Lu+O': 'Lu₂O₃ (Lutetium Oxide)',
+
+            // Actinides
+            'Th+O': 'ThO₂ (Thorium Dioxide)',
+            'U+O': 'UO₂ (Uranium Dioxide)',
+            'Pu+O': 'PuO₂ (Plutonium Dioxide)',
+
+            // Noble Gas Compounds
+            'Xe+F': 'XeF₄ (Xenon Tetrafluoride)',
+            'Kr+F': 'KrF₂ (Krypton Difluoride)',
+
+            // Arsenides
+            'Ga+As': 'GaAs (Gallium Arsenide)',
+            'In+As': 'InAs (Indium Arsenide)',
+
+            // Tellurides
+            'Cd+Te': 'CdTe (Cadmium Telluride)',
+            'Hg+Te': 'HgTe (Mercury Telluride)',
+            'Pb+Te': 'PbTe (Lead Telluride)',
+
+            // Selenides
+            'Zn+Se': 'ZnSe (Zinc Selenide)',
+            'Cd+Se': 'CdSe (Cadmium Selenide)',
+            'Cu+Se': 'Cu₂Se (Copper Selenide)',
+            'Pb+Se': 'PbSe (Lead Selenide)',
+
+            // Antimonides
+            'Ga+Sb': 'GaSb (Gallium Antimonide)',
+            'In+Sb': 'InSb (Indium Antimonide)',
+
+            // Phosphides
+            'Ga+P': 'GaP (Gallium Phosphide)',
+            'In+P': 'InP (Indium Phosphide)',
+            'Ca+P': 'Ca₃P₂ (Calcium Phosphide)',
+
+            // Nitrides
+            'B+N': 'BN (Boron Nitride)',
+            'Si+N': 'Si₃N₄ (Silicon Nitride)',
+            'Al+N': 'AlN (Aluminum Nitride)',
+            'Ga+N': 'GaN (Gallium Nitride)',
+            'Ti+N': 'TiN (Titanium Nitride)',
+
+            // Carbides
+            'Si+C': 'SiC (Silicon Carbide)',
+            'B+C': 'B₄C (Boron Carbide)',
+            'Ti+C': 'TiC (Titanium Carbide)',
+            'Ca+C': 'CaC₂ (Calcium Carbide)',
+            'Al+C': 'Al₄C₃ (Aluminum Carbide)',
+
+            // Intermetallics
+            'Ni+Al': 'Ni₃Al (Nickel Aluminide)',
+            'Ti+Al': 'TiAl (Titanium Aluminide)',
+            'Fe+Al': 'FeAl (Iron Aluminide)',
+
+            // Precious Metal Compounds
+            'Pt+O': 'PtO₂ (Platinum Oxide)',
+            'Pd+O': 'PdO (Palladium Oxide)',
+            'Rh+O': 'Rh₂O₃ (Rhodium Oxide)',
+            'Ir+O': 'IrO₂ (Iridium Oxide)',
+            'Ru+O': 'RuO₂ (Ruthenium Oxide)',
+            'Os+O': 'OsO₄ (Osmium Tetroxide)'
+        };
+
+        // ---- Extra compounds ----
+        const extraRecipes = {
+            'Li+Br': 'LiBr (Lithium Bromide)',
+            'Li+I': 'LiI (Lithium Iodide)',
+            'K+F': 'KF (Potassium Fluoride)',
+            'Rb+F': 'RbF (Rubidium Fluoride)',
+            'Rb+Cl': 'RbCl (Rubidium Chloride)',
+            'Rb+Br': 'RbBr (Rubidium Bromide)',
+            'Rb+I': 'RbI (Rubidium Iodide)',
+            'Cs+F': 'CsF (Cesium Fluoride)',
+            'Cs+Cl': 'CsCl (Cesium Chloride)',
+            'Cs+Br': 'CsBr (Cesium Bromide)',
+            'Cs+I': 'CsI (Cesium Iodide)',
+            'Be+Cl': 'BeCl₂ (Beryllium Chloride)',
+            'Be+Br': 'BeBr₂ (Beryllium Bromide)',
+            'Be+I': 'BeI₂ (Beryllium Iodide)',
+            'Sr+F': 'SrF₂ (Strontium Fluoride)',
+            'Sr+Cl': 'SrCl₂ (Strontium Chloride)',
+            'Sr+Br': 'SrBr₂ (Strontium Bromide)',
+            'Sr+I': 'SrI₂ (Strontium Iodide)',
+            'Ba+F': 'BaF₂ (Barium Fluoride)',
+            'Ba+Cl': 'BaCl₂ (Barium Chloride)',
+            'Ba+Br': 'BaBr₂ (Barium Bromide)',
+            'Ba+I': 'BaI₂ (Barium Iodide)',
+            'Mg+F': 'MgF₂ (Magnesium Fluoride)',
+            'Mg+Br': 'MgBr₂ (Magnesium Bromide)',
+            'Mg+I': 'MgI₂ (Magnesium Iodide)',
+            'Ca+I': 'CaI₂ (Calcium Iodide)',
+            'Zn+F': 'ZnF₂ (Zinc Fluoride)',
+            'Zn+Br': 'ZnBr₂ (Zinc Bromide)',
+            'Zn+I': 'ZnI₂ (Zinc Iodide)',
+            'Cd+F': 'CdF₂ (Cadmium Fluoride)',
+            'Cd+Cl': 'CdCl₂ (Cadmium Chloride)',
+            'Cd+Br': 'CdBr₂ (Cadmium Bromide)',
+            'Cd+I': 'CdI₂ (Cadmium Iodide)',
+            'Hg+F': 'HgF₂ (Mercury(II) Fluoride)',
+            'Hg+Br': 'HgBr₂ (Mercury(II) Bromide)',
+            'Hg+I': 'HgI₂ (Mercury(II) Iodide)',
+            'Al+F': 'AlF₃ (Aluminum Fluoride)',
+            'Al+Br': 'AlBr₃ (Aluminum Bromide)',
+            'Al+I': 'AlI₃ (Aluminum Iodide)',
+            'Ga+F': 'GaF₃ (Gallium Fluoride)',
+            'Ga+Cl': 'GaCl₃ (Gallium Chloride)',
+            'Ga+Br': 'GaBr₃ (Gallium Bromide)',
+            'Ga+I': 'GaI₃ (Gallium Iodide)',
+            'In+F': 'InF₃ (Indium Fluoride)',
+            'In+Cl': 'InCl₃ (Indium Chloride)',
+            'In+Br': 'InBr₃ (Indium Bromide)',
+            'In+I': 'InI₃ (Indium Iodide)',
+            'Tl+F': 'TlF (Thallium(I) Fluoride)',
+            'Tl+Cl': 'TlCl (Thallium(I) Chloride)',
+            'Tl+Br': 'TlBr (Thallium(I) Bromide)',
+            'Tl+I': 'TlI (Thallium(I) Iodide)',
+            'Sc+F': 'ScF₃ (Scandium Fluoride)',
+            'Sc+Cl': 'ScCl₃ (Scandium Chloride)',
+            'Sc+Br': 'ScBr₃ (Scandium Bromide)',
+            'Sc+I': 'ScI₃ (Scandium Iodide)',
+            'Y+F': 'YF₃ (Yttrium Fluoride)',
+            'Y+Cl': 'YCl₃ (Yttrium Chloride)',
+            'Y+Br': 'YBr₃ (Yttrium Bromide)',
+            'Y+I': 'YI₃ (Yttrium Iodide)',
+            'La+F': 'LaF₃ (Lanthanum Fluoride)',
+            'La+Cl': 'LaCl₃ (Lanthanum Chloride)',
+            'La+Br': 'LaBr₃ (Lanthanum Bromide)',
+            'La+I': 'LaI₃ (Lanthanum Iodide)',
+            'Ce+F': 'CeF₃ (Cerium(III) Fluoride)',
+            'Ce+Cl': 'CeCl₃ (Cerium(III) Chloride)',
+            'Ce+Br': 'CeBr₃ (Cerium(III) Bromide)',
+            'Ce+I': 'CeI₃ (Cerium(III) Iodide)',
+            'Pr+F': 'PrF₃ (Praseodymium Fluoride)',
+            'Pr+Cl': 'PrCl₃ (Praseodymium Chloride)',
+            'Pr+Br': 'PrBr₃ (Praseodymium Bromide)',
+            'Pr+I': 'PrI₃ (Praseodymium Iodide)',
+            'Nd+F': 'NdF₃ (Neodymium Fluoride)',
+            'Nd+Cl': 'NdCl₃ (Neodymium Chloride)',
+            'Nd+Br': 'NdBr₃ (Neodymium Bromide)',
+            'Nd+I': 'NdI₃ (Neodymium Iodide)',
+            'Sm+F': 'SmF₃ (Samarium Fluoride)',
+            'Sm+Cl': 'SmCl₃ (Samarium Chloride)',
+            'Sm+Br': 'SmBr₃ (Samarium Bromide)',
+            'Sm+I': 'SmI₃ (Samarium Iodide)',
+            'Gd+F': 'GdF₃ (Gadolinium Fluoride)',
+            'Gd+Cl': 'GdCl₃ (Gadolinium Chloride)',
+            'Gd+Br': 'GdBr₃ (Gadolinium Bromide)',
+            'Gd+I': 'GdI₃ (Gadolinium Iodide)',
+            'Tb+F': 'TbF₃ (Terbium Fluoride)',
+            'Tb+Cl': 'TbCl₃ (Terbium Chloride)',
+            'Tb+Br': 'TbBr₃ (Terbium Bromide)',
+            'Tb+I': 'TbI₃ (Terbium Iodide)',
+            'Dy+F': 'DyF₃ (Dysprosium Fluoride)',
+            'Dy+Cl': 'DyCl₃ (Dysprosium Chloride)',
+            'Dy+Br': 'DyBr₃ (Dysprosium Bromide)',
+            'Dy+I': 'DyI₃ (Dysprosium Iodide)',
+            'Ho+F': 'HoF₃ (Holmium Fluoride)',
+            'Ho+Cl': 'HoCl₃ (Holmium Chloride)',
+            'Ho+Br': 'HoBr₃ (Holmium Bromide)',
+            'Ho+I': 'HoI₃ (Holmium Iodide)',
+            'Er+F': 'ErF₃ (Erbium Fluoride)',
+            'Er+Cl': 'ErCl₃ (Erbium Chloride)',
+            'Er+Br': 'ErBr₃ (Erbium Bromide)',
+            'Er+I': 'ErI₃ (Erbium Iodide)',
+            'Tm+F': 'TmF₃ (Thulium Fluoride)',
+            'Tm+Cl': 'TmCl₃ (Thulium Chloride)',
+            'Tm+Br': 'TmBr₃ (Thulium Bromide)',
+            'Tm+I': 'TmI₃ (Thulium Iodide)',
+            'Lu+F': 'LuF₃ (Lutetium Fluoride)',
+            'Lu+Cl': 'LuCl₃ (Lutetium Chloride)',
+            'Lu+Br': 'LuBr₃ (Lutetium Bromide)',
+            'Lu+I': 'LuI₃ (Lutetium Iodide)',
+            'Ti+F': 'TiF₄ (Titanium(IV) Fluoride)',
+            'Ti+Br': 'TiBr₄ (Titanium(IV) Bromide)',
+            'Ti+I': 'TiI₄ (Titanium(IV) Iodide)',
+            'Zr+F': 'ZrF₄ (Zirconium Fluoride)',
+            'Zr+Cl': 'ZrCl₄ (Zirconium Chloride)',
+            'Zr+Br': 'ZrBr₄ (Zirconium Bromide)',
+            'Zr+I': 'ZrI₄ (Zirconium Iodide)',
+            'Hf+F': 'HfF₄ (Hafnium Fluoride)',
+            'Hf+Cl': 'HfCl₄ (Hafnium Chloride)',
+            'Hf+Br': 'HfBr₄ (Hafnium Bromide)',
+            'Hf+I': 'HfI₄ (Hafnium Iodide)',
+            'Cr+F': 'CrF₃ (Chromium(III) Fluoride)',
+            'Cr+Cl': 'CrCl₃ (Chromium(III) Chloride)',
+            'Cr+Br': 'CrBr₃ (Chromium(III) Bromide)',
+            'Cr+I': 'CrI₃ (Chromium(III) Iodide)',
+            'Mn+F': 'MnF₂ (Manganese(II) Fluoride)',
+            'Mn+Cl': 'MnCl₂ (Manganese(II) Chloride)',
+            'Mn+Br': 'MnBr₂ (Manganese(II) Bromide)',
+            'Mn+I': 'MnI₂ (Manganese(II) Iodide)',
+            'Co+F': 'CoF₂ (Cobalt(II) Fluoride)',
+            'Co+Cl': 'CoCl₂ (Cobalt(II) Chloride)',
+            'Co+Br': 'CoBr₂ (Cobalt(II) Bromide)',
+            'Co+I': 'CoI₂ (Cobalt(II) Iodide)',
+            'Ni+F': 'NiF₂ (Nickel(II) Fluoride)',
+            'Ni+Cl': 'NiCl₂ (Nickel(II) Chloride)',
+            'Ni+Br': 'NiBr₂ (Nickel(II) Bromide)',
+            'Ni+I': 'NiI₂ (Nickel(II) Iodide)',
+            'Pb+F': 'PbF₂ (Lead(II) Fluoride)',
+            'Pb+Br': 'PbBr₂ (Lead(II) Bromide)',
+            'Pb+I': 'PbI₂ (Lead(II) Iodide)',
+            'Sn+F': 'SnF₂ (Tin(II) Fluoride)',
+            'Sn+Cl': 'SnCl₂ (Tin(II) Chloride)',
+            'Sn+Br': 'SnBr₂ (Tin(II) Bromide)',
+            'Sn+I': 'SnI₂ (Tin(II) Iodide)',
+            'Sb+F': 'SbF₃ (Antimony(III) Fluoride)',
+            'Sb+Cl': 'SbCl₃ (Antimony(III) Chloride)',
+            'Sb+Br': 'SbBr₃ (Antimony(III) Bromide)',
+            'Sb+I': 'SbI₃ (Antimony(III) Iodide)',
+            'Bi+F': 'BiF₃ (Bismuth(III) Fluoride)',
+            'Bi+Cl': 'BiCl₃ (Bismuth(III) Chloride)',
+            'Bi+Br': 'BiBr₃ (Bismuth(III) Bromide)',
+            'Bi+I': 'BiI₃ (Bismuth(III) Iodide)',
+            'Th+F': 'ThF₄ (Thorium Fluoride)',
+            'Th+Cl': 'ThCl₄ (Thorium Chloride)',
+            'Th+Br': 'ThBr₄ (Thorium Bromide)',
+            'Th+I': 'ThI₄ (Thorium Iodide)',
+            'U+F': 'UF₄ (Uranium(IV) Fluoride)',
+            'U+Cl': 'UCl₄ (Uranium(IV) Chloride)',
+            'U+Br': 'UBr₄ (Uranium(IV) Bromide)',
+            'U+I': 'UI₄ (Uranium(IV) Iodide)',
+            'Nb+F': 'NbF₅ (Niobium(V) Fluoride)',
+            'Nb+Cl': 'NbCl₅ (Niobium(V) Chloride)',
+            'Nb+Br': 'NbBr₅ (Niobium(V) Bromide)',
+            'Nb+I': 'NbI₅ (Niobium(V) Iodide)',
+            'Ta+F': 'TaF₅ (Tantalum(V) Fluoride)',
+            'Ta+Cl': 'TaCl₅ (Tantalum(V) Chloride)',
+            'Ta+Br': 'TaBr₅ (Tantalum(V) Bromide)',
+            'Ta+I': 'TaI₅ (Tantalum(V) Iodide)',
+            'Pt+F': 'PtF₄ (Platinum(IV) Fluoride)',
+            'Pt+Cl': 'PtCl₄ (Platinum(IV) Chloride)',
+            'Pt+Br': 'PtBr₄ (Platinum(IV) Bromide)',
+            'Pt+I': 'PtI₄ (Platinum(IV) Iodide)',
+            'Ag+F': 'AgF (Silver Fluoride)',
+            'Fe+F': 'FeF₃ (Iron(III) Fluoride)',
+            'Fe+Br': 'FeBr₃ (Iron(III) Bromide)',
+            'Fe+I': 'FeI₂ (Iron(II) Iodide)',
+            'Cu+F': 'CuF₂ (Copper(II) Fluoride)',
+            'Cu+Br': 'CuBr₂ (Copper(II) Bromide)',
+            'Cu+I': 'CuI (Copper(I) Iodide)',
+            'Au+F': 'AuF₃ (Gold(III) Fluoride)',
+            'Au+Cl': 'AuCl₃ (Gold(III) Chloride)',
+            'Au+Br': 'AuBr₃ (Gold(III) Bromide)',
+            'Au+I': 'AuI (Gold(I) Iodide)',
+            'Pd+F': 'PdF₂ (Palladium(II) Fluoride)',
+            'Pd+Cl': 'PdCl₂ (Palladium(II) Chloride)',
+            'Pd+Br': 'PdBr₂ (Palladium(II) Bromide)',
+            'Pd+I': 'PdI₂ (Palladium(II) Iodide)',
+            'V+F': 'VF₃ (Vanadium(III) Fluoride)',
+            'V+Cl': 'VCl₃ (Vanadium(III) Chloride)',
+            'V+Br': 'VBr₃ (Vanadium(III) Bromide)',
+            'V+I': 'VI₃ (Vanadium(III) Iodide)',
+            'W+F': 'WF₆ (Tungsten(VI) Fluoride)',
+            'W+Cl': 'WCl₆ (Tungsten(VI) Chloride)',
+            'Mo+F': 'MoF₆ (Molybdenum(VI) Fluoride)',
+            'Mo+Cl': 'MoCl₅ (Molybdenum(V) Chloride)',
+            'Re+F': 'ReF₆ (Rhenium(VI) Fluoride)',
+            'Re+Cl': 'ReCl₅ (Rhenium(V) Chloride)',
+            'Ru+Cl': 'RuCl₃ (Ruthenium(III) Chloride)',
+            'Rh+Cl': 'RhCl₃ (Rhodium(III) Chloride)',
+            'Ir+Cl': 'IrCl₃ (Iridium(III) Chloride)',
+            'Os+F': 'OsF₆ (Osmium(VI) Fluoride)',
+            'Eu+Cl': 'EuCl₃ (Europium(III) Chloride)',
+            'Yb+Cl': 'YbCl₃ (Ytterbium(III) Chloride)',
+            'Pu+F': 'PuF₄ (Plutonium(IV) Fluoride)',
+            'Np+F': 'NpF₄ (Neptunium(IV) Fluoride)',
+            'Am+Cl': 'AmCl₃ (Americium(III) Chloride)',
+            'Ra+Cl': 'RaCl₂ (Radium Chloride)',
+            'Ra+Br': 'RaBr₂ (Radium Bromide)',
+            'Ra+F': 'RaF₂ (Radium Fluoride)',
+            'Fr+Cl': 'FrCl (Francium Chloride)',
+            'Ac+Cl': 'AcCl₃ (Actinium(III) Chloride)',
+            'Ac+F': 'AcF₃ (Actinium(III) Fluoride)',
+            'Pm+Cl': 'PmCl₃ (Promethium(III) Chloride)',
+            'Tc+F': 'TcF₆ (Technetium(VI) Fluoride)',
+            'Li+S': 'Li₂S (Lithium Sulfide)',
+            'Li+Se': 'Li₂Se (Lithium Selenide)',
+            'Li+Te': 'Li₂Te (Lithium Telluride)',
+            'Na+Se': 'Na₂Se (Sodium Selenide)',
+            'Na+Te': 'Na₂Te (Sodium Telluride)',
+            'K+Se': 'K₂Se (Potassium Selenide)',
+            'K+Te': 'K₂Te (Potassium Telluride)',
+            'Rb+S': 'Rb₂S (Rubidium Sulfide)',
+            'Rb+Se': 'Rb₂Se (Rubidium Selenide)',
+            'Rb+Te': 'Rb₂Te (Rubidium Telluride)',
+            'Cs+S': 'Cs₂S (Cesium Sulfide)',
+            'Cs+Se': 'Cs₂Se (Cesium Selenide)',
+            'Cs+Te': 'Cs₂Te (Cesium Telluride)',
+            'Be+S': 'BeS (Beryllium Sulfide)',
+            'Be+Se': 'BeSe (Beryllium Selenide)',
+            'Be+Te': 'BeTe (Beryllium Telluride)',
+            'Mg+Se': 'MgSe (Magnesium Selenide)',
+            'Mg+Te': 'MgTe (Magnesium Telluride)',
+            'Ca+Se': 'CaSe (Calcium Selenide)',
+            'Ca+Te': 'CaTe (Calcium Telluride)',
+            'Sr+S': 'SrS (Strontium Sulfide)',
+            'Sr+Se': 'SrSe (Strontium Selenide)',
+            'Sr+Te': 'SrTe (Strontium Telluride)',
+            'Ba+Se': 'BaSe (Barium Selenide)',
+            'Ba+Te': 'BaTe (Barium Telluride)',
+            'Zn+Te': 'ZnTe (Zinc Telluride)',
+            'Hg+Se': 'HgSe (Mercury(II) Selenide)',
+            'Al+Se': 'Al₂Se₃ (Aluminum Selenide)',
+            'Al+Te': 'Al₂Te₃ (Aluminum Telluride)',
+            'Ga+S': 'Ga₂S₃ (Gallium Sulfide)',
+            'Ga+Se': 'Ga₂Se₃ (Gallium Selenide)',
+            'Ga+Te': 'Ga₂Te₃ (Gallium Telluride)',
+            'In+S': 'In₂S₃ (Indium Sulfide)',
+            'In+Se': 'In₂Se₃ (Indium Selenide)',
+            'In+Te': 'In₂Te₃ (Indium Telluride)',
+            'Ag+Se': 'Ag₂Se (Silver Selenide)',
+            'Ag+Te': 'Ag₂Te (Silver Telluride)',
+            'Cu+Te': 'Cu₂Te (Copper(I) Telluride)',
+            'Sn+S': 'SnS (Tin(II) Sulfide)',
+            'Sn+Se': 'SnSe (Tin(II) Selenide)',
+            'Sn+Te': 'SnTe (Tin(II) Telluride)',
+            'Bi+S': 'Bi₂S₃ (Bismuth(III) Sulfide)',
+            'Bi+Se': 'Bi₂Se₃ (Bismuth(III) Selenide)',
+            'Bi+Te': 'Bi₂Te₃ (Bismuth(III) Telluride)',
+            'Sb+Se': 'Sb₂Se₃ (Antimony(III) Selenide)',
+            'Sb+Te': 'Sb₂Te₃ (Antimony(III) Telluride)',
+            'Ni+S': 'NiS (Nickel(II) Sulfide)',
+            'Ni+Se': 'NiSe (Nickel(II) Selenide)',
+            'Ni+Te': 'NiTe (Nickel(II) Telluride)',
+            'Co+S': 'CoS (Cobalt(II) Sulfide)',
+            'Co+Se': 'CoSe (Cobalt(II) Selenide)',
+            'Co+Te': 'CoTe (Cobalt(II) Telluride)',
+            'Fe+Se': 'FeSe (Iron(II) Selenide)',
+            'Fe+Te': 'FeTe (Iron(II) Telluride)',
+            'Mn+S': 'MnS (Manganese(II) Sulfide)',
+            'Mn+Se': 'MnSe (Manganese(II) Selenide)',
+            'Mn+Te': 'MnTe (Manganese(II) Telluride)',
+            'Ti+S': 'TiS₂ (Titanium(IV) Sulfide)',
+            'Ti+Se': 'TiSe₂ (Titanium(IV) Selenide)',
+            'Ti+Te': 'TiTe₂ (Titanium(IV) Telluride)',
+            'Zr+S': 'ZrS₂ (Zirconium Sulfide)',
+            'Zr+Se': 'ZrSe₂ (Zirconium Selenide)',
+            'Zr+Te': 'ZrTe₂ (Zirconium Telluride)',
+            'Mo+Se': 'MoSe₂ (Molybdenum(IV) Selenide)',
+            'Mo+Te': 'MoTe₂ (Molybdenum(IV) Telluride)',
+            'W+S': 'WS₂ (Tungsten(IV) Sulfide)',
+            'W+Se': 'WSe₂ (Tungsten(IV) Selenide)',
+            'W+Te': 'WTe₂ (Tungsten(IV) Telluride)',
+            'La+S': 'La₂S₃ (Lanthanum Sulfide)',
+            'La+Se': 'La₂Se₃ (Lanthanum Selenide)',
+            'La+Te': 'La₂Te₃ (Lanthanum Telluride)',
+            'Y+S': 'Y₂S₃ (Yttrium Sulfide)',
+            'Y+Se': 'Y₂Se₃ (Yttrium Selenide)',
+            'Y+Te': 'Y₂Te₃ (Yttrium Telluride)',
+            'Sc+S': 'Sc₂S₃ (Scandium Sulfide)',
+            'Sc+Se': 'Sc₂Se₃ (Scandium Selenide)',
+            'Sc+Te': 'Sc₂Te₃ (Scandium Telluride)',
+            'Tl+S': 'Tl₂S (Thallium(I) Sulfide)',
+            'Tl+Se': 'Tl₂Se (Thallium(I) Selenide)',
+            'Tl+Te': 'Tl₂Te (Thallium(I) Telluride)',
+            'C+S': 'CS₂ (Carbon Disulfide)',
+            'C+Cl': 'CCl₄ (Carbon Tetrachloride)',
+            'C+F': 'CF₄ (Carbon Tetrafluoride)',
+            'C+Br': 'CBr₄ (Carbon Tetrabromide)',
+            'C+Se': 'CSe₂ (Carbon Diselenide)',
+            'H+C': 'CH₄ (Methane)',
+            'Si+F': 'SiF₄ (Silicon Tetrafluoride)',
+            'Si+Br': 'SiBr₄ (Silicon Tetrabromide)',
+            'Si+I': 'SiI₄ (Silicon Tetraiodide)',
+            'N+F': 'NF₃ (Nitrogen Trifluoride)',
+            'N+Cl': 'NCl₃ (Nitrogen Trichloride)',
+            'P+F': 'PF₃ (Phosphorus Trifluoride)',
+            'P+Br': 'PBr₃ (Phosphorus Tribromide)',
+            'P+I': 'PI₃ (Phosphorus Triiodide)',
+            'P+S': 'P₄S₁₀ (Phosphorus Pentasulfide)',
+            'As+F': 'AsF₃ (Arsenic Trifluoride)',
+            'As+Cl': 'AsCl₃ (Arsenic Trichloride)',
+            'As+Br': 'AsBr₃ (Arsenic Tribromide)',
+            'As+I': 'AsI₃ (Arsenic Triiodide)',
+            'B+F': 'BF₃ (Boron Trifluoride)',
+            'B+Cl': 'BCl₃ (Boron Trichloride)',
+            'B+Br': 'BBr₃ (Boron Tribromide)',
+            'B+I': 'BI₃ (Boron Triiodide)',
+            'B+S': 'B₂S₃ (Boron Sulfide)',
+            'B+P': 'BP (Boron Phosphide)',
+            'B+As': 'BAs (Boron Arsenide)',
+            'S+F': 'SF₆ (Sulfur Hexafluoride)',
+            'Se+F': 'SeF₆ (Selenium Hexafluoride)',
+            'Se+Cl': 'SeCl₄ (Selenium Tetrachloride)',
+            'Te+F': 'TeF₆ (Tellurium Hexafluoride)',
+            'Te+Cl': 'TeCl₄ (Tellurium Tetrachloride)',
+            'Cl+F': 'ClF₃ (Chlorine Trifluoride)',
+            'Br+F': 'BrF₃ (Bromine Trifluoride)',
+            'I+F': 'IF₅ (Iodine Pentafluoride)',
+            'Br+Cl': 'BrCl (Bromine Monochloride)',
+            'I+Cl': 'ICl (Iodine Monochloride)',
+            'I+Br': 'IBr (Iodine Monobromide)',
+            'Cl+O': 'Cl₂O (Dichlorine Monoxide)',
+            'Br+O': 'Br₂O (Dibromine Monoxide)',
+            'I+O': 'I₂O₅ (Iodine Pentoxide)',
+            'F+O': 'OF₂ (Oxygen Difluoride)',
+            'Ge+F': 'GeF₄ (Germanium Tetrafluoride)',
+            'Ge+Cl': 'GeCl₄ (Germanium Tetrachloride)',
+            'Ge+Br': 'GeBr₄ (Germanium Tetrabromide)',
+            'Ge+I': 'GeI₄ (Germanium Tetraiodide)',
+            'Ge+S': 'GeS₂ (Germanium Disulfide)',
+            'Ge+Se': 'GeSe₂ (Germanium Diselenide)',
+            'Ge+Te': 'GeTe (Germanium Telluride)',
+            'Ge+N': 'Ge₃N₄ (Germanium Nitride)',
+            'Ge+O': 'GeO₂ (Germanium Dioxide)',
+            'As+O': 'As₂O₃ (Arsenic Trioxide)',
+            'Sb+O': 'Sb₂O₃ (Antimony Trioxide)',
+            'Bi+O': 'Bi₂O₃ (Bismuth Oxide)',
+            'Se+O': 'SeO₂ (Selenium Dioxide)',
+            'Te+O': 'TeO₂ (Tellurium Dioxide)',
+            'As+Se': 'As₂Se₃ (Arsenic Triselenide)',
+            'As+Te': 'As₂Te₃ (Arsenic Telluride)',
+            'Rn+F': 'RnF₂ (Radon Difluoride)',
+            'H+Se': 'H₂Se (Hydrogen Selenide)',
+            'H+Te': 'H₂Te (Hydrogen Telluride)',
+            'Sn+H': 'SnH₄ (Stannane)',
+            'Sb+H': 'SbH₃ (Stibine)',
+            'Si+Ge': 'SiGe (Silicon Germanium)',
+            'S+Br': 'S₂Br₂ (Disulfur Dibromide)',
+            'Se+Br': 'Se₂Br₂ (Diselenium Dibromide)',
+            'Se+S': 'SeS₂ (Selenium Disulfide)',
+            'Li+P': 'Li₃PO₄ (Lithium Phosphate)',
+            'Ba+P': 'Ba₃(PO₄)₂ (Barium Phosphate)',
+            'Sr+P': 'Sr₃(PO₄)₂ (Strontium Phosphate)',
+            'Zn+P': 'Zn₃(PO₄)₂ (Zinc Phosphate)',
+            'Cu+P': 'Cu₃(PO₄)₂ (Copper Phosphate)',
+            'Ag+P': 'Ag₃PO₄ (Silver Phosphate)',
+            'Pb+P': 'Pb₃(PO₄)₂ (Lead Phosphate)',
+            'Cr+P': 'CrPO₄ (Chromium(III) Phosphate)',
+            'Mn+P': 'Mn₃(PO₄)₂ (Manganese(II) Phosphate)',
+            'Ni+P': 'Ni₃(PO₄)₂ (Nickel Phosphate)',
+            'Co+P': 'Co₃(PO₄)₂ (Cobalt Phosphate)',
+            'Zr+P': 'Zr₃(PO₄)₄ (Zirconium Phosphate)',
+            'Ce+P': 'CePO₄ (Cerium Phosphate)',
+            'La+P': 'LaPO₄ (Lanthanum Phosphate)',
+            'Y+P': 'YPO₄ (Yttrium Phosphate)',
+            'Bi+P': 'BiPO₄ (Bismuth Phosphate)',
+            'Th+P': 'Th₃(PO₄)₄ (Thorium Phosphate)',
+            'Cd+P': 'Cd₃(PO₄)₂ (Cadmium Phosphate)',
+            'Li+N': 'LiNO₃ (Lithium Nitrate)',
+            'Rb+N': 'RbNO₃ (Rubidium Nitrate)',
+            'Cs+N': 'CsNO₃ (Cesium Nitrate)',
+            'Sr+N': 'Sr(NO₃)₂ (Strontium Nitrate)',
+            'Zn+N': 'Zn(NO₃)₂ (Zinc Nitrate)',
+            'Fe+N': 'Fe(NO₃)₃ (Iron(III) Nitrate)',
+            'Ni+N': 'Ni(NO₃)₂ (Nickel Nitrate)',
+            'Co+N': 'Co(NO₃)₂ (Cobalt Nitrate)',
+            'Mn+N': 'Mn(NO₃)₂ (Manganese Nitrate)',
+            'Cd+N': 'Cd(NO₃)₂ (Cadmium Nitrate)',
+            'Hg+N': 'Hg(NO₃)₂ (Mercury(II) Nitrate)',
+            'Cr+N': 'Cr(NO₃)₃ (Chromium(III) Nitrate)',
+            'La+N': 'La(NO₃)₃ (Lanthanum Nitrate)',
+            'Ce+N': 'Ce(NO₃)₃ (Cerium Nitrate)',
+            'Bi+N': 'Bi(NO₃)₃ (Bismuth Nitrate)',
+            'Tl+N': 'TlNO₃ (Thallium Nitrate)',
+            'Be+N': 'Be₃N₂ (Beryllium Nitride)',
+            'Zr+N': 'ZrN (Zirconium Nitride)',
+            'Hf+N': 'HfN (Hafnium Nitride)',
+            'V+N': 'VN (Vanadium Nitride)',
+            'Nb+N': 'NbN (Niobium Nitride)',
+            'Ta+N': 'TaN (Tantalum Nitride)',
+            'Sc+N': 'ScN (Scandium Nitride)',
+            'Y+N': 'YN (Yttrium Nitride)',
+            'In+N': 'InN (Indium Nitride)',
+            'U+N': 'UN (Uranium Nitride)',
+            'Li+C': 'Li₂CO₃ (Lithium Carbonate)',
+            'Rb+C': 'Rb₂CO₃ (Rubidium Carbonate)',
+            'Cs+C': 'Cs₂CO₃ (Cesium Carbonate)',
+            'Ni+C': 'NiCO₃ (Nickel Carbonate)',
+            'Co+C': 'CoCO₃ (Cobalt Carbonate)',
+            'Mn+C': 'MnCO₃ (Manganese Carbonate)',
+            'Cd+C': 'CdCO₃ (Cadmium Carbonate)',
+            'Ag+C': 'Ag₂CO₃ (Silver Carbonate)',
+            'Be+C': 'Be₂C (Beryllium Carbide)',
+            'Cr+C': 'Cr₃C₂ (Chromium Carbide)',
+            'V+C': 'VC (Vanadium Carbide)',
+            'Nb+C': 'NbC (Niobium Carbide)',
+            'Ta+C': 'TaC (Tantalum Carbide)',
+            'Zr+C': 'ZrC (Zirconium Carbide)',
+            'Hf+C': 'HfC (Hafnium Carbide)',
+            'Mo+C': 'Mo₂C (Molybdenum Carbide)',
+            'U+C': 'UC (Uranium Carbide)',
+            'Sr+H': 'Sr(OH)₂ (Strontium Hydroxide)',
+            'Ba+H': 'Ba(OH)₂ (Barium Hydroxide)',
+            'Zn+H': 'Zn(OH)₂ (Zinc Hydroxide)',
+            'Fe+H': 'Fe(OH)₃ (Iron(III) Hydroxide)',
+            'Cu+H': 'Cu(OH)₂ (Copper(II) Hydroxide)',
+            'Ni+H': 'Ni(OH)₂ (Nickel Hydroxide)',
+            'Co+H': 'Co(OH)₂ (Cobalt Hydroxide)',
+            'Mn+H': 'Mn(OH)₂ (Manganese Hydroxide)',
+            'Cr+H': 'Cr(OH)₃ (Chromium(III) Hydroxide)',
+            'Pb+H': 'Pb(OH)₂ (Lead Hydroxide)',
+            'Cd+H': 'Cd(OH)₂ (Cadmium Hydroxide)',
+            'Be+H': 'Be(OH)₂ (Beryllium Hydroxide)',
+            'Rb+H': 'RbOH (Rubidium Hydroxide)',
+            'Cs+H': 'CsOH (Cesium Hydroxide)',
+            'Ga+H': 'Ga(OH)₃ (Gallium Hydroxide)',
+            'Sc+H': 'Sc(OH)₃ (Scandium Hydroxide)',
+            'Ti+H': 'TiH₂ (Titanium Hydride)',
+            'Zr+H': 'ZrH₂ (Zirconium Hydride)',
+            'La+H': 'LaH₃ (Lanthanum Hydride)',
+            'Pd+H': 'PdH (Palladium Hydride)',
+            'U+H': 'UH₃ (Uranium Hydride)',
+            'Ti+P': 'TiP (Titanium Phosphide)',
+            'Al+As': 'AlAs (Aluminum Arsenide)',
+            'Zn+As': 'Zn₃As₂ (Zinc Arsenide)',
+            'Cd+As': 'Cd₃As₂ (Cadmium Arsenide)',
+            'Na+As': 'Na₃As (Sodium Arsenide)',
+            'Mg+As': 'Mg₃As₂ (Magnesium Arsenide)',
+            'Ca+As': 'Ca₃As₂ (Calcium Arsenide)',
+            'Fe+As': 'FeAs (Iron Arsenide)',
+            'Ni+As': 'NiAs (Nickel Arsenide)',
+            'Co+As': 'CoAs (Cobalt Arsenide)',
+            'Mn+As': 'MnAs (Manganese Arsenide)',
+            'Cu+As': 'Cu₃As (Copper Arsenide)',
+            'Li+As': 'Li₃As (Lithium Arsenide)',
+            'K+As': 'K₃As (Potassium Arsenide)',
+            'Al+Sb': 'AlSb (Aluminum Antimonide)',
+            'Zn+Sb': 'ZnSb (Zinc Antimonide)',
+            'Cd+Sb': 'CdSb (Cadmium Antimonide)',
+            'Mg+Sb': 'Mg₃Sb₂ (Magnesium Antimonide)',
+            'Na+Sb': 'Na₃Sb (Sodium Antimonide)',
+            'K+Sb': 'K₃Sb (Potassium Antimonide)',
+            'Li+Sb': 'Li₃Sb (Lithium Antimonide)',
+            'Ni+Sb': 'NiSb (Nickel Antimonide)',
+            'Co+Sb': 'CoSb (Cobalt Antimonide)',
+            'Fe+Sb': 'FeSb (Iron Antimonide)',
+            'Mn+Sb': 'MnSb (Manganese Antimonide)',
+            'Cu+Sb': 'Cu₂Sb (Copper Antimonide)',
+            'Ag+Sb': 'Ag₃Sb (Silver Antimonide)',
+            'Sn+Sb': 'SnSb (Tin Antimonide)',
+            'In+Bi': 'InBi (Indium Bismuthide)',
+            'Mg+Bi': 'Mg₃Bi₂ (Magnesium Bismuthide)',
+            'Na+Bi': 'Na₃Bi (Sodium Bismuthide)',
+            'Li+Bi': 'Li₃Bi (Lithium Bismuthide)',
+            'K+Bi': 'K₃Bi (Potassium Bismuthide)',
+            'Ni+Bi': 'NiBi (Nickel Bismuthide)',
+            'B+Ti': 'TiB₂ (Titanium Diboride)',
+            'B+Zr': 'ZrB₂ (Zirconium Diboride)',
+            'B+Hf': 'HfB₂ (Hafnium Diboride)',
+            'B+Mg': 'MgB₂ (Magnesium Diboride)',
+            'B+Al': 'AlB₂ (Aluminum Diboride)',
+            'B+Ca': 'CaB₆ (Calcium Hexaboride)',
+            'B+La': 'LaB₆ (Lanthanum Hexaboride)',
+            'B+Cr': 'CrB (Chromium Boride)',
+            'B+Fe': 'Fe₂B (Iron Boride)',
+            'B+Ni': 'Ni₃B (Nickel Boride)',
+            'B+Nb': 'NbB₂ (Niobium Diboride)',
+            'B+Ta': 'TaB₂ (Tantalum Diboride)',
+            'B+V': 'VB₂ (Vanadium Diboride)',
+            'B+Sr': 'SrB₆ (Strontium Hexaboride)',
+            'B+Ba': 'BaB₆ (Barium Hexaboride)',
+            'B+Ce': 'CeB₆ (Cerium Hexaboride)',
+            'B+Y': 'YB₆ (Yttrium Hexaboride)',
+            'B+Sc': 'ScB₂ (Scandium Diboride)',
+            'B+W': 'W₂B₅ (Tungsten Boride)',
+            'B+Mo': 'MoB₂ (Molybdenum Diboride)',
+            'B+Co': 'Co₂B (Cobalt Boride)',
+            'Si+Ti': 'TiSi₂ (Titanium Disilicide)',
+            'Si+Zr': 'ZrSi₂ (Zirconium Disilicide)',
+            'Si+Mo': 'MoSi₂ (Molybdenum Disilicide)',
+            'Si+W': 'WSi₂ (Tungsten Disilicide)',
+            'Si+Fe': 'FeSi (Iron Silicide)',
+            'Si+Ni': 'Ni₂Si (Nickel Silicide)',
+            'Si+Co': 'CoSi (Cobalt Silicide)',
+            'Si+Cr': 'CrSi₂ (Chromium Disilicide)',
+            'Si+Ta': 'TaSi₂ (Tantalum Disilicide)',
+            'Si+Cu': 'Cu₃Si (Copper Silicide)',
+            'Si+Pt': 'PtSi (Platinum Silicide)',
+            'Si+Pd': 'Pd₂Si (Palladium Silicide)',
+            'Si+Nb': 'NbSi₂ (Niobium Disilicide)',
+            'Si+V': 'VSi₂ (Vanadium Disilicide)',
+            'Si+Mn': 'MnSi (Manganese Silicide)',
+            'Si+Hf': 'HfSi₂ (Hafnium Disilicide)',
+            'Ga+O': 'Ga₂O₃ (Gallium Oxide)',
+            'In+O': 'In₂O₃ (Indium Oxide)',
+            'Tl+O': 'Tl₂O (Thallium(I) Oxide)',
+            'Sc+O': 'Sc₂O₃ (Scandium Oxide)',
+            'Y+O': 'Y₂O₃ (Yttrium Oxide)',
+            'Zr+O': 'ZrO₂ (Zirconium Dioxide)',
+            'Hf+O': 'HfO₂ (Hafnium Dioxide)',
+            'Nb+O': 'Nb₂O₅ (Niobium Pentoxide)',
+            'Ta+O': 'Ta₂O₅ (Tantalum Pentoxide)',
+            'Re+O': 'Re₂O₇ (Rhenium Heptoxide)',
+            'Ag+O': 'Ag₂O (Silver Oxide)',
+            'Au+O': 'Au₂O₃ (Gold(III) Oxide)',
+            'Be+O': 'BeO (Beryllium Oxide)',
+            'Sr+O': 'SrO (Strontium Oxide)',
+            'Cs+O': 'Cs₂O (Cesium Oxide)',
+            'Rb+O': 'Rb₂O (Rubidium Oxide)',
+            'Ac+O': 'Ac₂O₃ (Actinium Oxide)',
+            'Ra+O': 'RaO (Radium Oxide)',
+            'Tc+O': 'Tc₂O₇ (Technetium Heptoxide)',
+            'Pm+O': 'Pm₂O₃ (Promethium Oxide)',
+            'Pa+O': 'Pa₂O₅ (Protactinium Pentoxide)',
+            'Np+O': 'NpO₂ (Neptunium Dioxide)',
+            'Am+O': 'AmO₂ (Americium Dioxide)',
+            'Cm+O': 'Cm₂O₃ (Curium Oxide)',
+            'Bk+O': 'BkO₂ (Berkelium Dioxide)',
+            'Cf+O': 'Cf₂O₃ (Californium Oxide)',
+            'Cu+Be': 'CuBe (Beryllium Copper)',
+            'Al+Li': 'Al-Li (Aluminum-Lithium Alloy)',
+            'Sn+Ag': 'Ag₃Sn (Silver-Tin Alloy)'
+        };
+
+        // Build the full lookup with both orderings
+        const recipes = {};
+        for (const [key, result] of Object.entries({ ...baseRecipes, ...extraRecipes })) {
+            const [a, b] = key.split('+');
+            recipes[a + '+' + b] = result;
+            recipes[b + '+' + a] = result;
+        }
+
+        /* ------------------------------------------------------------
+           State
+        ------------------------------------------------------------ */
+        let nextId = 1;
+        let topZ = 10;
+        const craftedItems = new Set();
+        let drag = null;            // { el, ox, oy }
+        let selectedItem = null;
+
+        const craftArea = document.getElementById('craftArea');
+        const sidebar = document.querySelector('.sidebar');
+
+        /* ------------------------------------------------------------
+           Sidebar
+        ------------------------------------------------------------ */
+        function addSidebarItem(listId, label, type, full) {
+            const div = document.createElement('div');
+            div.className = 'element' + (type !== 'element' ? ' ' + type : '');
+            div.textContent = label;
+            if (full) div.title = full;
+            div.dataset.element = label;
+            div.dataset.type = type;
+            div.addEventListener('pointerdown', startFromSidebar);
+            document.getElementById(listId).appendChild(div);
+        }
+
+        function init() {
+            periodicElements.forEach(el => addSidebarItem('elementList', el.name, 'element', el.full));
+        }
+
+        /* ------------------------------------------------------------
+           Craft-area tiles
+        ------------------------------------------------------------ */
+        function spawn(label, type, x, y) {
+            const el = document.createElement('div');
+            el.className = 'draggable ' + type;
+            el.textContent = label;
+            el.dataset.element = label;
+            el.dataset.type = type;
+            el.dataset.id = nextId++;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.zIndex = ++topZ;
+            el.addEventListener('pointerdown', startFromCraft);
+            craftArea.appendChild(el);
+            return el;
+        }
+
+        function startFromSidebar(e) {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            const rect = craftArea.getBoundingClientRect();
+            const el = spawn(e.currentTarget.dataset.element, e.currentTarget.dataset.type, 0, 0);
+            const ox = el.offsetWidth / 2, oy = el.offsetHeight / 2;
+            el.style.left = Math.max(0, e.clientX - rect.left + craftArea.scrollLeft - ox) + 'px';
+            el.style.top = Math.max(0, e.clientY - rect.top + craftArea.scrollTop - oy) + 'px';
+            beginDrag(el, ox, oy);
+        }
+
+        function startFromCraft(e) {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const el = e.currentTarget;
+            const r = el.getBoundingClientRect();
+            el.style.zIndex = ++topZ;
+            beginDrag(el, e.clientX - r.left, e.clientY - r.top);
+        }
+
+        function beginDrag(el, ox, oy) {
+            drag = { el, ox, oy };
+            el.classList.add('dragging');
+            selectItem(el);
+        }
+
+        /* ------------------------------------------------------------
+           Pointer tracking
+        ------------------------------------------------------------ */
+        document.addEventListener('pointermove', (e) => {
+            if (!drag) return;
+            const rect = craftArea.getBoundingClientRect();
+            drag.el.style.left = Math.max(0, e.clientX - rect.left + craftArea.scrollLeft - drag.ox) + 'px';
+            drag.el.style.top = Math.max(0, e.clientY - rect.top + craftArea.scrollTop - drag.oy) + 'px';
+            highlightTarget(findCollision(drag.el));
+        });
+
+        function endDrag(e) {
+            if (!drag) return;
+            const el = drag.el;
+            el.classList.remove('dragging');
+            highlightTarget(null);
+
+            const sb = sidebar.getBoundingClientRect();
+            if (e.clientX < sb.right) {
+                // Dropped on the sidebar: discard
+                if (selectedItem === el) selectedItem = null;
+                el.remove();
+            } else {
+                const hit = findCollision(el);
+                if (hit) tryMerge(el, hit);
+            }
+            drag = null;
+        }
+        document.addEventListener('pointerup', endDrag);
+        document.addEventListener('pointercancel', endDrag);
+
+        function findCollision(el) {
+            const a = el.getBoundingClientRect();
+            for (const item of craftArea.querySelectorAll('.draggable')) {
+                if (item === el) continue;
+                const b = item.getBoundingClientRect();
+                if (!(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)) {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        function highlightTarget(target) {
+            craftArea.querySelectorAll('.drop-target').forEach(n => {
+                if (n !== target) n.classList.remove('drop-target');
+            });
+            if (target) target.classList.add('drop-target');
+        }
+
+        /* ------------------------------------------------------------
+           Selection / delete
+        ------------------------------------------------------------ */
+        function selectItem(el) {
+            if (selectedItem && selectedItem !== el) selectedItem.classList.remove('selected');
+            selectedItem = el;
+            if (el) el.classList.add('selected');
+        }
+
+        craftArea.addEventListener('pointerdown', (e) => {
+            if (e.target === craftArea) selectItem(null);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'Backspace' || e.key === 'Delete') && selectedItem) {
+                e.preventDefault();
+                selectedItem.remove();
+                selectedItem = null;
+            }
+        });
+
+        /* ------------------------------------------------------------
+           Crafting
+        ------------------------------------------------------------ */
+        function tryMerge(el1, el2) {
+            const name1 = el1.dataset.element;
+            const name2 = el2.dataset.element;
+            const type1 = el1.dataset.type;
+            const type2 = el2.dataset.type;
+
+            // Nuclear Reactor + element -> isotope
+            if ((name1 === 'Nuclear Reactor' && type2 === 'element') ||
+                (name2 === 'Nuclear Reactor' && type1 === 'element')) {
+                const element = type1 === 'element' ? name1 : name2;
+                const reactor = type1 === 'element' ? el2 : el1;
+                createIsotope(element, reactor);
+                consume(el1);
+                return;
+            }
+
+            const result = recipes[name1 + '+' + name2];
+            if (result) {
+                createCompound(result, el2);
+                consume(el1);
+            }
+        }
+
+        function consume(el) {
+            if (selectedItem === el) selectedItem = null;
+            el.remove();
+        }
+
+        function createCompound(name, near) {
+            if (craftedItems.has(name)) {
+                showNotification(`You already discovered ${name}!`);
+            } else {
+                craftedItems.add(name);
+                showNotification(`🎉 New discovery: ${name}!`);
+                addSidebarItem('compoundList', name, 'compound');
+            }
+            spawn(name, 'compound', parseInt(near.style.left) || 0, (parseInt(near.style.top) || 0) + 60);
+        }
+
+        function createIsotope(element, reactor) {
+            const isotopeName = element + '-' + Math.floor(Math.random() * 50 + 200);
+            if (craftedItems.has(isotopeName)) {
+                showNotification(`You already discovered ${isotopeName}!`);
+            } else {
+                craftedItems.add(isotopeName);
+                showNotification(`☢️ New isotope: ${isotopeName}!`);
+                addSidebarItem('isotopeList', isotopeName, 'isotope');
+            }
+            spawn(isotopeName, 'isotope', parseInt(reactor.style.left) || 0, (parseInt(reactor.style.top) || 0) + 60);
+        }
+
+        function showNotification(text) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = text;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
