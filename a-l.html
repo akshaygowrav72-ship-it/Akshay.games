@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Asteroid Launcher – Earth Impact Simulator (No API)</title>
+
+<!-- Leaflet (OpenStreetMap) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, sans-serif;
+    background: #000;
+    color: #fff;
+  }
+
+  #map {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  #panel {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    width: 300px;
+    background: rgba(0,0,0,0.8);
+    padding: 16px;
+    border-radius: 14px;
+    z-index: 1000;
+  }
+
+  h2 {
+    margin: 0 0 10px;
+    font-size: 18px;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    margin-top: 10px;
+  }
+
+  input, select {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 14px;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: none;
+    background: #ff3b3b;
+    color: white;
+    cursor: pointer;
+  }
+
+  #stats {
+    margin-top: 14px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h2>Asteroid Launcher</h2>
+
+  <label>Diameter (meters)
+    <input type="range" id="size" min="10" max="10000" value="1000">
+  </label>
+
+  <label>Material
+    <select id="material">
+      <option value="7800">Iron</option>
+      <option value="3000">Rock</option>
+      <option value="900">Ice</option>
+    </select>
+  </label>
+
+  <label>Impact Speed (km/s)
+    <input type="range" id="speed" min="5" max="70" value="20">
+  </label>
+
+  <button onclick="launch()">Launch Asteroid</button>
+
+  <div id="stats">Click on the map to select impact location.</div>
+</div>
+
+<div id="map"></div>
+
+<script>
+// Initialize map
+const map = L.map('map').setView([20, 0], 2);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+let impactMarker = null;
+let impactCircle = null;
+let impactLatLng = [0, 0];
+
+map.on('click', e => {
+  impactLatLng = [e.latlng.lat, e.latlng.lng];
+
+  if (impactMarker) map.removeLayer(impactMarker);
+
+  impactMarker = L.marker(impactLatLng).addTo(map);
+});
+
+function launch() {
+  const diameter = +size.value;        // meters
+  const density = +material.value;     // kg/m^3
+  const velocity = +speed.value * 1000; // m/s
+
+  const radius = diameter / 2;
+  const volume = (4/3) * Math.PI * Math.pow(radius, 3);
+  const mass = volume * density;
+
+  const energy = 0.5 * mass * velocity * velocity; // joules
+  const megatons = energy / 4.184e15;
+
+  const craterDiameter = Math.pow(megatons, 0.28) * 1000;
+  const fireballRadius = craterDiameter * 1.5;
+  const quakeMag = Math.min(12, Math.log10(megatons) + 5);
+
+  // Casualty estimation (very rough)
+  const lethalRadius = fireballRadius * 1.8; // meters
+  const avgPopDensity = 150; // people per km^2 (global average-ish)
+  const areaKm2 = Math.PI * Math.pow(lethalRadius / 1000, 2);
+  const casualties = Math.floor(areaKm2 * avgPopDensity);
+
+  document.getElementById('stats').innerHTML = `
+    <b>Impact Energy:</b> ${megatons.toExponential(2)} Mt TNT<br>
+    <b>Crater Diameter:</b> ${craterDiameter.toFixed(0)} m<br>
+    <b>Fireball Radius:</b> ${fireballRadius.toFixed(0)} m<br>
+    <b>Earthquake:</b> Magnitude ${quakeMag.toFixed(1)}<br>
+    <b>Estimated Fatalities:</b> ${casualties.toLocaleString()} people
+  `;
+
+  if (impactCircle) map.removeLayer(impactCircle);
+
+  impactCircle = L.circle(impactLatLng, {
+    radius: fireballRadius,
+    color: 'red',
+    fillColor: '#f03',
+    fillOpacity: 0.3
+  }).addTo(map);
+}
+</script>
+
+</body>
+</html>
