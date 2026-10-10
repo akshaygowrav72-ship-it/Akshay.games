@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Nuke Impact Simulator</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { margin:0; display:flex; height:100vh; font-family:sans-serif; }
+    #sidebar { width:310px; padding:12px; background:#111; color:#eee; box-sizing:border-box; overflow:auto; }
+    #map { flex:1; }
+    label { display:block; margin-top:8px; }
+    input[type=range], input[type=number], select { width:100%; }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h2>Nuke Impact (Educational)</h2>
+    <p style="font-size:12px;color:#ccc;">
+      This model is for educational purposes only. Results are simplified and use approximate global averages based on historical data.
+    </p>
+
+    <label>
+      Yield (kT): <span id="yieldValue">100</span>
+      <input id="yield" type="range" min="1" max="50000" value="100" step="1">
+    </label>
+
+    <label>
+      Burst type:
+      <select id="burstType">
+        <option value="air">Airburst</option>
+        <option value="ground">Groundburst</option>
+      </select>
+    </label>
+
+    <label>
+      Population density (people / km²)
+      <input id="popDensity" type="number" value="5000" min="0">
+    </label>
+
+    <label>
+      Property value (USD / km²)
+      <input id="valueDensity" type="number" value="500000000" min="0">
+    </label>
+
+    <label>
+      Total population in impact region
+      <input id="maxPop" type="number" value="335000000" min="0">
+    </label>
+
+    <button id="launchBtn" style="margin-top:12px;width:100%;">Launch (Simulate)</button>
+    <div id="info" style="margin-top:12px;font-size:13px;line-height:1.4;"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Map setup with deeper zoom capability
+    let map = L.map('map', { minZoom: 1, maxZoom: 18 }).setView([20, 0], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let groundZero = null, layers = [];
+
+    map.on('click', e => {
+      if (groundZero) groundZero.remove();
+      groundZero = L.marker(e.latlng).addTo(map);
+    });
+
+    const yieldInput = document.getElementById('yield');
+    const yieldValue = document.getElementById('yieldValue');
+    const burstType = document.getElementById('burstType');
+    const info = document.getElementById('info');
+
+    yieldInput.addEventListener('input', () => { yieldValue.textContent = yieldInput.value; });
+
+    document.getElementById('launchBtn').onclick = () => {
+      if (!groundZero) {
+        alert('Click on the map to set impact location.');
+        return;
+      }
+      // Clean up previous overlays
+      layers.forEach(l => map.removeLayer(l));
+      layers = [];
+
+      const W = parseFloat(yieldInput.value);
+      const type = burstType.value;
+
+      // Simplified blast radius scaling (illustrative only)
+      const fireballRadius = 150 * Math.pow(W, 0.4);
+      const heavyBlastRadius = 800 * Math.pow(W, 0.33);
+      const lightBlastRadius = 2000 * Math.pow(W, 0.33);
+
+      const latlng = groundZero.getLatLng();
+
+      function addCircle(radius, color) {
+        const c = L.circle(latlng, { radius, color, fillColor: color, fillOpacity: 0.25 });
+        c.addTo(map);
+        layers.push(c);
+      }
+
+      addCircle(fireballRadius, '#ff6600');
+      addCircle(heavyBlastRadius, '#ff0000');
+      addCircle(lightBlastRadius, '#ffaa00');
+
+      // Obtain user population and property values
+      const popDensity = parseFloat(document.getElementById('popDensity').value) || 0;
+      const valueDensity = parseFloat(document.getElementById('valueDensity').value) || 0;
+      const maxPop = parseFloat(document.getElementById('maxPop').value) || 335000000;
+
+      function areaKm2(r) { return Math.PI * Math.pow(r / 1000, 2); }
+
+      const areaFireball = areaKm2(fireballRadius);
+      const areaHeavy = areaKm2(heavyBlastRadius) - areaFireball;
+      const areaLight = areaKm2(lightBlastRadius) - areaKm2(heavyBlastRadius);
+
+      // Approximate fatality fractions
+      const fatalFracFireball = 0.95, fatalFracHeavy = 0.6, fatalFracLight = 0.15;
+
+      const peopleFireball = areaFireball * popDensity;
+      const peopleHeavy = areaHeavy * popDensity;
+      const peopleLight = areaLight * popDensity;
+
+      let deaths = peopleFireball * fatalFracFireball +
+                   peopleHeavy * fatalFracHeavy +
+                   peopleLight * fatalFracLight;
+
+      // Limit deaths to given total population cap
+      if (deaths > maxPop) deaths = maxPop;
+
+      // Groundburst radiation estimate (placeholder)
+      let radiationRadius = 0;
+      if (type === 'ground') radiationRadius = 3000 * Math.pow(W, 0.33);
+      if (radiationRadius > 0) addCircle(radiationRadius, '#66ccff');
+
+      const damagedAreaKm2 = areaHeavy + areaLight;
+      const propertyLoss = damagedAreaKm2 * valueDensity;
+
+      info.innerHTML =
+        `<b>Approximate effects</b><br>
+         Fireball radius: ${(fireballRadius/1000).toFixed(2)} km<br>
+         Severe blast (~5 psi): ${(heavyBlastRadius/1000).toFixed(2)} km<br>
+         Light blast (~1 psi): ${(lightBlastRadius/1000).toFixed(2)} km<br>` +
+        (radiationRadius > 0
+          ? `Fallout zone radius: ${(radiationRadius/1000).toFixed(2)} km<br>`
+          : '') +
+        `<br>
+         <b>Human & economic impact (estimates)</b><br>
+         Estimated deaths: ~${Math.round(deaths).toLocaleString()} people<br>
+         Damaged area: ${damagedAreaKm2.toFixed(1)} km²<br>
+         Estimated property loss: ~$${Math.round(propertyLoss).toLocaleString()}<br>
+         <small>All figures are simplified educational estimates based on population density and yield scaling.
+         Real impacts depend on terrain, weather, construction type, and emergency response capacities.</small>`;
+    };
+  </script>
+</body>
+</html>
