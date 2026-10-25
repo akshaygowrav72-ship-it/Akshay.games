@@ -48,10 +48,16 @@
       margin-bottom: 40px;
     }
 
-    .grid,
-    .bottom-row {
+    .grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .bottom-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 24px;
       margin-bottom: 24px;
     }
@@ -90,6 +96,11 @@
       outline-offset: 4px;
     }
 
+    #st {
+      background: #93BB65;
+      color: #000;
+    }
+
     #bm {
       background: #66FF00;
       color: #000;
@@ -123,11 +134,6 @@
 
     #sem {
       background: #90EE90;
-      color: #000;
-    }
-
-    #st {
-      background: #93BB65;
       color: #000;
     }
 
@@ -197,7 +203,7 @@
       }
 
       .bottom-row .btn {
-        min-height: 120px;
+        min-height: 140px;
       }
     }
   </style>
@@ -208,6 +214,10 @@
 
   <main>
     <div class="grid">
+      <a href="s-t.html" class="btn" id="st">
+        Money
+      </a>
+
       <a href="b-m.html" class="btn" id="bm">
         Progress
       </a>
@@ -242,10 +252,6 @@
     </div>
 
     <div class="bottom-row">
-      <a href="s-t.html" class="btn" id="st">
-        Money
-      </a>
-
       <a href="arcade.html" class="btn" id="arcade">
         Arcade
       </a>
@@ -263,6 +269,7 @@
   <footer>© Akshay Gowrav, 2026</footer>
 </body>
 </html>
+
 
 
   <footer>© Akshay Gowrav, 2026</footer>
