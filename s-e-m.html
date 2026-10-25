@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spend Elon Musk's Money</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  background: #f5f5f5;
+  text-align: center;
+}
+
+header {
+  background: #111;
+  color: white;
+  padding: 30px 10px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 42px;
+}
+
+#money {
+  font-size: 32px;
+  margin-top: 10px;
+  font-weight: bold;
+  color: #00ff88;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 30px auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  padding: 0 20px;
+}
+
+.item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+.item h2 {
+  margin: 0 0 10px;
+}
+
+.price {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+button {
+  padding: 8px 14px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.buy {
+  background: #00c853;
+  color: white;
+}
+
+.sell {
+  background: #ff5252;
+  color: white;
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+footer {
+  margin: 40px 0;
+  color: #555;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Spend Elon Musk's Money</h1>
+  <div id="money">$1,000,000,000,000</div>
+</header>
+
+<div class="container" id="shop"></div>
+
+<footer>
+  Net worth is approximate and for entertainment only.
+</footer>
+
+<script>
+let balance = 1_000_000_000_000;
+
+const items = [
+  // 🧍 Common items (25)
+  { name: "Cup of Coffee", price: 4, count: 0 },
+  { name: "Big Mac", price: 5, count: 0 },
+  { name: "Movie Ticket", price: 15, count: 0 },
+  { name: "Pizza", price: 20, count: 0 },
+  { name: "Groceries (1 week)", price: 120, count: 0 },
+  { name: "Gas Tank Fill-Up", price: 60, count: 0 },
+  { name: "Sneakers", price: 100, count: 0 },
+  { name: "Jeans", price: 80, count: 0 },
+  { name: "Headphones", price: 150, count: 0 },
+  { name: "Smartwatch", price: 300, count: 0 },
+  { name: "Smartphone", price: 1_000, count: 0 },
+  { name: "Laptop", price: 2_000, count: 0 },
+  { name: "Gaming Console", price: 500, count: 0 },
+  { name: "4K TV", price: 1_200, count: 0 },
+  { name: "Bicycle", price: 800, count: 0 },
+  { name: "Gym Membership (1 year)", price: 600, count: 0 },
+  { name: "Netflix Subscription (1 year)", price: 180, count: 0 },
+  { name: "Vacation Trip", price: 3_500, count: 0 },
+  { name: "Rent (1 month)", price: 1_800, count: 0 },
+  { name: "Furniture Set", price: 5_000, count: 0 },
+  { name: "Used Car", price: 15_000, count: 0 },
+  { name: "New Car", price: 35_000, count: 0 },
+  { name: "Wedding", price: 30_000, count: 0 },
+  { name: "College Tuition (1 year)", price: 25_000, count: 0 },
+  { name: "Home Down Payment", price: 60_000, count: 0 },
+
+  // 💸 Big items
+  { name: "Tesla Model 3", price: 40_000, count: 0 },
+  { name: "Luxury Yacht", price: 150_000_000, count: 0 },
+  { name: "Private Jet", price: 75_000_000, count: 0 },
+  { name: "Skyscraper", price: 1_200_000_000, count: 0 },
+  { name: "NBA Team", price: 2_500_000_000, count: 0 },
+  { name: "Moon Base", price: 50_000_000_000, count: 0 },
+  { name: "Mars Colony", price: 120_000_000_000, count: 0 }
+];
+
+const shop = document.getElementById("shop");
+const moneyDisplay = document.getElementById("money");
+
+function formatMoney(num) {
+  return "$" + num.toLocaleString();
+}
+
+function updateMoney() {
+  moneyDisplay.textContent = formatMoney(balance);
+}
+
+function render() {
+  shop.innerHTML = "";
+
+  items.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "item";
+
+    div.innerHTML = `
+      <h2>${item.name}</h2>
+      <div class="price">${formatMoney(item.price)}</div>
+      <p>Owned: ${item.count}</p>
+      <div class="controls">
+        <button class="sell" ${item.count === 0 ? "disabled" : ""}>Sell</button>
+        <button class="buy" ${balance < item.price ? "disabled" : ""}>Buy</button>
+      </div>
+    `;
+
+    div.querySelector(".buy").onclick = () => {
+      if (balance >= item.price) {
+        balance -= item.price;
+        item.count++;
+        updateMoney();
+        render();
+      }
+    };
+
+    div.querySelector(".sell").onclick = () => {
+      if (item.count > 0) {
+        balance += item.price;
+        item.count--;
+        updateMoney();
+        render();
+      }
+    };
+
+    shop.appendChild(div);
+  });
+}
+
+updateMoney();
+render();
+</script>
+
+</body>
+</html>
