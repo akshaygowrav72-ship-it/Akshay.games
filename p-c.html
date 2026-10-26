@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Coin Cabinet</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#0e3a34;--bg2:#0a2c27;--pan:#134a42;--brass:#f0b429;--cream:#fbf3dc;--mut:#9fc5bb;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{letter-spacing:.02em;margin:0;background:var(--bg);color:var(--cream);font:400 17px/1.35 Impact,"Haettenschweiler","Arial Narrow Bold",sans-serif;min-height:100vh}
+.app{max-width:1060px;margin:0 auto;padding:16px;display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media(max-width:820px){.app{grid-template-columns:1fr}}
+.left{background:var(--bg2);border-radius:22px;padding:22px;text-align:center;align-self:start;position:relative}
+h1{font:400 22px Impact,sans-serif;margin:0 0 14px;color:var(--brass)}
+.coins{font:400 48px Impact,sans-serif;line-height:1}
+.sub{color:var(--mut);margin:6px 0 14px}
+#coin{width:200px;height:264px;border:0;background:none;cursor:pointer;padding:0;transition:transform .08s;-webkit-tap-highlight-color:transparent;position:relative}
+#coin:active{transform:scale(.93) rotate(-4deg)}#coin:focus-visible,button:focus-visible{outline:3px solid var(--cream);outline-offset:3px}
+#coin img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;border-radius:24px;filter:drop-shadow(0 8px 0 #0006)}
+.stats{display:flex;justify-content:space-around;margin-top:14px}.stats b{display:block;font-size:20px;color:var(--brass)}.stats span{color:var(--mut);font-size:13px}
+.fl{position:fixed;pointer-events:none;font:700 22px Impact;color:var(--brass);text-shadow:0 2px 0 #000a;animation:up .8s ease-out forwards;z-index:5}
+@keyframes up{to{transform:translateY(-70px);opacity:0}}
+.right{background:var(--pan);border-radius:22px;padding:14px;min-height:540px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px;border:0;border-radius:12px;background:var(--bg2);color:var(--mut);font:600 16px Impact;cursor:pointer}
+.tabs button.on{background:var(--brass);color:#2a1d00}
+.pn{display:none}.pn.on{display:block}
+.it{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border:0;border-radius:14px;background:var(--bg2);color:var(--cream);font:inherit;cursor:pointer}
+.it:disabled{opacity:.45;cursor:not-allowed}.it:not(:disabled):hover{background:#0d3a33}
+.it .t{flex:1}.it .t b{display:block;font-size:17px}.it .t small{color:var(--mut)}
+.it .cost{font-weight:700;color:var(--brass);white-space:nowrap}.it .n{color:var(--mut);font-size:13px}
+.it svg.ic{width:54px;height:54px;flex:none;background:#0000002e;border-radius:12px;padding:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin-bottom:18px}
+.cell{background:var(--bg2);border-radius:12px;padding:6px;text-align:center;border-bottom:4px solid var(--rc,#555)}
+.cell svg{width:100%;aspect-ratio:1}.cell.lock svg{filter:brightness(0) opacity(.35)}
+.cell small{display:block;font-size:12px;color:var(--mut);min-height:16px}.cell b{font-size:13px;display:block}
+.ph{display:flex;justify-content:space-between;margin:4px 2px 8px;font-weight:700}.ph span{color:var(--mut);font-weight:500}
+.r0{--rc:#b8c0cc}.r1{--rc:#5fd38d}.r2{--rc:#4aa8ff}.r3{--rc:#b86bff}.r4{--rc:#ffb830}
+#ov{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:9;padding:16px}
+#ov.on{display:flex}
+.card{background:var(--cream);color:#1b1f1c;border-radius:24px;padding:20px;width:290px;text-align:center;border:6px solid var(--rc);animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+.card.r4{box-shadow:0 0 0 4px #ffb83055,0 0 60px 10px #ffb830aa}
+@keyframes pop{from{transform:scale(.4) rotate(-8deg);opacity:0}}
+.card svg{width:190px;height:190px}.card h2{margin:4px 0 0;font:400 26px Impact}.card .rl{font-weight:700;color:#1b1f1c;margin:4px 0 12px}
+.rl i{font-style:normal;background:var(--rc);padding:2px 12px;border-radius:99px}
+.nw{position:absolute;margin-left:-250px;margin-top:-6px;transform:rotate(-12deg);background:#e5322d;color:#fff;padding:2px 12px;border-radius:8px;font-weight:700}
+.btns{display:flex;gap:8px;justify-content:center}
+.btns button{padding:10px 16px;border:0;border-radius:12px;font:700 15px Impact;cursor:pointer;background:var(--brass);color:#2a1d00}
+.btns button.g{background:#d8d0b4}.btns button:disabled{opacity:.4}
+.rs{background:none;border:0;color:var(--mut);margin-top:16px;cursor:pointer;font:inherit;text-decoration:underline}
+.pv{background:var(--bg);color:var(--cream);border-radius:24px;padding:18px;width:min(560px,100%);max-height:92vh;overflow:auto;animation:pop .3s}.pv h2{margin:0 0 4px;font:400 28px Impact;color:var(--brass)}.pv .grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));margin:12px 0}.pv .cell b{color:var(--cream)}.pv .pc{color:var(--brass);font-size:15px}.pv .btns{margin-top:6px}.pv .btns button{font-size:17px}
+#lg{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}#lg.off{display:none}#lg form{background:var(--bg2);padding:28px;border-radius:24px;text-align:center;width:min(380px,100%)}#lg input{width:100%;padding:12px 14px;border-radius:12px;border:3px solid var(--brass);background:var(--bg);color:var(--cream);font:400 20px Impact;margin:14px 0;text-align:center}#lg button{width:100%;padding:12px;border:0;border-radius:12px;background:var(--brass);color:#2a1d00;font:400 20px Impact;cursor:pointer}
+.me{color:var(--mut);margin-bottom:8px}.me button{background:none;border:0;color:var(--brass);cursor:pointer;font:inherit;text-decoration:underline}#sv{font-size:13px;color:var(--mut);height:16px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="bv" x="-8%" y="-8%" width="116%" height="124%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.4" result="b"/><feSpecularLighting in="b" surfaceScale="3" specularConstant=".8" specularExponent="16" lighting-color="#fff" result="s"><fePointLight x="12" y="-8" z="30"/></feSpecularLighting><feComposite in="s" in2="SourceAlpha" operator="in" result="s2"/><feComposite in="SourceGraphic" in2="s2" operator="arithmetic" k1="0" k2="1" k3=".5" k4="0" result="l"/><feDropShadow in="l" dx="0" dy="1.6" stdDeviation="1" flood-color="#000" flood-opacity=".35"/></filter></svg>
+<div class="app">
+<section class="left"><h1>Coin Cabinet</h1><div class="me">Playing as <b id="nm"></b> <button id="sw">Switch</button></div>
+<div class="coins" id="co">0</div><div class="sub"><span id="cps">0</span> coins per second</div>
+<button id="coin" aria-label="Collect coins"><img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMUAAAEECAYAAACY+/BVAAAPnUlEQVR42u2dO4gkRRiA/37tzK66PuD0zsNTD3ycXnRwGhicoCiiibgGnsY+ojMzMBAU2cBAEMVEMDAQjATB4DAREcRMA+VAVAyUU1jYnXV3+lVtYi+zszM9NTP9qOr+vuQ8b5jp6amv/v+vqq5ysizL5H+SJJEkSaQN7O3tycbGRunvq5SSY8eOySeffCJgB77vi+/7+q/P/yOKIlFKcQehdSRJIkopCYJAHMeZLUWWZRJFkYwEDIDWoZSSMAzFcRzp9XqFr3XjOEYI6Aw6bd1tc8oURRGtACamU4VStP0GRFGEHHBEijiOuysFwCTSNEWKop4BEGMUvys3IB9lcxxnrjHrHJ2hPLBPCs/zuiNFr9cTpZRkWSae5x2IkGXZwqNtuRhBENCiWtJRTvyd9/f3rRiP3d3dla+//lprgjHLMjl16lRh3rgMQRDI1atXtV/7wAMPyNraGq3QQPr9vr2RIo5j+eijj2RnZ0eUUuK608uhKIrk0UcflTfeeKOy63nyySe1Uqobb7xR7r//fqSwCKvSp+FweBAp8j8n5YSO48g111xT6bUopbSkYGLUPqwffaLRAVJM6LERA5BighjjRfX29ja/LnRXipyqRpsAKQCQok3RIE3TWh6Woo5BCuPEKGr4JjVY5EGKzjQ21kIhBYU1EQAp2pJKAXROirzXpucGpBiDaAFIYViNAUhBjQFIAYfhmW+kgAnFPdvnIAXF9BTasik1EClaLyt0QAqTl1ZQYyBFY3m86TXGuBxMKiJF59MZJEAKM7+U2+zXGo0WFOH20codApsufEe36AQiBZBKIQUAUgAgBekIIAUFNCAFVHiDXW4xUgDRDSkAkIJCW3jCDykMkmI4HBp1PciBFEYwHA6NWlPEUDFSGEGRFFmWVS7N+LomogVSGBMxplF3I81TKaIGUjROGIZGNUQiBlIYkc+btqMG0QIpjGiEJhXfHE6JFFYU32Uzayh20uGUgBSN1Rh1PfFGNEAKaowFIgYgRSfhfIx24XMLyiuuRUQ8zzvyb4PBQHq9XiWfe91117FBAlKYHzVGG+nW1pa8+uqrpX6G4zgHn7G5uSlnzpzhxiOF2RHDcZyDh4vSNJXBYDCxYS/7AFIQBNzwrtcUtgxx5ks+Zr1mWdi/FimMa/jLvoZRK6TobPFdJA2jVkjROZj5RgqYEhF0ogYgRWW5vI1isIgQKZbK0+sY2WlKDB5UQopKIobJozo6w7WMSjWLb5MEo0vDlVLiuq4VSxwmLWmf1vB936fwRor5Uqfxv5cxM1wlx48flw8//FCuv/76StKiy5cvy1tvvSVZlk1cd7VUGjFyX2d1QHEcy8WLF+WJJ56wfi2W9cs88nSk7AZRpshKKfH9am71v//+K1evXp3ZEFdWVir9nnEct+Yos9YMyZqaclAfIIWxxXfXpYiiiFqlK+kTvfJ80VQpxeraLkUKkyMG9wYpwGBYct6h9An0o0W+uUMQBDzOSqSAUdoyjIoUQI1B+jQ/e3t7nWvYOmmQUkqSJBHP8w5ePxwOF14Z4DiOZFnWqjrFKik8z5MkSSqbHZ6HMAxldXXVGCl0lnl4nif33XffkR1HyiBNU7nppptaUZ9YJYVpoT4Mw8r2c1r0/sxan/Tiiy/K2bNnK/n8ra0tuXjx4qEteMqQJMsyOXv2rLz22mu1SGflgsDx8N9kIxwOh+J5nhETYkUbstXRqSRJItvb26V/juu6tQ4IuDZKkYdrU0ZOmryWSQ8utW05R93nj1g/+mTK0g7TGmJT19MGIVshhQm1hmnHGZtYgyFFA+lL3gia7K2Gw+Ghz2+yYebPfOfXw4LJDklhWuhmlhgpSBmmpFJ1Ssq+UkhRGC1MiRh1zvKasq8UhTaY80O6rtZOhDAbqybvTOqFqlgqUUb6lC/5sGG5ha7AdYvO8xQLYnKjmzWzbQrnzp3T/j4nT56UNE21U9Jl1qUhRYsxfeuft99+e67O5emnn5YwDGc3at+Xzz77TPr9PjWFzSlCWz+/7LpJh2WHxJFiiZrChjpIZ+/atkmx9OfYdmN46N7+QQrj5bPxouM4ZjJqwcGBquVow+9ibfrEUorFGmzV961KKer6za2uKZqMGKb0iCbWDFEU1f4MBFKM9R5NNFAOcGxv/deK0adxMeqUBDGKo5iNNUZrhmSbihiI0b5o4dvW8Gf9e1MbCJg8e2xCjSFy+OCYeTuwMAxlbW1Na5Y6y7KlDqnxH3rooVK++HiDmLU3U5Ik8txzz8krr7xSes/U1CwuYugz79qxXq8nH3/8sfZ7v/vuu/Lnn3/OfO0HH3xwVIrff/996hvP0+vO+yUHg4EMBoPWpTNdF6NohW4cx0tF8nl6/z/++EOuXLmy0MJNv2jqPEmSyjb7avNO110WoygtGt3tvOpdHvMN2RZpZzMLbSbJKL67VoC7Oj8u640Qo0toDckqpSQMw8blmGfEQmfdPcDCUozKAYAUFuWCAI1IoZRCDECKaTUG2IVpe92ayszB4qIRlDAMFz4nwvb6RHdkqY6HenTuZV2L85RS1s/RzJTijjvuKLyZi07C3XzzzbK2tmZtLXP77bdrffcbbrih0usIgkBuvfXWI9fiuu6R/1fXMw4m7Du1TAdQKMVgMJBvv/22si/4888/y5133qklWxAERvVAX3zxhRHXsbGxIRsbG0Z1GHnkmiRmXRG00khRNboNPU3TwpsM5lGUSpn8O1r1PAWjXu2tvYySwra1TTY/+9tlMcZz/KojxTLt2rXR5iiKWFdkYSpVViFcS/pk43O0SGEfTT1Hv3BNYWMjo8awL1rk7cyKQjvfKKtOOZbtLbIsY7dAC1IlnRrDSCmaCGtl9BaIYXaaZCNuW/J1xDCr1jM9GhThTzO9jn2UhsOh/PPPP1rRZG1tTa699trC0Lzsg/GwHGEYShRFsrq6evC7TWtDJq99a3RG+8yZM/LLL79ovXZnZ0eeeeYZ2d3dpfg2lNtuu02++uor7XMkTC22G5Wi3+9rH8HkeZ525GKzheZYX183pq5ZdGGiVcs8dKWgvoDSC21TYTEgIAUAUgAgRSU1BUBeWy6yqtoqKdh3CogU4xfrku3BYhFjnlUajD5B68kPy9Sd2PWLJjhMy+GVUtQVsJQcURTNPOfC393dtWLHhbxoymcqsyw7SKeSJDnY1CAIAun1eiz3gKkkSVJ4PoY/ay3RiRMntOQYDofy5ptvyqVLlypJc2655Ra5cuUKvyiUknHEcTy1nc5c+6S7BY3ruowOgVWp1LRUnOEcAKQAQAoApABACoA6pbD5AXSAyiKF7sEgAJ1LnxADusDMybsoimYumXAcR5IkYUdwMIq8E5/3sJ+ZUnz55Zfab5Ykibzzzjtaey8lSSLnz5+Xhx9+mF8P7IoUDz74oPabff/997K5uVm42ConDEN5/fXXkQIqZ96tbkrf98n3fS0pkiTh+QgwMo1yq7oAgCZJ0/RIW0zTVGvFN5N3AEgBRJG03pqCOgFsF6P0SMGSEDCtwDYifUIMsFmMyqRADDCBRdbtuSZdDEBVbdGozdCIGGCSHEgBMFZfGDN5p5QilQJjmCWGW7epAKZEDSOkALCh+PZNMhTABNwmTQVACqSAmhgOh/ZJAWBqx4sU0Eocx1l4xTarZKG1UcKYSMHoEtgeKUodkj158qS8//77WhsXxHEsx44dk8uXL0sURYdk6vf7R16/srIiFy5c4CEmmCtSLNJeSpfihRde0H79Dz/8oL3FzWOPPSYXLlzg14bK8Zv88CRJpp5UOX5mdq/X49eCWjB29Gl8ESGnnULnpRjNDQEWLbZbK4VSigIbautQ3bZ/QehulGhtpABYtBNlmQfACMtMIiMFAFIAFOM3fQFxHIvv+4wuQenpUxiG4rquKKUOJoNH06ppNYdvwhdIkkTrSDDoNt999512O3n55ZdlMBjYGSlGIwZiwDT29/fl0qVLWiNKSin55ptvZHV11f6aIo5j5iOAQntSKgWAFEQMQAoiBiAFEQOQgogBZVNXB2nFjDYPGEEuxTyHr7RaCoBR0jQtjBrLRhSkACupciulRme019fX5aWXXtJ67alTp+Snn37SDp/9fl/uvvtuWk/LI4bnee2S4q677pLNzU2t1/79999yzz33HJJifMePvPfIskweeeQR+fzzz2k5HRDDcZwjbcFaKeb98qurq4d2k562ViqKookbqkF7C/DOFtrjo1CMSnWLouH5MkelrC+0p03w1TF0B+ZlE0gx0oOMi1FFAQZ2iMGQ7BQxiBTUGJ2XYjzn5EgAQIoZNQZAZ6UgSgBSQGeoq7NDCgCkAKIFUkDLpEiSpFI5kAKsjBJKqamjjMsKgxRgDeMSVDX0jhRgdeSoIo1CCqDGQApoe72BFAAli+FzK6FtNQajTwBjsHQcOkGv16vtGRnfppvy/PPPa/cCJ06ckF9//VX7/U+fPk3Lq5m//vpL+7VBEMizzz4r+/v7U1+Tn52dZdlSx8U5+/v7rXz4YHt7W86dO6f12nvvvVc+/fRTWV9fp6XWyOOPP37kCK5JW9UkSSLnz5+X9957r/SzESft+tLqQntra0vrdUW9D1Tbce3s7MysB6Ioku3t7dquq9VS6PYqbJVj9m9W5kZnFNrQCup+khIpAJACACkAkAIAKQCQAgApAJACACkAkAK6ju5MdZZltW6ajRTQGKaeIYIU0ChRFBl3dAJSQOPEcWxU1EAKIJVCCjCF8bQpiiIjDtxBCjCKqncURwqwVowmi2+kAGOL76YiBlL8T9m7RMD8NYUpqRTbZorIb7/9Jk899ZSx1+e6bu0P7y97vSsrK5KmqXieN/V1YRg2WmNM6wiRQkT29vbkxx9/rK8n8v2lG92yjaFsyVzXPfS9dN5f9xqqOhsdKQxKn9I0Fd/3F/7MMhp0FWI4jlMYGWz5zakpGmKZEZai897meY+yU5MkSbRSIlM6rCAIkMJEMZqminy97NnpKlKnooiGFA2zaL6cZVlpDbpsMZIkMXYFrE5d59o0qkEq1d1Uqsz36vf7hSmZGwRBa8foTVuSXFUqVdb3tCGVqqM+cR3HmVpw2M5wODQ+jJeRSpUpRtn3y6RUSretu//nUNLWNMrEh1iqSKXK+o5l1iomiZFPKOq084NqY2Vl5eCmVDGs1nTE6PV6jf0YSqmDP/PTdmY1okUm+PKGt2wHl6bpwVxKmVEwv7Z5BV5GeM/z5s6E/Ekhpt/vS5qmBydN2tTTjnL8+PHGRzTy46ZmSbHMpNeiEszqKMqoNcfvSX4/pt2nSf+e9/K6KVI+ibjoPXUyW1s8QFXRnVsAgBQASAGAFABIAVAe/wFdaaqICVtbXgAAAABJRU5ErkJggg=="></button>
+<div class="stats"><div><b id="cv">1</b><span>per click</span></div><div><b id="cb">0</b><span>creature bonus</span></div><div><b id="fd">0</b><span>found</span></div></div>
+<div id="sv"></div><button class="rs" id="rs">Reset progress</button></section>
+<section class="right"><div class="tabs"><button data-p="up" class="on">Upgrades</button><button data-p="pk">Packs</button><button data-p="cl">Collection</button></div>
+<div class="pn on" id="up"></div><div class="pn" id="pk"></div><div class="pn" id="cl"></div></section></div>
+<div id="lg"><form id="lf"><h1>Coin Cabinet</h1><div>Enter a username. Your progress saves to it automatically.</div><input id="un" maxlength="16" autocomplete="off" placeholder="Username" required><button>Play</button></form></div>
+<div id="ov"><div id="rv"></div></div>
+<script>
+const W='stroke="#111" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"';
+const svg=s=>`<svg viewBox="0 0 60 60"><g ${W} filter="url(#bv)">${s}</g></svg>`;
+const C=(x,y,r,f)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}"/>`;
+const E=(x,y,a,b,f,z="")=>`<ellipse cx="${x}" cy="${y}" rx="${a}" ry="${b}" fill="${f}" ${z}/>`;
+const P=(d,f="none",z="")=>`<path d="${d}" fill="${f}" ${z}/>`;
+const R=(x,y,w,h,f,r=2,z="")=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${f}" ${z}/>`;
+const N=(x,y,r,f="#111")=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" stroke="none"/>`;
+const Y=(y,g=7,r=2,f)=>N(30-g,y,r,f)+N(30+g,y,r,f);
+const T=(x,y,s,t,a="middle")=>`<text x="${x}" y="${y}" font-size="${s}" font-weight="900" text-anchor="${a}" fill="#111" stroke="none" font-family="Impact,sans-serif">${t}</text>`;
+const sm=(y=38)=>P(`M25 ${y}Q28 ${y+6} 30 ${y+1}Q32 ${y+6} 35 ${y}`);
+const star=(x,y,s,f="#ffd54a")=>P(`M${x} ${y-s}L${x+s*.3} ${y-s*.3}L${x+s} ${y}L${x+s*.3} ${y+s*.3}L${x} ${y+s}L${x-s*.3} ${y+s*.3}L${x-s} ${y}L${x-s*.3} ${y-s*.3}Z`,f,'stroke-width="1.2"');
+const CAT=P("M12 24L11 6L26 15Z","#fff")+P("M48 24L49 6L34 15Z","#fff")+E(30,34,21,17,"#fff")+Y(32,7,2.2)+sm(38);
+const bill=(c,n,x="")=>R(3,15,54,30,c,3)+R(7,19,46,22,"none",2,'stroke-width="1"')+x+E(30,30,7,9,"#ffffffcc",'stroke-width="1.5"')+C(30,27,2.8,"#667")+P("M24.5 37Q30 29 35.5 37Z","#667")+T(12,28,7,n)+T(48,40,7,n);
+const H=c=>P("M20 24Q18 8 30 8Q42 8 40 24Q37 15 30 15Q23 15 20 24Z",c);
+const B=c=>P("M21 27Q22 50 30 52Q38 50 39 27Q35 36 30 34Q25 36 21 27Z",c);
+const god=(robe,hair,beard,ex="",pre="")=>svg(pre+P("M10 58Q12 36 30 36Q48 36 50 58Z",robe)+C(30,24,9,"#f4cfa9")+beard+hair+Y(24,4,1.5)+ex);
+const gl=(c)=>N(30,30,29,c);
+const PACKS=[
+{id:"bc",name:"Battle Cat Pack",cost:100,ic:0,items:[
+["Cat",0,svg(CAT)],
+["Eraser Cat",0,svg(P("M18 14L17 4L26 9Z","#fff")+P("M42 14L43 4L34 9Z","#fff")+R(16,8,28,48,"#fff",12)+Y(22,6,2)+sm(28)+E(22,57,5,2.5,"#fff")+E(38,57,5,2.5,"#fff"))],
+["Wall Cat",1,svg(P("M14 10L13 1L24 7Z","#fff")+P("M46 10L47 1L36 7Z","#fff")+R(12,6,36,50,"#fff",2)+R(12,35,36,21,"#c9ccd1",0)+Y(18,8,2)+sm(24)+T(30,50,9,"NEKO")+E(20,57,5,2.5,"#fff")+E(40,57,5,2.5,"#fff"))],
+["Papaluga",3,svg(P("M24 48L19 58M36 48L41 58")+E(30,47,10,4,"#fff")+P("M30 22V44")+P("M21 28Q30 31 39 28M22 34Q30 37 38 34M23 40Q30 42 37 40")+P("M38 28L44 40L40 52M22 28L16 40L20 52")+P("M23 17Q30 42 37 17Z","#fff")+P("M24 5L21 1M36 5L39 1")+E(30,12,9,10,"#fff")+N(26,11,3)+N(34,11,3)+N(30,17,1.3))],
+["Gangalion",4,svg(gl("#ffe08a66")+P("M30 28L2 12Q4 30 14 38L22 34L12 46L30 40Z","#fff")+P("M30 28L58 12Q56 30 46 38L38 34L48 46L30 40Z","#fff")+P("M30 48Q46 58 57 50")+P("M24 57L22 34Q30 28 38 34L36 57Z","#fff")+`<g transform="translate(18 7) scale(.4)">${CAT}</g>`+P("M24 9L16 0M36 9L44 0"))]]},
+{id:"mg",name:"Magic Pack",cost:1200,ic:0,items:[
+["Wizard",0,svg(P("M46 14V58M10 58L18 30H42L50 58Z","#3a5bd9")+C(30,25,7,"#f2c6a0")+P("M23 27Q30 54 37 27Q30 33 23 27Z","#fff")+P("M30 0L16 23H44Z","#6a3fd1")+E(30,23,16,3.5,"#6a3fd1")+Y(26,3.5,1.4)+star(30,13,3.5)+N(46,12,4,"#7ff"))],
+["Fairy",1,svg(E(16,24,11,7,"#d8f3ff")+E(44,24,11,7,"#d8f3ff")+E(19,35,8,5,"#d8f3ff")+E(41,35,8,5,"#d8f3ff")+P("M25 28H35L42 52H18Z","#ff8fc7")+C(30,19,7,"#f6d0b0")+P("M23 19Q23 9 30 10Q37 9 37 19Q33 13 30 14Q27 13 23 19Z","#e977b3")+Y(20,3,1.2)+P("M40 44L50 30")+star(52,24,6)+N(8,10,1.5,"#fff")+N(10,50,1.5,"#fff"))],
+["Unicorn",2,svg(P("M10 58Q10 30 24 22L38 24L42 36Q30 38 28 58Z","#fff")+E(40,31,12,9,"#fff")+P("M38 23L46 2L46 26Z","#ffd54a")+P("M34 23L33 14L40 21Z","#fff")+P("M22 20Q8 28 12 46Q16 34 22 32Q18 26 26 22Z","#c86cf0")+N(42,29,1.9)+N(51,34,1.2)+star(12,12,4,"#fff"))],
+["Phoenix",3,svg(P("M30 30L2 12Q4 36 20 46Z","#ff8a1f")+P("M30 30L58 12Q56 36 40 46Z","#ff8a1f")+P("M24 52L18 60M30 56V60M36 52L42 60")+P("M30 3Q46 22 41 40Q37 55 30 57Q23 55 19 40Q14 22 30 3Z","#ff5a1f")+P("M30 30Q39 40 35 50Q30 55 25 50Q21 40 30 30Z","#ffd23f","stroke=\"none\"")+Y(18,4,1.8,"#111")+P("M27 22L30 28L33 22Z","#ffd23f"))],
+["Arcane Dragon",4,svg(gl("#a855f755")+P("M20 17L9 2L28 11Z","#ffd54a")+P("M40 17L51 2L32 11Z","#ffd54a")+E(30,32,19,16,"#7c4dff")+E(30,43,11,8,"#9d7bff")+N(21,28,3.5,"#ffd54a")+N(39,28,3.5,"#ffd54a")+N(21,28,1,"#111")+N(39,28,1,"#111")+N(26,41,1.4)+N(34,41,1.4)+P("M24 48L26 54L28 48M32 48L34 54L36 48","#fff")+star(8,40,3,"#fff")+star(52,42,3,"#fff"))]]},
+{id:"bz",name:"Blizzard Pack",cost:2000,ic:0,items:[
+["Snowflake",0,svg(P("M30 5V55M8 17.5L52 42.5M8 42.5L52 17.5","none",'stroke="#7cc7ff" stroke-width="4"')+P("M24 10L30 16L36 10M24 50L30 44L36 50M10 28L18 28L16 20M50 32L42 32L44 40","none",'stroke="#7cc7ff" stroke-width="3"')+C(30,30,5,"#fff"))],
+["Snowman",0,svg(P("M20 38L8 30M40 38L52 30","none",'stroke="#7a4a1a" stroke-width="3"')+C(30,44,14,"#fff")+C(30,22,10,"#fff")+R(22,6,16,9,"#222",1)+R(18,13,24,3,"#222",1)+Y(21,4,1.6)+P("M30 24L39 26L30 28Z","#f80")+N(30,40,1.8)+N(30,47,1.8))],
+["Penguin",1,svg(E(30,36,16,21,"#222")+E(30,40,10,15,"#fff")+E(22,57,6,2.5,"#fa0")+E(38,57,6,2.5,"#fa0")+P("M14 32Q7 44 15 50","#222")+P("M46 32Q53 44 45 50","#222")+C(30,17,10,"#222")+N(25,15,2.2,"#fff")+N(35,15,2.2,"#fff")+N(25,15,1,"#000")+N(35,15,1,"#000")+P("M26 20L34 20L30 27Z","#fa0"))],
+["Polar Bear",2,svg(C(15,14,6,"#fff")+C(45,14,6,"#fff")+E(30,30,19,17,"#fff")+E(30,39,9,7,"#e8f0f5")+Y(27,8,2)+E(30,35,3.5,2.5,"#111")+P("M30 38V42M25 43Q30 47 35 43")+C(15,14,2.5,"#f9b")+C(45,14,2.5,"#f9b"))],
+["Frost Dragon",4,svg(gl("#7cc7ff55")+P("M20 17L8 1L28 11Z","#9df")+P("M40 17L52 1L32 11Z","#9df")+E(30,33,19,16,"#bfe3ff")+E(30,44,11,8,"#9cc9f5")+N(21,29,3.5,"#06c")+N(39,29,3.5,"#06c")+N(21,29,1,"#fff")+N(39,29,1,"#fff")+N(26,42,1.4)+N(34,42,1.4)+P("M24 49L26 55L28 49M32 49L34 55L36 49","#fff")+P("M8 30L2 34L8 38M52 30L58 34L52 38","#9df"))]]},
+{id:"bg",name:"Bug Pack",cost:250,ic:1,items:[
+["Ant",0,svg(P("M22 44L16 56M27 45L27 58M33 44L40 56M22 32L16 22M27 31L27 20M33 32L40 22")+P("M9 33Q4 26 6 19M14 33Q16 26 12 19")+E(46,38,11,9,"#c0392b")+E(28,38,8,6,"#c0392b")+C(13,38,7,"#c0392b")+N(10,36,1.6,"#fff"))],
+["Ladybug",0,svg(P("M12 40L4 44M12 30L4 26M48 40L56 44M48 30L56 26")+E(30,13,9,6,"#222")+C(30,37,19,"#e5322d")+P("M30 18V56")+N(21,31,3.6)+N(39,31,3.6)+N(21,44,3.2)+N(39,44,3.2)+N(26,12,1.8,"#fff")+N(34,12,1.8,"#fff")+P("M26 8L22 1M34 8L38 1"))],
+["Bee",1,svg(E(17,20,10,6,"#d8efff")+E(43,20,10,6,"#d8efff")+P("M26 9L22 2M34 9L38 2")+E(30,37,13,17,"#ffcf1f")+P("M18 34Q30 37 42 34M17.5 42Q30 45 42.5 42M20 50Q30 53 40 50","none",'stroke-width="4.5"')+C(30,17,8,"#ffcf1f")+Y(16,3.5,1.8)+P("M28 53L30 59L32 53","#111"))],
+["Butterfly",2,svg(P("M30 28Q3 4 5 27Q7 44 30 34Z","#ff7ab8")+P("M30 28Q57 4 55 27Q53 44 30 34Z","#ff7ab8")+P("M30 34Q8 40 14 54Q26 57 30 40Z","#9b7bff")+P("M30 34Q52 40 46 54Q34 57 30 40Z","#9b7bff")+N(15,24,3.5,"#fff")+N(45,24,3.5,"#fff")+N(19,48,2.5,"#fff")+N(41,48,2.5,"#fff")+E(30,34,3,15,"#222")+P("M29 19Q26 8 21 5M31 19Q34 8 39 5"))],
+["Stag Beetle",3,svg(P("M17 34L6 38M17 44L6 50M43 34L54 38M43 44L54 50")+E(30,41,14,16,"#6b3e1e")+P("M30 26V57")+E(30,22,8,6,"#3d2310")+P("M24 21Q12 15 18 3M36 21Q48 15 42 3","none",'stroke="#3d2310" stroke-width="4"')+N(24,37,2.5,"#ffffff66")+Y(21,3.5,1.2,"#fff"))],
+["Rainbow Dragonfly",4,svg(gl("#7cf5ff44")+E(15,24,13,4.5,"#aef")+E(45,24,13,4.5,"#aef")+E(16,33,12,4.5,"#fbf")+E(44,33,12,4.5,"#fbf")+E(30,35,3.5,21,"#2cd")+P("M26.5 27H33.5","none",'stroke="#ffd23f" stroke-width="3"')+P("M26.5 36H33.5","none",'stroke="#ff6bd6" stroke-width="3"')+P("M27 45H33","none",'stroke="#8f5bff" stroke-width="3"')+C(30,11,6,"#d63cff")+N(27,10,2,"#fff")+N(33,10,2,"#fff"))]]},
+{id:"sn",name:"Snack Pack",cost:400,ic:3,items:[
+["Cookie",0,svg(C(30,31,24,"#d9a05b")+N(20,20,3.5,"#5a3418")+N(42,21,3,"#5a3418")+N(46,36,3.5,"#5a3418")+N(37,46,3,"#5a3418")+N(15,38,3,"#5a3418")+N(30,13,2.5,"#5a3418")+Y(30,7,2)+sm(36))],
+["Pizza Slice",0,svg(P("M30 57L7 15Q30 4 53 15Z","#ffcc44")+P("M7 15Q30 4 53 15","none",'stroke="#c8863a" stroke-width="7"')+C(22,26,4.2,"#d63a2e")+C(38,26,4.2,"#d63a2e")+C(30,42,4.2,"#d63a2e")+N(22,26,1,"#a22")+N(26,31,1.4)+N(34,31,1.4))],
+["Banana",1,svg(P("M13 11Q6 36 25 51Q42 60 54 44Q40 48 31 36Q25 24 26 9Z","#ffe135")+P("M13 11L26 9L25 4L15 5Z","#6b4a1f")+P("M25 14Q26 32 42 46","none",'stroke="#d9a400" stroke-width="1.5"')+N(24,34,1.5)+N(30,41,1.5))],
+["Donut",2,svg(C(30,31,24,"#e0a060")+P("M8 30Q8 12 30 9Q52 12 52 30Q50 38 43 35Q39 43 30 38Q21 44 17 36Q9 38 8 30Z","#ff7ab8")+C(30,30,6.5,"#134a42")+P("M17 20l4 2M38 16l3 3M44 28l-1 4M22 40l3-2M32 18l1 4","none",'stroke="#fff" stroke-width="2.5"')+P("M14 28l3 1M42 36l3-1","none",'stroke="#ffe135" stroke-width="2.5"'))],
+["Cosmic Brownie",4,svg(gl("#a855f766")+R(7,24,46,27,"#3b2012",3)+P("M7 24L15 10H45L53 24Z","#6a3b8f")+E(30,17,13,4,"#c46bff","stroke=\"none\"")+star(20,16,2.2,"#fff")+star(38,15,2,"#ffe27a")+N(44,18,1,"#fff")+Y(37,8,2.2,"#fff")+P("M25 42Q30 48 35 42","none",'stroke="#fff"')+star(14,45,2.5,"#9ff")+star(48,42,2,"#ff8"))]]},
+{id:"eg",name:"Egypt Pack",cost:3500,ic:4,items:[
+["Camel",0,svg(P("M16 42V57M24 42V57M38 42V57M46 42V57","none",'stroke-width="5"')+E(29,36,18,11,"#d9a35a")+C(21,24,7,"#d9a35a")+C(35,24,7,"#d9a35a")+P("M44 34Q52 30 50 18L57 14L58 22L56 26Q56 34 46 44Z","#d9a35a")+E(53,13,6,4.5,"#d9a35a")+N(55,12,1.6)+P("M11 34Q6 40 8 48","none")+P("M15 36H43","none",'stroke="#c0392b" stroke-width="3" stroke-dasharray="3 3"'))],
+["Scribe",0,svg(P("M17 58L22 29H38L43 58Z","#f5f0e0")+R(40,36,12,8,"#eed9a0",1)+C(30,18,8,"#e8b88a")+P("M21 17Q21 5 30 5Q39 5 39 17L39 22L36 14H24L21 22Z","#fff")+Y(18,3.5,1.5)+P("M17 36L24 42"))],
+["Priest",1,svg(P("M49 6V58","none",'stroke="#a8742c" stroke-width="3"')+P("M18 58L21 30H39L42 58Z","#fff")+P("M19 30Q30 42 41 30L38 26H22Z","#2ab6c9")+C(30,17,8,"#e8b88a")+P("M22 14Q30 4 38 14Q30 11 22 14Z","#222")+Y(18,3.5,1.5)+N(49,6,3,"#f0b429"))],
+["Mummy",2,svg(P("M20 38L10 48M40 38L50 48")+R(18,8,24,48,"#e8e0c8",9)+P("M18 24H42M18 33H42M18 42H42M20 50H40","none",'stroke-width="2"')+R(21,13,18,8,"#222",3)+N(26,17,2.6,"#fff")+N(34,17,2.6,"#fff")+N(26,17,1,"#111")+N(34,17,1,"#111"))],
+["Pharaoh",3,svg(P("M16 58L14 20Q30 -2 46 20L44 58L38 42H22Z","#3b6fd1")+P("M16 58L14 20Q30 -2 46 20L44 58","none")+E(30,25,9,11,"#e8b88a")+P("M26 34H34L33 44H27Z","#2a4a9a")+P("M14 20Q30 -2 46 20","none",'stroke="#f0b429" stroke-width="4"')+P("M14 28H46","none",'stroke="#f0b429" stroke-width="3"')+Y(24,4,1.7)+P("M24.5 24H27M33 24H35.5","none",'stroke-width="1.5"')+N(30,8,2.5,"#f0b429"))],
+["Anubis",4,svg(gl("#ffd24a55")+P("M12 58Q14 40 30 40Q46 40 48 58Z","#f0b429")+P("M21 24L15 2L29 13Z","#222")+P("M39 24L45 2L31 13Z","#222")+P("M20 26Q30 4 40 26L35 36H25Z","#2a2a34")+P("M26 28L30 41L34 28Z","#3b3b48")+N(30,40,2.5)+N(25,23,2.5,"#ffd24a")+N(35,23,2.5,"#ffd24a")+P("M19 40Q30 50 41 40","none",'stroke="#2ab6c9" stroke-width="4"'))]]},
+{id:"gr",name:"Greek God Pack",cost:10000,ic:5,items:[
+["Satyr",0,svg(P("M22 13Q15 5 21 2M38 13Q45 5 39 2")+P("M21 22L11 17L20 27Z","#f4cfa9")+P("M39 22L49 17L40 27Z","#f4cfa9")+P("M16 58Q15 36 30 36Q45 36 44 58Z","#8a5a2b")+C(30,24,9,"#f4cfa9")+H("#5a3a1a")+Y(24,4,1.5)+R(34,42,18,7,"#d9ae3c",1)+P("M39 42V49M44 42V49M49 42V49"))],
+["Hermes",1,god("#d97a2b",H("#6b4a2a")+P("M18 16Q30 2 42 16Q30 12 18 16Z","#d9ae3c")+P("M18 14L5 6Q7 15 17 18Z","#fff")+P("M42 14L55 6Q53 15 43 18Z","#fff"),"","",P("M10 8V58","none",'stroke="#a8742c" stroke-width="3"'))],
+["Athena",2,god("#f4f4f4",P("M19 25Q17 6 30 6Q43 6 41 25L38 22V16Q30 11 22 16V22Z","#d9ae3c")+P("M30 6Q27 -1 39 1Q34 3 34 6Z","#d63a2e"),"",C(46,48,9,"#d9ae3c")+N(46,48,3,"#111")+N(46,48,1.1,"#fff"))],
+["Poseidon",3,god("#1f8fc9",H("#37b6a8"),B("#37b6a8"),"",P("M49 10V58M43 3V14Q49 20 55 14V3M49 3V14","none",'stroke="#f0b429" stroke-width="3"'))],
+["Hades",3,god("#2b2b36",P("M19 23Q14 9 22 11Q22 3 28 7Q32 -1 37 7Q45 5 42 13Q46 17 41 23Q36 13 30 15Q24 13 19 23Z","#58c8ff"),B("#3b3b4a"),N(10,48,5,"#58c8ff"))],
+["Zeus",4,god("#e9eefc",H("#eee"),B("#eee"),P("M47 4L38 22H44L40 36L54 15H47Z","#ffd21f"),gl("#ffe14a55"))]]}
+,{id:"mn",name:"Money Pack",cost:6000,ic:5,items:[
+["One Dollar",0,svg(bill("#a9d3a1","1"))],
+["Five Dollar",0,svg(bill("#c5b3e6","5"))],
+["Ten Dollar",1,svg(bill("#f2c88f","10"))],
+["Twenty Dollar",2,svg(bill("#8fd0a6","20"))],
+["Fifty Dollar",3,svg(bill("#f0a9b8","50",P("M45 19V41","none",'stroke="#3a7bd5" stroke-width="2"')))],
+["Hundred Dollar",4,svg(gl("#ffd24a55")+bill("#8ec9e6","100",P("M45 19V41","none",'stroke="#3a7bd5" stroke-width="2"'))+star(54,12,4,"#fff"))]]},
+{id:"bl",name:"Ball Pack",cost:700,ic:2,items:[
+["Tennis Ball",0,svg(C(30,30,24,"#d4e635")+P("M10 14Q24 30 10 46M50 14Q36 30 50 46","none",'stroke="#fff" stroke-width="3"'))],
+["Baseball",0,svg(C(30,30,24,"#fff")+P("M14 12Q23 30 14 48M46 12Q37 30 46 48","none",'stroke="#d22" stroke-width="2.5" stroke-dasharray="3 3"'))],
+["Soccer Ball",1,svg(C(30,30,24,"#fff")+P("M30 20L39 26L36 37H24L21 26Z","#222")+P("M30 20V7M39 26L51 22M36 37L43 49M24 37L17 49M21 26L9 22")+P("M18 49L24 55M42 49L36 55M51 22L53 33M9 22L7 33")+P("M25 7H35L30 11Z","#222"))],
+["Basketball",2,svg(C(30,30,24,"#e8772e")+P("M6 30H54M30 6V54M11 14Q30 30 11 46M49 14Q30 30 49 46"))],
+["Bowling Ball",3,svg(C(30,30,24,"#1a2a8a")+N(23,20,3.4,"#000")+N(34,17,3.4,"#000")+N(31,28,3.6,"#000")+P("M12 38Q14 48 24 52","none",'stroke="#ffffff55" stroke-width="3"'))],
+["Golden Ball",4,svg(gl("#ffd70055")+C(30,30,23,"#ffd24a")+P("M30 20L39 26L36 37H24L21 26Z","#b8860b")+P("M30 20V8M39 26L51 22M36 37L43 49M24 37L17 49M21 26L9 22")+star(47,12,4,"#fff")+star(12,46,3,"#fff"))]]}
+];
+const RN=["Common","Uncommon","Rare","Epic","Legendary"],RW=[55,25,12,6,2],RB=[.2,1,4,15,60];
+const UPS=[{id:"f",n:"Sharper Finger",d:"+1 coin per click",c:15,k:1},{id:"h",n:"Strong Grip",d:"+5 coins per click",c:200,k:5},{id:"g",n:"Gold Gauntlet",d:"+40 coins per click",c:3000,k:40},{id:"a",n:"Auto Clicker",d:"+1 coin per second",c:50,s:1},{id:"m",n:"Coin Mill",d:"+8 coins per second",c:700,s:8},{id:"n",n:"Mint",d:"+60 coins per second",c:7000,s:60},{id:"v",n:"Vault Press",d:"+400 coins per second",c:60000,s:400}];
+const $=s=>document.querySelector(s);
+const fmt=n=>{n=Math.floor(n);if(n<1e3)return""+n;const u=["K","M","B","T"];let i=-1;while(n>=1e3&&i<3){n/=1e3;i++}return(n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+u[i]};
+let S={coins:0,up:{},own:{}},U=null;
+const key=u=>"coincab3:"+u.toLowerCase();
+function save(){if(!U)return;try{localStorage.setItem(key(U),JSON.stringify(S));localStorage.setItem("coincab3:last",U);$("#sv").textContent="Autosaved";}catch(e){$("#sv").textContent="Could not save"}}
+function login(u){U=u;S={coins:0,up:{},own:{}};try{const j=localStorage.getItem(key(u));if(j)S=Object.assign(S,JSON.parse(j))}catch(e){}$("#nm").textContent=u;$("#lg").classList.add("off");save();ref();cl()}
+const cost=u=>Math.ceil(u.c*Math.pow(1.15,S.up[u.id]||0));
+const clickV=()=>1+UPS.reduce((a,u)=>a+(u.k||0)*(S.up[u.id]||0),0);
+const bonus=()=>{let b=0;PACKS.forEach(p=>p.items.forEach((it,i)=>{b+=(S.own[p.id+i]||0)*RB[it[1]]}));return b};
+const cps=()=>UPS.reduce((a,u)=>a+(u.s||0)*(S.up[u.id]||0),0)+bonus();
+const found=()=>PACKS.reduce((a,p)=>a+p.items.filter((_,i)=>S.own[p.id+i]).length,0);
+const total=PACKS.reduce((a,p)=>a+p.items.length,0);
+$("#up").innerHTML=UPS.map(u=>`<button class="it" data-u="${u.id}"><div class="t"><b>${u.n}</b><small>${u.d}</small></div><div style="text-align:right"><div class="cost"></div><div class="n"></div></div></button>`).join("");
+$("#pk").innerHTML=PACKS.slice().sort((a,b)=>a.cost-b.cost).map(p=>`<button class="it" data-p="${p.id}">${p.items[p.ic][2].replace("<svg",'<svg class="ic"')}<div class="t"><b>${p.name}</b><small></small></div><div class="cost">${fmt(p.cost)}</div></button>`).join("");
+function cl(){$("#cl").innerHTML=PACKS.map(p=>`<div class="ph">${p.name}<span>${p.items.filter((_,i)=>S.own[p.id+i]).length} / ${p.items.length}</span></div><div class="grid">${p.items.map((it,i)=>{const n=S.own[p.id+i]||0;return`<div class="cell r${it[1]}${n?"":" lock"}">${it[2]}<b>${n?it[0]:"???"}</b><small>${n?RN[it[1]]+" x"+n:""}</small></div>`}).join("")}</div>`).join("")}
+function ref(){
+$("#co").textContent=fmt(S.coins);$("#cps").textContent=cps()<100?cps().toFixed(1):fmt(cps());$("#cv").textContent=fmt(clickV());$("#cb").textContent="+"+(bonus()<100?bonus().toFixed(1):fmt(bonus()));$("#fd").textContent=found()+"/"+total;
+document.querySelectorAll("[data-u]").forEach(b=>{const u=UPS.find(x=>x.id==b.dataset.u),c=cost(u);b.querySelector(".cost").textContent=fmt(c);b.querySelector(".n").textContent="Owned: "+(S.up[u.id]||0);b.disabled=S.coins<c});
+document.querySelectorAll("[data-p]").forEach(b=>{if(!b.classList.contains("it"))return;const p=PACKS.find(x=>x.id==b.dataset.p);b.disabled=S.coins<p.cost;b.querySelector("small").textContent=p.items.filter((_,i)=>S.own[p.id+i]).length+" of "+p.items.length+" found"})}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button,.pn").forEach(x=>x.classList.remove("on"));b.classList.add("on");$("#"+b.dataset.p).classList.add("on");if(b.dataset.p=="cl")cl()});
+$("#coin").addEventListener("click",e=>{const v=clickV();S.coins+=v;const f=document.createElement("span");f.className="fl";f.textContent="+"+fmt(v);const r=e.clientX||innerWidth/2,t=e.clientY||innerHeight/2;f.style.left=r-14+(Math.random()*30-15)+"px";f.style.top=t-30+"px";document.body.appendChild(f);setTimeout(()=>f.remove(),800);ref()});
+$("#up").onclick=e=>{const b=e.target.closest("[data-u]");if(!b)return;const u=UPS.find(x=>x.id==b.dataset.u),c=cost(u);if(S.coins<c)return;S.coins-=c;S.up[u.id]=(S.up[u.id]||0)+1;ref();save()};
+const pct=(p,it)=>{const rs=[...new Set(p.items.map(i=>i[1]))],tw=rs.reduce((a,r)=>a+RW[r],0);return RW[it[1]]/tw*100/p.items.filter(i=>i[1]==it[1]).length};
+function preview(p){$("#rv").innerHTML=`<div class="pv"><h2>${p.name}</h2><div>Each pack gives one creature. Duplicates add to your coins per second.</div><div class="grid">${p.items.map((it,i)=>{const n=S.own[p.id+i]||0;return`<div class="cell r${it[1]}">${it[2]}<b>${it[0]}</b><small>${RN[it[1]]}</small><small class="pc">${pct(p,it).toFixed(1)}%</small></div>`}).join("")}</div><div class="btns"><button id="by" ${S.coins<p.cost?"disabled":""}>Buy for ${fmt(p.cost)}</button><button class="g" id="cx">Close</button></div></div>`;$("#ov").classList.add("on");$("#by").onclick=()=>open(p);$("#cx").onclick=()=>{$("#ov").classList.remove("on")}}
+function open(p){if(S.coins<p.cost)return;S.coins-=p.cost;const rs=[...new Set(p.items.map(i=>i[1]))],tw=rs.reduce((a,r)=>a+RW[r],0);let x=Math.random()*tw,r=rs[0];for(const q of rs){if(x<RW[q]){r=q;break}x-=RW[q]}
+const ids=p.items.map((_,i)=>i).filter(i=>p.items[i][1]==r),i=ids[Math.floor(Math.random()*ids.length)],it=p.items[i],k=p.id+i,nw=!S.own[k];S.own[k]=(S.own[k]||0)+1;ref();save();
+$("#rv").innerHTML=`<div class="card r${r}">${nw?'<div class="nw">New!</div>':""}${it[2]}<h2>${it[0]}</h2><div class="rl r${r}"><i>${RN[r]}</i></div><div class="btns"><button id="ag">Back to pack</button><button class="g" id="cx">Close</button></div></div>`;
+$("#ag").onclick=()=>preview(p);$("#cx").onclick=()=>{$("#ov").classList.remove("on");cl()}}
+$("#pk").onclick=e=>{const b=e.target.closest("button[data-p]");if(b)preview(PACKS.find(x=>x.id==b.dataset.p))};
+$("#rs").onclick=()=>{if(confirm("Erase all progress?")){S={coins:0,up:{},own:{}};save();ref();cl()}};
+setInterval(()=>{if(U){S.coins+=cps()/10;ref()}},100);
+setInterval(save,2000);
+addEventListener("pagehide",save);document.addEventListener("visibilitychange",()=>{if(document.hidden)save()});
+$("#lf").onsubmit=e=>{e.preventDefault();const u=$("#un").value.trim();if(u)login(u)};
+$("#sw").onclick=()=>{save();U=null;$("#lg").classList.remove("off");$("#un").focus()};
+try{$("#un").value=localStorage.getItem("coincab3:last")||""}catch(e){}
+</script></body></html>
