@@ -168,7 +168,13 @@ $("#rs").onclick=()=>{if(confirm("Erase all progress?")){S={coins:0,up:{},own:{}
 setInterval(()=>{if(U){S.coins+=cps()/10;ref()}},100);
 setInterval(save,2000);
 addEventListener("pagehide",save);document.addEventListener("visibilitychange",()=>{if(document.hidden)save()});
-$("#lf").onsubmit=e=>{e.preventDefault();const u=$("#un").value.trim();if(u)login(u)};
+$("#lf").onsubmit=e=>{e.preventDefault();const u=$("#un").value.trim();if(!u)return;login(u)};
 $("#sw").onclick=()=>{save();U=null;$("#lg").classList.remove("off");$("#un").focus()};
-try{$("#un").value=localStorage.getItem("coincab3:last")||""}catch(e){}
+try{
+  const lastUser=localStorage.getItem("coincab3:last");
+  if(lastUser){
+    $("#un").value=lastUser;
+    login(lastUser);
+  }
+}catch(e){}
 </script></body></html>
