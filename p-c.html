@@ -624,14 +624,6 @@ XA("cs","Cosmic Pack",1000000,4,[
 ["The Final Pet",6,xh({1:"k",2:"w",3:"k",4:"y",5:"w",6:"k"},true,[...pts("y",[[5,-1],[6,-1],[7,-1],[8,-1],[9,-1],[10,-1]]),...XG])]]);
 
 /* ---------- seasonal packs ---------- */
-XA("xm","Christmas Pack",900,2,[
-["Snowflake",0,xk("blob","wwcw",pts("w",[[7,2],[8,2],[6,5],[9,5],[7,8],[8,8]]))],
-["Gingerbread Cat",1,xk("quad","nNwn",pts("w",[[4,6],[10,6]]))],
-["Rudolph",2,xk("quad","rRnk",pts("r",[[12,3],[13,2],[14,3]]))],
-["Elf Helper",3,xh({1:"g",2:"r",3:"g",4:"r",5:"n",6:"g"},true,xcrown(1,"r"))],
-["Frosty the Snowman",4,xk("blob","wwcw",pts("o",[[7,7],[8,7],[7,9],[8,9]]))],
-["Santa Paws",6,xk("quad","rRwk",[...xcrown(1,"r"),...XG])]]);
-
 XA("su","Summer Pack",1000,1,[
 ["Beach Ball",0,xdisc({q:"#ff6b6b",Q:"#ffcc33",h:"#fff4d6"},pts("b",[[7,2],[8,2],[7,13],[8,13]]))],
 ["Sunshine Chick",1,xk("bird","yYoy")],
@@ -715,7 +707,7 @@ const XCH={
 fm:["Prismatic Peacock","bird"],oc:["Rainbow Manta","fish"],jg:["Prism Chameleon","snake"],sp:["Aurora Alien","ghost"],
 cd:["Rainbow Gumdrop","blob"],rb:["Prism Bot","robot"],dn:["Spectrum Raptor","quad"],pt:["Rainbow Parrot","bird"],
 hn:["Prismatic Phantom","ghost"],md:["Rainbow Unicorn","quad"],sh:["Spectrum Shroom","shroom"],vc:["Prism Magma Slug","snake"],
-cy:["Hologram Fox","quad"],el:["Prism Elemental","blob"],cs:["Rainbow Nebula Whale","fish"],xm:["Prismatic Snowflake","snowflake"],su:["Rainbow Sunbeam","bird"],dg:["Prismatic Cerberus","quad"],ct:["Nebula Cat","quad"]};
+cy:["Hologram Fox","quad"],el:["Prism Elemental","blob"],cs:["Rainbow Nebula Whale","fish"],su:["Rainbow Sunbeam","bird"],dg:["Prismatic Cerberus","quad"],ct:["Nebula Cat","quad"]};
 const xmig=()=>{if(S.chromaMig)return;PACKS.forEach(p=>{if(XCH[p.id]&&S.own[p.id+5]){S.own[p.id+6]=S.own[p.id+5];delete S.own[p.id+5]}});S.chromaMig=1};
 const xLogin=login;login=function(u){xLogin(u);xmig();save();try{ref();cl()}catch(e){}};
 PACKS.forEach(p=>{
