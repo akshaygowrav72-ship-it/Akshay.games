@@ -58,6 +58,9 @@ h1{font:400 22px Impact,sans-serif;margin:0 0 14px;color:var(--brass)}
 .cell.r5 svg,.cell.r5 img,.card.r5 svg,.card.r5 img{animation:hue 4s linear infinite}
 .cell.lock svg,.cell.lock img{animation:none}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Readable pet names: distinguish lowercase i from l (e.g. Ganglion). */
+.card h2,.cell b,.pv .cell b{font-family:Arial,Helvetica,sans-serif!important;letter-spacing:.2px}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="bv" x="-8%" y="-8%" width="116%" height="124%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="b"/><feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="c"/><feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>
 <div class="app">
@@ -329,9 +332,45 @@ const PACKS=[
 {id:"bl",name:"Ball Pack",cost:700,ic:2,items:[["Tennis Ball",0,px(SPR.tennis)],["Baseball",0,px(SPR.baseball)],["Soccer Ball",1,px(SPR.soccer)],["Basketball",2,px(SPR.basket)],["Bowling Ball",3,px(SPR.bowling)],["Golden Ball",4,px(SPR.golden)],["Disco Orb",5,px(SPR.cBall)]]}
 ];
 const RN=["Common","Uncommon","Rare","Epic","Legendary","Chroma"],RW=[55,25,12,6,2,0.5],RB=[.2,1,4,15,60,200];const DM=[1,1.25,1.5,2,3,4,6];
-const UPS=[{id:"f",n:"Sharper Finger",d:"+1 coin per click",c:15,k:1},{id:"h",n:"Strong Grip",d:"+5 coins per click",c:200,k:5},{id:"g",n:"Gold Gauntlet",d:"+40 coins per click",c:3000,k:40},{id:"a",n:"Auto Collector",d:"+6 coins per second",c:12000,s:6},{id:"r",n:"Royal Vault",d:"+25 coins per second",c:60000,s:25}];
+const UPS=[
+{id:"f",n:"Sharper Finger",d:"+1 coin per click",c:15,k:1},
+{id:"h",n:"Strong Grip",d:"+5 coins per click",c:200,k:5},
+{id:"g",n:"Gold Gauntlet",d:"+40 coins per click",c:3000,k:40},
+{id:"a",n:"Auto Collector",d:"+6 coins per second",c:12000,s:6},
+{id:"r",n:"Royal Vault",d:"+25 coins per second",c:60000,s:25},
+{id:"u06",n:"Copper Clicker",d:"+100 coins per click",c:180000,k:100},
+{id:"u07",n:"Silver Clicker",d:"+250 coins per click",c:450000,k:250},
+{id:"u08",n:"Golden Clicker",d:"+600 coins per click",c:1100000,k:600},
+{id:"u09",n:"Coin Magnet",d:"+100 coins per second",c:2500000,s:100},
+{id:"u10",n:"Pocket Mint",d:"+300 coins per second",c:6000000,s:300},
+{id:"u11",n:"Diamond Finger",d:"+1,500 coins per click",c:14000000,k:1500},
+{id:"u12",n:"Turbo Tapper",d:"+4,000 coins per click",c:32000000,k:4000},
+{id:"u13",n:"Mini Mint Factory",d:"+1,000 coins per second",c:70000000,s:1000},
+{id:"u14",n:"Coin Conveyor",d:"+3,000 coins per second",c:150000000,s:3000},
+{id:"u15",n:"Platinum Pointer",d:"+12,000 coins per click",c:320000000,k:12000},
+{id:"u16",n:"Emerald Engine",d:"+8,000 coins per second",c:650000000,s:8000},
+{id:"u17",n:"Ruby Knuckles",d:"+35,000 coins per click",c:1300000000,k:35000},
+{id:"u18",n:"Bank Bot",d:"+25,000 coins per second",c:2600000000,s:25000},
+{id:"u19",n:"Quantum Tapper",d:"+100,000 coins per click",c:5200000000,k:100000},
+{id:"u20",n:"Quantum Generator",d:"+80,000 coins per second",c:10000000000,s:80000},
+{id:"u21",n:"Starfall Hammer",d:"+300,000 coins per click",c:20000000000,k:300000},
+{id:"u22",n:"Nebula Bank",d:"+250,000 coins per second",c:40000000000,s:250000},
+{id:"u23",n:"Galaxy Gloves",d:"+1,000,000 coins per click",c:80000000000,k:1000000},
+{id:"u24",n:"Stellar Mint",d:"+900,000 coins per second",c:160000000000,s:900000},
+{id:"u25",n:"Black Hole Clicker",d:"+4,000,000 coins per click",c:320000000000,k:4000000},
+{id:"u26",n:"Cosmic Coin Core",d:"+3,000,000 coins per second",c:650000000000,s:3000000},
+{id:"u27",n:"Timewarp Tapper",d:"+15,000,000 coins per click",c:1300000000000,k:15000000},
+{id:"u28",n:"Infinite Treasury",d:"+12,000,000 coins per second",c:2600000000000,s:12000000},
+{id:"u29",n:"Multiverse Mitts",d:"+60,000,000 coins per click",c:5200000000000,k:60000000},
+{id:"u30",n:"Reality Printer",d:"+50,000,000 coins per second",c:10400000000000,s:50000000},
+{id:"u31",n:"Omniversal Clicker",d:"+250,000,000 coins per click",c:20800000000000,k:250000000},
+{id:"u32",n:"Eternal Coin Reactor",d:"+200,000,000 coins per second",c:41600000000000,s:200000000},
+{id:"u33",n:"Cosmic Singularity Tapper",d:"+1,000,000,000 coins per click",c:83200000000000,k:1000000000},
+{id:"u34",n:"Omniverse Money Well",d:"+800,000,000 coins per second",c:166400000000000,s:800000000},
+{id:"u35",n:"Creator's Golden Touch",d:"+5,000,000,000 coins per click",c:332800000000000,k:5000000000}
+];
 const $=s=>document.querySelector(s);
-const fmt=n=>{n=Math.floor(n);if(n<1e3)return""+n;const u=["K","M","B","T"];let i=-1;while(n>=1e3&&i<3){n/=1e3;i++}return(n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+u[i]};
+const fmt=n=>{n=Math.floor(n);if(n<1e3)return""+n;const u=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];let i=-1;while(n>=1e3&&i<u.length-1){n/=1e3;i++}return(n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+u[i]};
 let S={coins:0,up:{},own:{}},U=null;
 const key=u=>"coincab3:"+u.toLowerCase();
 function save(){if(!U)return;try{localStorage.setItem(key(U),JSON.stringify(S));localStorage.setItem("coincab3:last",U);$("#sv").textContent="Autosaved";}catch(e){$("#sv").textContent="Could not save";}}
