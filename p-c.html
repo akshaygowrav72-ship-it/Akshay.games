@@ -715,7 +715,16 @@ PACKS.forEach(p=>{
  const ei=p.items.findIndex(i=>i[1]===6);
  p.items.splice(ei<0?p.items.length:ei,0,[c[0],5,xchroma(c[1])]);
 });
+// Explicitly remove the Christmas pack from the shop and all pack-driven displays.
+for(let i=PACKS.length-1;i>=0;i--){
+  if(PACKS[i].id==="xm" || /christmas/i.test(PACKS[i].name)) PACKS.splice(i,1);
+}
+// Remove any leftover Christmas chroma mapping as well.
+delete XCH.xm;
 save();
+ref();cl();
+
+</script></body></html>
 ref();cl();
 
 </script></body></html>
