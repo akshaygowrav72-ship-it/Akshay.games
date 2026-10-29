@@ -374,7 +374,7 @@ const fmt=n=>{n=Math.floor(n);if(n<1e3)return""+n;const u=["K","M","B","T","Qa",
 let S={coins:0,up:{},own:{}},U=null;
 const key=u=>"coincab3:"+u.toLowerCase();
 function save(){if(!U)return;try{localStorage.setItem(key(U),JSON.stringify(S));localStorage.setItem("coincab3:last",U);$("#sv").textContent="Autosaved";}catch(e){$("#sv").textContent="Could not save";}}
-function login(u){U=u;S={coins:0,up:{},own:{}};try{const j=localStorage.getItem(key(u));if(j)S=Object.assign(S,JSON.parse(j))}catch(e){}S.up=S.up||{};S.own=S.own||{};if(!S.bcRarityOrder){const old3=S.own.bc3||0,old4=S.own.bc4||0,old5=S.own.bc5||0;S.own.bc3=old5;S.own.bc4=old3;S.own.bc5=old4;S.bcRarityOrder=true;}$("#nm").textContent=u;$("#lg").classList.add("off");save();ref();cl();}
+function login(u){U=u;S={coins:0,up:{},own:{}};try{const j=localStorage.getItem(key(u));if(j)S=Object.assign(S,JSON.parse(j))}catch(e){}S.up=S.up||{};S.own=S.own||{};if(!S.bcRarityOrder){const old3=S.own.bc3||0,old4=S.own.bc4||0,old5=S.own.bc5||0;S.own.bc3=old5;S.own.bc4=old3;S.own.bc5=old4;S.bcRarityOrder=true;}$("#nm").textContent=u;$("#lg").classList.add("off");save();}
 const cost=u=>Math.ceil(u.c*Math.pow(1.15,S.up[u.id]||0));
 const clickV=()=>1+UPS.reduce((a,u)=>a+(u.k||0)*(S.up[u.id]||0),0);
 const bonus=()=>{let b=0;PACKS.forEach(p=>p.items.forEach((it,i)=>{{const n=S.own[p.id+i]||0;if(n)b+=RB[it[1]]*(1+(n-1)*DM[it[1]])}}));return b};
