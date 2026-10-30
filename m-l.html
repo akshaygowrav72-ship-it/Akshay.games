@@ -1,156 +1,319 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Million Clicks – Mega Shop</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Chemistry Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
-  body {
-    font-family: system-ui, Arial, sans-serif;
-    background: #111;
-    color: #fff;
-    text-align: center;
-    padding: 30px;
-  }
-
-  h1 {
-    font-size: 3rem;
-  }
-
-  #counter {
-    font-size: 2.5rem;
-    margin: 20px 0;
-  }
-
-  button {
-    font-size: 1.1rem;
-    padding: 10px 18px;
-    cursor: pointer;
-    margin: 6px;
-  }
-
-  .shop {
-    margin-top: 40px;
-    border-top: 2px solid #333;
-    padding-top: 20px;
-  }
-
-  .item {
-    border-bottom: 1px solid #333;
-    padding: 10px 0;
-  }
-
-  .win {
-    color: #55ff88;
-    font-size: 2rem;
-    margin-top: 20px;
-  }
-</style>
-</head>
-<body>
-
-<h1>🖱️ Million Clicks</h1>
-<div id="counter">0 / 1,000,000</div>
-
-<button onclick="manualClick()">CLICK</button>
-
-<div class="shop">
-  <h2>🛒 Item Shop</h2>
-  <div id="shopItems"></div>
+:root{--bg:#0d1218;--pn:#151d27;--ln:#26323f;--tx:#e6eef6;--mu:#8b9bab;--ac:#4cc3ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark}}
+*{box-sizing:inherit}html{scroll-padding-top:env(safe-area-inset-top,0px)}html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--ln);background:var(--pn);flex-wrap:wrap}
+h1{font-size:16px;margin:0 8px 0 0}h1 span{color:var(--ac)}
+.tb{background:none;border:1px solid var(--ln);color:var(--mu);padding:7px 14px;border-radius:8px;cursor:pointer;font:inherit}.tb.on{background:var(--ac);color:#04121c;border-color:var(--ac);font-weight:600}
+.cnt{margin-left:auto;color:var(--mu);font-size:12px}.cnt b{color:var(--ac)}
+.view{flex:1;min-height:0;display:flex}
+aside{width:330px;max-width:42%;background:var(--pn);border-right:1px solid var(--ln);display:flex;flex-direction:column;min-height:0;padding:10px;gap:8px;overflow:auto}
+.stage{flex:1;position:relative;min-width:0}canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+input[type=search]{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--ln);background:#0c1117;color:var(--tx);font:inherit}
+.gs{display:flex;flex-wrap:wrap;gap:4px}.g{background:#0c1117;border:1px solid var(--ln);color:var(--mu);border-radius:14px;padding:3px 10px;cursor:pointer;font-size:12px}.g.on{color:var(--ac);border-color:var(--ac)}
+#shelf{display:grid;grid-template-columns:1fr 1fr;gap:5px;overflow:auto;min-height:120px;flex:1}
+.it{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;background:#0c1117;border:1px solid var(--ln);border-radius:8px;padding:6px 8px;color:var(--tx);cursor:pointer;position:relative;padding-left:24px;font:inherit}.it:hover{border-color:var(--ac)}
+.it small{color:var(--mu);font-size:10.5px;line-height:1.2}.dot{width:11px;height:11px;border-radius:50%;display:inline-block;border:1px solid #fff4}.it .dot{position:absolute;left:7px;top:9px}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.btn{background:#1f2c3a;border:1px solid var(--ln);color:var(--tx);border-radius:8px;padding:7px 11px;cursor:pointer;font:inherit}.btn:hover{border-color:var(--ac)}
+.chip{display:inline-flex;align-items:center;gap:5px;background:#0c1117;border:1px solid var(--ln);border-radius:12px;padding:2px 9px;font-size:12.5px}
+.mut{color:var(--mu);font-size:12px}h3{margin:4px 0 2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+#log{overflow:auto;max-height:230px;background:#0c1117;border:1px solid var(--ln);border-radius:8px;padding:8px}
+.eq{font-size:14px;font-weight:600;margin-top:6px;word-break:break-word}.tag{display:inline-block;font-size:10.5px;color:var(--ac);border:1px solid var(--ac);border-radius:9px;padding:0 7px;margin:3px 0}.net{color:#9fe8b4;font-size:12.5px}#log ul{margin:4px 0 6px;padding-left:18px;color:#cfe0ee}
+.hint{position:absolute;left:12px;bottom:10px;color:#9fb3c6;font-size:12px;background:#0008;padding:4px 8px;border-radius:6px;pointer-events:none}
+.ov{position:absolute;left:12px;right:12px;top:10px;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:560px}.ov>*{pointer-events:auto}.card{background:#0a0f16d9;border:1px solid var(--ln);border-radius:10px;padding:8px 10px}
+#libm{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:9}#libm>div{width:min(820px,94vw);height:min(80vh,700px);background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+#llist{overflow:auto;flex:1}.lr{display:flex;justify-content:space-between;gap:10px;padding:7px 8px;border-bottom:1px solid var(--ln);cursor:pointer}.lr:hover{background:#1f2c3a}.lr em{color:var(--mu);font-size:11px;white-space:nowrap}
+@media(max-width:760px){#mix{flex-direction:column-reverse}aside{width:100%;max-width:none;max-height:48%;border-right:0;border-top:1px solid var(--ln)}}
+</style></head><body><div id="app">
+<header><h1>Chem<span>Lab</span> 3D</h1><button class="tb on" data-t="mix">⚗️ Mixing bench</button><button class="tb" data-t="mol">⚛️ Ion &amp; atom view</button><span class="cnt"><b id="rcount"></b> reactions in library</span></header>
+<div class="view" id="mix">
+<aside><input id="q" type="search" placeholder="Search reagents (e.g. silver, CuSO4, acid)…">
+<div class="gs"><button class="g on" data-g="All">All</button><button class="g" data-g="Salts">Salt solutions</button><button class="g" data-g="Acids">Acids</button><button class="g" data-g="Metals">Metals</button><button class="g" data-g="Solids">Solids</button><button class="g" data-g="Other">Other</button></div>
+<div id="shelf"></div>
+<h3>In the beaker</h3><div id="cont" class="row"></div>
+<div class="row"><button class="btn" id="stir">Stir</button><button class="btn" id="burner">🔥 Burner: off</button><span class="chip" id="temp">25 °C</span><button class="btn" id="reset">Empty beaker</button><button class="btn" id="libb">Browse reactions</button></div>
+<h3>Reaction log</h3><div id="log"></div></aside>
+<div class="stage"><canvas id="c1"></canvas><div class="hint">Drag to rotate · scroll to zoom · tap a reagent to pour it in</div></div></div>
+<div class="view" id="mol" style="display:none"><div class="stage"><canvas id="c2"></canvas>
+<div class="ov"><div class="card" id="netbox"></div><div class="card"><div class="row" id="legend"></div></div>
+<div class="card row"><label><input type="checkbox" id="wat" checked> show water molecules</label><label><input type="checkbox" id="chg" checked> show + / − signs and halos</label><button class="btn" id="replay">↻ Replay reaction</button></div></div>
+<div class="hint">Drag to rotate · scroll to zoom · atoms use CPK colours</div></div></div>
 </div>
-
-<div id="win"></div>
-
+<div id="libm"><div><div class="row"><b>Reaction library</b><button class="btn" id="libx" style="margin-left:auto">Close</button></div><input id="lq" type="search" placeholder="Filter: silver, precipitation, H2SO4…"><div class="mut" id="lcount"></div><div id="llist"></div></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-let clicks = 0;
-const goal = 1_000_000;
-
-let clicksPerClick = 1;
-let clicksPerSecond = 0;
-
-// 20 ITEMS
-const shop = [
-  // CPC UPGRADES (10)
-  { name: "Stronger Finger", cpc: 1, cost: 50 },
-  { name: "Gaming Mouse", cpc: 2, cost: 200 },
-  { name: "Energy Drink", cpc: 5, cost: 800 },
-  { name: "Mechanical Keyboard", cpc: 10, cost: 3_000 },
-  { name: "Double Jointed Thumb", cpc: 25, cost: 10_000 },
-  { name: "Titanium Finger", cpc: 50, cost: 40_000 },
-  { name: "Hydraulic Arm", cpc: 100, cost: 150_000 },
-  { name: "Robot Assistant", cpc: 250, cost: 500_000 },
-  { name: "Quantum Finger", cpc: 500, cost: 1_500_000 },
-  { name: "Godlike Clicking Power", cpc: 1_000, cost: 5_000_000 },
-
-  // CPS UPGRADES (10)
-  { name: "Lazy Auto Clicker", cps: 1, cost: 100 },
-  { name: "Phone Tapping App", cps: 3, cost: 500 },
-  { name: "Macro Script", cps: 10, cost: 2_000 },
-  { name: "Click Farm", cps: 25, cost: 8_000 },
-  { name: "Server Rack", cps: 75, cost: 30_000 },
-  { name: "Bot Army", cps: 200, cost: 120_000 },
-  { name: "AI Clicker", cps: 500, cost: 400_000 },
-  { name: "Quantum Computer", cps: 1_000, cost: 1_200_000 },
-  { name: "Alien Technology", cps: 2_500, cost: 4_000_000 },
-  { name: "Reality Itself Clicking", cps: 10_000, cost: 15_000_000 }
-];
-
-function updateDisplay() {
-  document.getElementById("counter").textContent =
-    `${Math.floor(clicks).toLocaleString()} / 1,000,000`;
-
-  if (clicks >= goal) {
-    document.getElementById("win").innerHTML =
-      "🏆 YOU CLICKED ONE MILLION TIMES!";
-  }
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const sub=f=>f.replace(/\d/g,d=>'₀₁₂₃₄₅₆₇₈₉'[d]);
+const sup=(c)=>(c>1?'⁰¹²³⁴⁵⁶⁷⁸⁹'[c]:'')+'⁺';
+const supA=(c)=>(c>1?'⁰¹²³⁴⁵⁶⁷⁸⁹'[c]:'')+'⁻';
+// key:[formula,charge,CPK colour,radius,solution tint,name,polyatomic]
+const CA={Na:['Na',1,'#ab5cf2',.5,0,'sodium'],K:['K',1,'#8f40d4',.62,0,'potassium'],NH4:['NH4',1,'#3050f8',.5,0,'ammonium',1],Ag:['Ag',1,'#c8c8d0',.5,0,'silver'],Ca:['Ca',2,'#3dff00',.5,0,'calcium'],Ba:['Ba',2,'#00c900',.66,0,'barium'],Sr:['Sr',2,'#00ff80',.58,0,'strontium'],Mg:['Mg',2,'#8aff00',.4,0,'magnesium'],Pb:['Pb',2,'#575961',.62,0,'lead(II)'],Cu:['Cu',2,'#c88033',.42,'#2a7fff','copper(II)'],Fe2:['Fe',2,'#e06633',.42,'#9ccf9a','iron(II)'],Fe3:['Fe',3,'#e06633',.38,'#d9922b','iron(III)'],Zn:['Zn',2,'#7d80b0',.42,0,'zinc'],Ni:['Ni',2,'#50d050',.4,'#57c98a','nickel(II)'],Co:['Co',2,'#f090a0',.4,'#e8728f','cobalt(II)'],Mn:['Mn',2,'#9c7ac7',.42,'#f0cfd8','manganese(II)'],Al:['Al',3,'#bfa6a6',.36,0,'aluminium'],Cr3:['Cr',3,'#8a99c7',.38,'#4f9a5a','chromium(III)'],Cd:['Cd',2,'#ffd98f',.5,0,'cadmium'],Hg:['Hg',2,'#b8b8d0',.58,0,'mercury(II)']};
+const AN={Cl:['Cl',1,'#1ff01f',.62,0,'chloride'],Br:['Br',1,'#a62929',.7,0,'bromide'],I:['I',1,'#940094',.8,0,'iodide'],NO3:['NO3',1,0,0,0,'nitrate',1],SO4:['SO4',2,0,0,0,'sulfate',1],CO3:['CO3',2,0,0,0,'carbonate',1],PO4:['PO4',3,0,0,0,'phosphate',1],OH:['OH',1,0,0,0,'hydroxide',1],S:['S',2,'#e6c619',.7,0,'sulfide'],CrO4:['CrO4',2,0,0,'#f2d200','chromate',1],OAc:['CH3COO',1,0,0,0,'acetate',1]};
+const SP={};
+const reg=(id,o)=>(SP[id]=Object.assign({f:id,st:'aq'},o));
+const part=(f,n,p)=>n==1?f:(p?'('+f+')':f)+n;
+function fx(c,a){const C=CA[c],A=AN[a],g=gcd(C[1],A[1]);return part(C[0],A[1]/g,C[6])+part(A[0],C[1]/g,A[6]);}
+const PC={'Cu.OH':['#3f6fe0','pale blue'],'Fe2.OH':['#7aa07a','green'],'Fe3.OH':['#b5532a','rust-brown'],'Ni.OH':['#6fbf6f','apple-green'],'Co.OH':['#9a6ab0','blue-violet'],'Mn.OH':['#c9a98a','tan'],'Cr3.OH':['#5b8f6a','grey-green'],'Hg.OH':['#e0a030','yellow'],'Cd.S':['#f2c800','yellow'],'Zn.S':['#f0f0f0','white'],'Mn.S':['#e8a89a','pink'],'Ag.I':['#e8d84a','yellow'],'Pb.I':['#ffd400','bright yellow'],'Hg.I':['#e03a1a','red-orange'],'Ag.Br':['#e9e3b0','cream'],'Ag.CrO4':['#8b2a1a','brick-red'],'Pb.CrO4':['#ffd800','yellow'],'Ba.CrO4':['#f0e060','pale yellow'],'Sr.CrO4':['#e8dc58','pale yellow'],'Cu.CrO4':['#7a3f20','brown'],'Fe3.CrO4':['#8a4a20','brown'],'Cu.CO3':['#3f9f8f','blue-green'],'Fe2.CO3':['#9db09a','grey-green'],'Ni.CO3':['#9ad0a8','pale green'],'Co.CO3':['#e08a9a','pink'],'Ag.PO4':['#e5d94a','yellow'],'Cu.PO4':['#4fa0c0','turquoise'],'Ni.PO4':['#9ad0a8','pale green'],'Fe3.PO4':['#d8d0a0','cream'],'Cr3.PO4':['#7aa070','green'],'Co.PO4':['#a060b0','violet'],'Ag.CO3':['#d8d8a8','pale yellow'],'Ag.OH':['#6b5a40','brown'],'Pb.S':['#161616','black']};
+const BLK=['Cu','Ag','Fe2','Ni','Co','Hg','Fe3'];
+function pcol(c,a){let k=c+'.'+a;if(PC[k])return PC[k];if(a=='S'&&BLK.includes(c))return['#161616','black'];if(a=='S')return['#d8d8d0','off-white'];return['#f2f2ee','white'];}
+function ex(c,a){if(c=='NH4'&&a=='OH')return 0;if(['Al','Cr3','Fe3'].includes(c)&&['CO3','S'].includes(a))return 0;if((c=='Fe3'||c=='Cu')&&a=='I')return 0;if(c=='Hg'&&a=='CO3')return 0;return 1;}
+function sol(c,a){if(['Na','K','NH4'].includes(c)||a=='NO3'||a=='OAc')return 1;
+ if(a=='Cl'||a=='Br')return!['Ag','Pb'].includes(c);if(a=='I')return!['Ag','Pb','Hg'].includes(c);
+ if(a=='SO4')return!['Ba','Sr','Pb','Ca'].includes(c);if(a=='OH')return['Ba','Sr'].includes(c);
+ if(a=='S')return['Ca','Ba','Sr'].includes(c);if(a=='CrO4')return['Ca','Mg','Sr'].includes(c);return 0;}
+function S(c,a){const id=fx(c,a);if(!SP[id]){const C=CA[c],A=AN[a],g=gcd(C[1],A[1]),s=sol(c,a);
+ reg(id,{kind:'salt',c,a,nc:A[1]/g,na:C[1]/g,st:s?'aq':'s',col:s?null:pcol(c,a),tint:C[4]||A[4]||null,name:C[5]+' '+A[5]});}return id;}
+const ACIDS={HCl:['Cl',1,'hydrochloric acid'],HBr:['Br',1,'hydrobromic acid'],HNO3:['NO3',1,'nitric acid'],H2SO4:['SO4',2,'sulfuric acid'],H3PO4:['PO4',3,'phosphoric acid'],CH3COOH:['OAc',1,'acetic acid']};
+for(const k in ACIDS)reg(k,{kind:'acid',a:ACIDS[k][0],h:ACIDS[k][1],name:ACIDS[k][2]});
+const MET={Mg:['#b8bcc0','silver-grey'],Al:['#c9ccd0','silvery'],Mn:['#8b8d95','grey'],Zn:['#a9b0b8','blue-grey'],Fe:['#6e6e72','dark grey'],Cd:['#b0b4bc','silver'],Co:['#7d8590','steel'],Ni:['#a8acb0','silver'],Pb:['#5a5f66','dull grey'],Cu:['#c4733a','reddish-brown'],Cr:['#aab0b8','shiny'],Ag:['#dcdcdc','silver'],Na:['#d8d8e0','silvery'],K:['#cfcfd8','silvery'],Ca:['#d0d0c8','grey-white']};
+for(const m in MET)reg(m,{kind:'metal',st:'s',col:MET[m],name:m=='Fe'?'iron':({Mg:'magnesium',Al:'aluminium',Mn:'manganese',Zn:'zinc',Cd:'cadmium',Co:'cobalt',Ni:'nickel',Pb:'lead',Cu:'copper',Cr:'chromium',Ag:'silver',Na:'sodium',K:'potassium',Ca:'calcium'})[m]+' metal'});
+reg('Hg',{kind:'metal',st:'l',col:['#cfd3da','silver liquid'],name:'mercury'});
+reg('H2O',{kind:'liq',st:'l',name:'water'});
+for(const[g,n]of Object.entries({CO2:'carbon dioxide',H2:'hydrogen',H2S:'hydrogen sulfide',O2:'oxygen',NH3g:'ammonia gas'}))reg(g,{kind:'gas',st:'g',name:n});
+SP.NH3g.f='NH3';
+reg('NH3',{kind:'base',name:'ammonia solution'});
+reg('H2O2',{kind:'peroxide',name:'hydrogen peroxide'});
+reg('Cl2',{kind:'halogen',tint:'#d8e8a0',name:'chlorine water'});reg('Br2',{kind:'halogen',tint:'#e87a1e',name:'bromine water'});reg('I2',{kind:'halogen',tint:'#6b3a1a',name:'iodine solution'});
+reg('MnO2',{kind:'solid',st:'s',col:['#2a2420','black-brown'],name:'manganese dioxide',lat:['Mn','O']});
+const OX={CuO:['Cu','#1c1c1c','black'],MgO:['Mg','#f0f0f0','white'],ZnO:['Zn','#f4f4f0','white'],Fe2O3:['Fe3','#8a3a20','red-brown'],CaO:['Ca','#efefe8','white'],NiO:['Ni','#4a6a50','green-grey'],Al2O3:['Al','#f0f0f0','white'],PbO:['Pb','#d8a040','yellow-orange'],CdO:['Cd','#8a4a30','brown']};
+for(const k in OX)reg(k,{kind:'solid',st:'s',oxc:OX[k][0],col:[OX[k][1],OX[k][2]],name:k+' (oxide)',lat:[OX[k][0],'O']});
+const RX=new Map();
+function add(r,p,type){const k=r.slice().sort().join('|');if(!RX.has(k))RX.set(k,{r,p,type});}
+const SOL=[];
+for(const c in CA)for(const a in AN)if(ex(c,a)){const id=S(c,a);if(SP[id].st=='aq')SOL.push(id);}
+// A: double displacement precipitation
+for(let i=0;i<SOL.length;i++)for(let j=i+1;j<SOL.length;j++){const x=SP[SOL[i]],y=SP[SOL[j]];if(x.c==y.c||x.a==y.a)continue;
+ if(!ex(x.c,y.a)||!ex(y.c,x.a))continue;const p=S(x.c,y.a),q=S(y.c,x.a);if(SP[p].st=='aq'&&SP[q].st=='aq')continue;add([SOL[i],SOL[j]],[p,q],'precipitation');}
+const AC=Object.keys(ACIDS),NA=AC.filter(a=>a!='HNO3');
+const wh=['Na','K','Ba','Sr'];
+for(const A of AC){const an=ACIDS[A][0];
+ for(const c of wh)add([A,S(c,'OH')],[S(c,an),'H2O'],'neutralisation');
+ add([A,'NH3'],[S('NH4',an)],'neutralisation');
+ for(const c of['Na','K','NH4'])add([A,S(c,'CO3')],[S(c,an),'H2O','CO2'],'gas evolution');
+ for(const c of['Na','K','NH4','Ca','Ba','Sr'])add([A,S(c,'S')],[S(c,an),'H2S'],'gas evolution');
+ for(const c in CA){if(['Na','K','NH4'].includes(c)||!ex(c,an))continue;
+  for(const a of['CO3','OH'])if(ex(c,a)&&!sol(c,a))add([A,S(c,a)],a=='CO3'?[S(c,an),'H2O','CO2']:[S(c,an),'H2O'],a=='CO3'?'gas evolution':'neutralisation');
+  if(['Fe2','Zn','Mn'].includes(c))add([A,S(c,'S')],[S(c,an),'H2S'],'gas evolution');}
+ for(const o in OX)if(ex(OX[o][0],an))add([A,o],[S(OX[o][0],an),'H2O'],'neutralisation');
+ const mm={Mg:'Mg',Al:'Al',Mn:'Mn',Zn:'Zn',Fe:'Fe2',Cd:'Cd',Co:'Co',Ni:'Ni',Na:'Na',K:'K',Ca:'Ca'};
+ if(A!='HNO3')for(const m in mm)if(ex(mm[m],an))add([A,m],[S(mm[m],an),'H2'],'metal + acid');}
+for(const m of['Na','K','Ca'])add([m,'H2O'],[m=='Ca'?S('Ca','OH'):S(m,'OH'),'H2'],'metal + water');
+add(['CaO','H2O'],[S('Ca','OH')],'hydration');
+const ACT=['Mg','Al','Mn','Zn','Cr3','Fe2','Cd','Co','Ni','Pb','Cu','Hg','Ag'],MK={Mg:'Mg',Al:'Al',Mn:'Mn',Zn:'Zn',Cr3:'Cr',Fe2:'Fe',Cd:'Cd',Co:'Co',Ni:'Ni',Pb:'Pb',Cu:'Cu',Hg:'Hg',Ag:'Ag'};
+for(let i=0;i<10;i++){const mk=ACT[i];if(mk=='Cr3')continue;for(const id of SOL){const s=SP[id],j=ACT.indexOf(s.c);if(j>i&&ex(mk,s.a))add([MK[mk],id],[MK[s.c],S(mk,s.a)],'single displacement');}}
+const HAL=[['Cl2','Br','Br2'],['Cl2','I','I2'],['Br2','I','I2']];
+for(const[h,a,o]of HAL)for(const id of SOL){const s=SP[id];if(s.a==a)add([h,id],[S(s.c,h[0]=='C'?'Cl':'Br'),o],'halogen displacement');}
+for(const id of SOL){const s=SP[id];if(s.c=='NH4')for(const c of wh)add([id,S(c,'OH')],[S(c,s.a),'H2O','NH3g'],'gas evolution');
+ if(['Mg','Fe2','Fe3','Mn','Al','Cr3','Pb','Hg'].includes(s.c)&&s.a!='OH'&&s.c!='NH4'){const n=CA[s.c][1];add([id,'NH3'],[S(s.c,'OH'),S('NH4',s.a)],'precipitation');}}
+for(const c of['Na','K','Ba','Sr'])add(['CO2',S(c,'OH')],[S(c,'CO3'),'H2O'],'carbonation');
+add(['CO2',S('Ca','OH')],[S('Ca','CO3'),'H2O'],'carbonation');
+for(const c of['MnO2'])add(['H2O2',c],['H2O','O2'],'catalytic decomposition');
+for(const id of[S('K','I'),S('Fe3','Cl'),S('Fe3','NO3'),S('Cu','SO4')])add(['H2O2',id],['H2O','O2',id],'catalytic decomposition');
+function parse(f){const st=[{}];let i=0;while(i<f.length){const ch=f[i];if(ch=='('){st.push({});i++;}else if(ch==')'){i++;let n='';while(/\d/.test(f[i]||''))n+=f[i++];n=+n||1;const t=st.pop(),u=st[st.length-1];for(const k in t)u[k]=(u[k]||0)+t[k]*n;}else{const m=f.slice(i).match(/^([A-Z][a-z]?)(\d*)/),u=st[st.length-1];u[m[1]]=(u[m[1]]||0)+(+m[2]||1);i+=m[0].length;}}return st[0];}
+function balance(R,P){const sp=[...R,...P].map(i=>SP[i].f),ps=sp.map(parse),els=[...new Set(ps.flatMap(Object.keys))],n=sp.length;
+ for(let M=1;M<=12;M++){const co=Array(n).fill(1);const rec=i=>{if(i==n)return els.every(e=>{let s=0;for(let j=0;j<n;j++)s+=(j<R.length?1:-1)*co[j]*(ps[j][e]||0);return!s});
+  for(let v=1;v<=M;v++){co[i]=v;if(rec(i+1))return 1}return 0};if(rec(0))return co;}return null;}
+const $=s=>document.querySelector(s);
+const phase=id=>({aq:'(aq)',s:'(s)',g:'(g)',l:'(l)'})[SP[id].st];
+const nm=id=>SP[id].name||id;
+function bal(R,P){let r=R.slice(),p=P.slice(),co=balance(r,p);if(!co){r=[...R,'H2O'];co=balance(r,p);}if(!co){r=R.slice();p=[...P,'H2O'];co=balance(r,p);}return{r,p,co};}
+function eqn(R,P){const b=bal(R,P);if(!b.co)return R.map(i=>sub(SP[i].f)).join(' + ')+' → '+P.map(i=>sub(SP[i].f)).join(' + ');
+ const t=(l,o)=>l.map((i,k)=>(b.co[k+o]>1?b.co[k+o]:'')+sub(SP[i].f)+phase(i)).join(' + ');return t(b.r,0)+' → '+t(b.p,b.r.length);}
+const hex=h=>parseInt(h.slice(1),16);
+const contents=new Map();let lastEv=null,stirT=0,gasT=0,streamT=0,streamCol=0xffffff,dirty=1;
+function tint(id){const s=SP[id];return s.tint||null;}
+function liquidColor(){let r=0,g=0,b=0,w=0;const c=new THREE.Color();for(const[id,n]of contents){const s=SP[id];if(s.st!='aq')continue;const t=tint(id);if(t){c.set(t);r+=c.r;g+=c.g;b+=c.b;w++;}}
+ if(!w)return{c:new THREE.Color('#bfe3f5'),o:.35};const k=Math.min(1,w/2);return{c:new THREE.Color(r/w,g/w,b/w),o:.35+.3*k};}
+function pour(id){const ev={added:id,steps:[],gas:[]};contents.set(id,(contents.get(id)||0)+1);if(SP[id].st=='g'){}
+ react(id,ev,0);if(SP[id].st=='g'&&contents.has(id)){contents.delete(id);ev.gas.push(id);}if(id=='H2O'){contents.delete('H2O');B.extra=Math.min(1.2,(B.extra||0)+.35);}lastEv=ev;streamT=1.8;const t=tint(id);streamCol=t?hex(new THREE.Color(t).getHexString().replace(/^/,'#')):(SP[id].col?hex(SP[id].col[0]):0xddeeff);
+ if(ev.gas.length)gasT=5;if(SP[id].st=='g'&&!ev.steps.length){gasT=3;}
+ syncBeaker();fxGo(ev);buildMol(ev);renderUI(ev);}
+function react(id,ev,d){if(d>3||!(contents.get(id)>0))return;const others=[...contents.keys()].filter(k=>k!=id&&contents.get(k)>0&&k!='H2O');others.push('H2O');
+ for(const o of others){const rx=RX.get([id,o].sort().join('|'));if(!rx)continue;
+  dec(id);if(o!='H2O')dec(o);
+  const prods=[];for(const p of rx.p){if(SP[p].st=='g')ev.gas.push(p);else if(p!='H2O'){contents.set(p,(contents.get(p)||0)+1);prods.push(p);}}
+  ev.steps.push(rx);for(const p of prods)react(p,ev,d+1);return;}}
+function dec(k){const n=contents.get(k)-1;n>0?contents.set(k,n):contents.delete(k);}
+function reset(){contents.clear();B.extra=0;B.temp=25;lastEv=null;syncBeaker();buildMol(null);renderUI(null);}
+function observe(ev){const o=[];for(const rx of ev.steps){for(const p of rx.p){const s=SP[p];if(s.st=='s'&&s.kind=='salt'||s.kind=='solid')o.push(`${s.col[1]} precipitate forms (${nm(p)})`);else if(s.kind=='metal'&&s.st!='aq')o.push(`${s.col[1]} ${s.name} deposits`);else if(s.kind=='halogen')o.push(`solution turns ${({Br2:'orange',I2:'brown',Cl2:'pale green'})[p]}`);}
+ for(const p of rx.p)if(SP[p].st=='g')o.push(`bubbles of ${nm(p)} gas are released`);if(rx.type=='metal + water')o.push('vigorous fizzing, heat released');if(rx.type=='neutralisation')o.push('mixture warms slightly');}
+ if(ev.steps.length&&!o.length)o.push('colour/properties change in solution');return[...new Set(o)];}
+function netIonic(rx){if(rx.type!='precipitation')return'';const s=rx.p.find(p=>SP[p].st=='s'&&SP[p].kind=='salt');if(!s)return'';const x=SP[s],C=CA[x.c],A=AN[x.a];
+ return`${x.nc>1?x.nc:''}${sub(C[0])}${sup(C[1])}(aq) + ${x.na>1?x.na:''}${sub(A[0])}${supA(A[1])}(aq) → ${sub(SP[s].f)}(s)`;}
+let logHTML='';
+function renderUI(ev){const c=$('#cont');c.innerHTML='';if(!contents.size)c.innerHTML='<i class=mut>Beaker holds only water. Add a reagent →</i>';
+ for(const[id,n]of contents){const b=document.createElement('span');b.className='chip';b.innerHTML=`${sub(SP[id].f)}${phase(id)}${n>1?' ×'+n:''}`;c.appendChild(b);}
+ if(ev){let h='';if(ev.steps.length){for(const rx of ev.steps){h+=`<div class=eq>${eqn(rx.r,rx.p)}</div><div class=tag>${rx.type}</div>`;const n=netIonic(rx);if(n)h+=`<div class=net>Net ionic: ${n}</div>`;}
+  const ob=observe(ev);h+='<ul>'+ob.map(x=>'<li>'+x+'</li>').join('')+'</ul>';}
+  else h=`<div class=mut>${sub(SP[ev.added].f)}: no reaction with the current contents.</div>`;
+  logHTML=h+logHTML.slice(0,2500);$('#log').innerHTML=logHTML;}else{logHTML='';$('#log').innerHTML='<i class=mut>Reactions will be logged here.</i>';}}
+// ---------- shelf
+const GROUPS={Salts:id=>SP[id].kind=='salt',Acids:id=>SP[id].kind=='acid',Metals:id=>SP[id].kind=='metal',Solids:id=>SP[id].kind=='solid',Other:id=>['base','halogen','peroxide','gas','liq'].includes(SP[id].kind)};
+const shelfIds=['H2O',...SOL,...Object.keys(ACIDS),'NH3','Na','K','Ca','Mg','Al','Mn','Zn','Fe','Cd','Co','Ni','Pb','Cu','Hg',...Object.keys(OX),'MnO2','Cl2','Br2','I2','H2O2','CO2',S('Ca','OH'),S('Ca','CO3'),S('Cu','OH'),S('Fe2','S'),S('Zn','S')];
+let grp='All';
+function shelf(){const q=$('#q').value.toLowerCase(),l=$('#shelf');l.innerHTML='';let k=0;
+ for(const id of [...new Set(shelfIds)]){const s=SP[id];if(grp!='All'&&!GROUPS[grp](id))continue;const lab=sub(s.f)+' '+nm(id);if(q&&!lab.toLowerCase().includes(q)&&!s.f.toLowerCase().includes(q))continue;
+  const b=document.createElement('button');b.className='it';const dot=s.col?s.col[0]:(s.tint||'#cfe9f7');b.innerHTML=`<span class=dot style="background:${dot}"></span><b>${sub(s.f)}</b><small>${nm(id)}</small>`;b.onclick=()=>pour(id);l.appendChild(b);k++;}
+ if(!k)l.innerHTML='<i class=mut>No match</i>';}
+// ---------- reaction library
+function lib(){const q=$('#lq').value.toLowerCase(),l=$('#llist');l.innerHTML='';let k=0,tot=0;
+ for(const rx of RX.values()){const t=rx.r.map(i=>SP[i].f).join(' + ')+' → '+rx.p.map(i=>SP[i].f).join(' + ');const names=rx.r.map(nm).join(' ')+rx.type;if(q&&!(t.toLowerCase().includes(q)||names.toLowerCase().includes(q)))continue;tot++;
+  if(k<150){const d=document.createElement('div');d.className='lr';d.innerHTML=`<span>${sub(t)}</span><em>${rx.type}</em>`;d.onclick=()=>{reset();rx.r.forEach(pour);$('#libm').style.display='none';tab('mix');};l.appendChild(d);k++;}}
+ $('#lcount').textContent=`${tot.toLocaleString()} of ${RX.size.toLocaleString()} reactions`+(tot>150?' (showing 150 — refine search)':'');}
+// ---------- three.js common
+function orbit(cam,el,t,r,th,ph){let dr=0,px=0,py=0;el.addEventListener('pointerdown',e=>{dr=1;px=e.clientX;py=e.clientY;el.setPointerCapture(e.pointerId)});el.addEventListener('pointerup',()=>dr=0);
+ el.addEventListener('pointermove',e=>{if(!dr)return;th-=(e.clientX-px)*.008;ph=Math.max(.15,Math.min(1.5,ph-(e.clientY-py)*.006));px=e.clientX;py=e.clientY});
+ el.addEventListener('wheel',e=>{e.preventDefault();r=Math.max(5,Math.min(26,r*(1+e.deltaY*.001)))},{passive:false});
+ return()=>{cam.position.set(t.x+r*Math.sin(ph)*Math.sin(th),t.y+r*Math.cos(ph),t.z+r*Math.sin(ph)*Math.cos(th));cam.lookAt(t);};}
+function mkR(el){const r=new THREE.WebGLRenderer({canvas:el,antialias:true});r.setPixelRatio(Math.min(2,devicePixelRatio));r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;return r;}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+// ---------- bench scene
+const B={};{const cv=$('#c1');B.r=mkR(cv);B.s=new THREE.Scene();B.s.background=new THREE.Color(0x10151c);B.s.fog=new THREE.Fog(0x10151c,18,40);
+ B.cam=new THREE.PerspectiveCamera(40,1,.1,100);B.up=orbit(B.cam,cv,new THREE.Vector3(0,.8,0),17,.5,1.2);
+ B.s.add(new THREE.HemisphereLight(0xcfe6ff,0x30261c,.75));const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(5,10,6);dl.castShadow=true;dl.shadow.mapSize.set(2048,2048);Object.assign(dl.shadow.camera,{left:-8,right:8,top:8,bottom:-8});B.s.add(dl);
+ const rim=new THREE.PointLight(0x88aaff,.6,30);rim.position.set(-6,4,-5);B.s.add(rim);
+ const top=new THREE.Mesh(new THREE.BoxGeometry(22,.6,12),new THREE.MeshStandardMaterial({color:0x2f3a46,roughness:.28,metalness:.15}));top.position.y=-2.5;top.receiveShadow=true;B.s.add(top);
+ const wall=new THREE.Mesh(new THREE.PlaneGeometry(40,16),new THREE.MeshStandardMaterial({color:0x1b2430,roughness:.9}));wall.position.set(0,5,-7);B.s.add(wall);
+ const gm=new THREE.MeshPhysicalMaterial({color:0xdff3ff,transparent:true,opacity:.22,roughness:.03,metalness:0,clearcoat:1,side:THREE.DoubleSide,depthWrite:false});
+ const R=1.7,H=4.4,pts=[[0,0],[R-.15,0],[R-.03,.04],[R,.18],[R,H],[R+.08,H+.05],[R+.08,H+.12],[R-.05,H+.02],[R-.05,.26],[0,.2]].map(p=>new THREE.Vector2(p[0],p[1]));
+ B.beaker=new THREE.Mesh(new THREE.LatheGeometry(pts,64),gm);B.beaker.castShadow=true;B.s.add(B.beaker);B.R=R;B.H=H;
+ for(let i=1;i<=4;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.025,.02),new THREE.MeshBasicMaterial({color:0xcfe9ff,transparent:true,opacity:.7}));m.position.set(0,.2+i*.9,R+.01);m.position.x=Math.sin(0)*0;B.s.add(m);}
+ B.liqM=new THREE.MeshPhysicalMaterial({color:0xbfe3f5,transparent:true,opacity:.35,roughness:.08,clearcoat:1,depthWrite:false});
+ B.liq=new THREE.Mesh(new THREE.CylinderGeometry(R-.06,R-.06,1,64),B.liqM);B.s.add(B.liq);
+ B.surf=new THREE.Mesh(new THREE.CircleGeometry(R-.06,64),new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:.3,roughness:0,metalness:.2,clearcoat:1,depthWrite:false}));B.surf.rotation.x=-Math.PI/2;B.s.add(B.surf);
+ B.rod=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,5.4,12),new THREE.MeshPhysicalMaterial({color:0xe6f6ff,transparent:true,opacity:.55,roughness:.05}));B.rod.visible=false;B.s.add(B.rod);
+ B.stream=new THREE.Mesh(new THREE.CylinderGeometry(.2,.14,1,16),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.85}));B.stream.visible=false;B.s.add(B.stream);{const bm=new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:.75,roughness:.1,clearcoat:1});const g=new THREE.Group(),b1=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,1.4,32),bm),b2=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,.5,24),bm);b1.position.y=1.15;b2.position.y=.2;g.add(b1,b2);g.position.set(0,6.9,0);g.visible=false;B.bot=g;B.s.add(g);}
+ B.N=2600;B.fm=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),new THREE.MeshStandardMaterial({roughness:.7,metalness:.05}),B.N);B.fm.instanceMatrix.setUsage(THREE.DynamicDrawUsage);B.fm.setColorAt(0,new THREE.Color(1,1,1));B.fm.count=0;B.fm.castShadow=true;B.s.add(B.fm);B.fl=[];
+ B.bm=new THREE.InstancedMesh(new THREE.SphereGeometry(1,10,8),new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:.45,roughness:0,clearcoat:1,depthWrite:false}),300);B.bm.count=0;B.s.add(B.bm);B.bu=[];
+ B.solids=new THREE.Group();B.s.add(B.solids);B.fxL=new THREE.PointLight(0xffffff,0,16);B.fxL.position.set(0,5,0);B.s.add(B.fxL);B.dr=new THREE.InstancedMesh(new THREE.SphereGeometry(1,8,6),new THREE.MeshStandardMaterial({color:0xcfe9ff,roughness:.2,transparent:true,opacity:.8}),500);B.dr.count=0;B.s.add(B.dr);B.dp=[];B.st=new THREE.InstancedMesh(new THREE.SphereGeometry(1,8,6),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.16,depthWrite:false}),160);B.st.count=0;B.s.add(B.st);B.sp=[];B.ring=new THREE.Mesh(new THREE.RingGeometry(.95,1,64),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));B.ring.rotation.x=-Math.PI/2;B.s.add(B.ring);B.ringT=0;B.flm=new THREE.Mesh(new THREE.ConeGeometry(.55,1.6,16),new THREE.MeshBasicMaterial({color:0xff9a2a,transparent:true,opacity:.75,depthWrite:false}));B.flm.visible=false;B.s.add(B.flm);B.flT=0;B.bead=new THREE.Mesh(new THREE.SphereGeometry(.28,16,12),new THREE.MeshStandardMaterial({color:0xdadae2,metalness:.9,roughness:.25}));B.bead.visible=false;B.s.add(B.bead);B.beadT=0;B.shake=0;{const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');const gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);B.ft=new THREE.CanvasTexture(cv);}B.fg=new THREE.Group();B.s.add(B.fg);B.fp=[];B.temp=25;B.on=false;B.bp=[];
+ {const steel=new THREE.MeshStandardMaterial({color:0x9aa3ad,metalness:.9,roughness:.3}),dark=new THREE.MeshStandardMaterial({color:0x22262b,metalness:.6,roughness:.5}),brass=new THREE.MeshStandardMaterial({color:0xc9a24a,metalness:.9,roughness:.35});
+ const put=(m,x,y,z)=>{m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;B.s.add(m);return m;};
+ put(new THREE.Mesh(new THREE.CylinderGeometry(.75,.85,.18,32),dark),0,-2.31,0);
+ put(new THREE.Mesh(new THREE.CylinderGeometry(.14,.18,1.15,24),steel),0,-1.65,0);
+ put(new THREE.Mesh(new THREE.CylinderGeometry(.21,.21,.28,24),brass),0,-1.95,0);
+ put(new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,1.6,12),new THREE.MeshStandardMaterial({color:0x2a8a4a,roughness:.6})),.9,-2.1,0).rotation.z=Math.PI/2;
+ const ring=put(new THREE.Mesh(new THREE.TorusGeometry(1.55,.05,8,48),steel),0,-.14,0);ring.rotation.x=Math.PI/2;
+ for(let i=0;i<3;i++){const a=i*2.094+.5,p1=new THREE.Vector3(Math.cos(a)*1.55,-.14,Math.sin(a)*1.55),p2=new THREE.Vector3(Math.cos(a)*1.9,-2.4,Math.sin(a)*1.9),d=p2.clone().sub(p1),l=d.length();const leg=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,l,8),steel);leg.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());put(leg,(p1.x+p2.x)/2,(p1.y+p2.y)/2,(p1.z+p2.z)/2);}
+ const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');gx.strokeStyle='#c8ccd2';gx.lineWidth=4;for(let i=0;i<=128;i+=16){gx.beginPath();gx.moveTo(i,0);gx.lineTo(i,128);gx.moveTo(0,i);gx.lineTo(128,i);gx.stroke();}const gt=new THREE.CanvasTexture(gc);gt.wrapS=gt.wrapT=THREE.RepeatWrapping;gt.repeat.set(4,4);
+ const gz=put(new THREE.Mesh(new THREE.CircleGeometry(1.5,48),new THREE.MeshStandardMaterial({map:gt,transparent:true,alphaTest:.3,side:THREE.DoubleSide,roughness:.5,metalness:.6})),0,-.05,0);gz.rotation.x=-Math.PI/2;gz.castShadow=false;
+ B.bl=new THREE.PointLight(0x6aa8ff,0,7);B.bl.position.set(0,-.9,0);B.s.add(B.bl);}}
+function liqH(){let v=0;for(const[id,n]of contents)if(SP[id].st=='aq')v+=n;return Math.min(3.9,2.0+v*.14+(B.extra||0));}
+function syncBeaker(){const h=liqH(),{c,o}=liquidColor();B.th=h;B.tc=c.clone();B.to=o;if(!B.col0){B.col0=1;B.liqM.color.copy(c);}B.liqM.opacity=o;B.surf.material.color.copy(c).lerp(new THREE.Color(1,1,1),.5);
+ // flakes per solid species
+ const want={};for(const[id,n]of contents){const s=SP[id];if(s.st=='s'&&(s.kind=='salt'||s.kind=='solid'&&id!='MnO2'||id=='MnO2'))want[id]=n*(s.kind=='salt'?110:60);}
+ const have={};B.fl.forEach(f=>have[f.id]=(have[f.id]||0)+1);
+ for(const id in want){const d=want[id]-(have[id]||0);for(let i=0;i<d&&B.fl.length<B.N;i++){const a=Math.random()*6.28,r=Math.sqrt(Math.random())*(B.R-.25);B.fl.push({id,x:Math.cos(a)*r,y:rnd(.5,h+.1),z:Math.sin(a)*r,s:rnd(.035,.075),v:0,set:0,col:new THREE.Color(SP[id].col[0]).multiplyScalar(rnd(.85,1.05)),ph:Math.random()*9});}}
+ for(const id in have){if(!(id in want)||have[id]>want[id]){let rm=have[id]-(want[id]||0);B.fl=B.fl.filter(f=>{if(f.id==id&&rm>0){rm--;return false}return true});}}
+ // metals & liquids
+ while(B.solids.children.length)B.solids.remove(B.solids.children[0]);
+ for(const[id,n]of contents){const s=SP[id];if(s.kind!='metal')continue;const liquid=s.st=='l';for(let i=0;i<n*(liquid?7:2);i++){const m=new THREE.Mesh(liquid?new THREE.SphereGeometry(rnd(.1,.2),16,12):new THREE.DodecahedronGeometry(rnd(.2,.34)),new THREE.MeshStandardMaterial({color:s.col[0],metalness:liquid?1:.85,roughness:liquid?.05:.35}));const a=rnd(0,6.28),r=rnd(0,1);m.position.set(Math.cos(a)*r,.4,Math.sin(a)*r);m.rotation.set(rnd(0,3),rnd(0,3),0);m.castShadow=true;B.solids.add(m);}}
+ // nonreactive gases just bubble
 }
-
-function manualClick() {
-  clicks += clicksPerClick;
-  updateDisplay();
-}
-
-function buyItem(index) {
-  const item = shop[index];
-  if (clicks >= item.cost) {
-    clicks -= item.cost;
-    item.cost = Math.floor(item.cost * 1.8);
-
-    if (item.cpc) clicksPerClick += item.cpc;
-    if (item.cps) clicksPerSecond += item.cps;
-
-    renderShop();
-    updateDisplay();
-  }
-}
-
-function renderShop() {
-  const shopDiv = document.getElementById("shopItems");
-  shopDiv.innerHTML = "";
-
-  shop.forEach((item, i) => {
-    const bonus = item.cpc
-      ? `+${item.cpc} clicks per click`
-      : `+${item.cps} clicks per second`;
-
-    shopDiv.innerHTML += `
-      <div class="item">
-        <b>${item.name}</b><br>
-        ${bonus}<br>
-        Cost: ${item.cost.toLocaleString()}<br>
-        <button onclick="buyItem(${i})">Buy</button>
-      </div>
-    `;
-  });
-}
-
-// Auto-click loop
-setInterval(() => {
-  clicks += clicksPerSecond;
-  updateDisplay();
-}, 1000);
-
-renderShop();
-</script>
-
-</body>
-</html>
+function benchFrame(t,dt){B.up();B.h=(B.h||2)+((B.th||2)-(B.h||2))*Math.min(1,dt*3);const h=B.h;B.liq.scale.y=h;B.liq.position.y=.22+h/2;B.surf.position.y=.22+h;B.surf.rotation.z=Math.sin(t*1.3)*.01;
+ stirT=Math.max(0,stirT-dt);B.rod.visible=stirT>0;if(stirT>0){B.rod.position.set(Math.cos(t*5)*.7,h/2+1.4,Math.sin(t*5)*.7);B.rod.rotation.set(Math.sin(t*5)*.12,0,-Math.cos(t*5)*.12);}
+ streamT=Math.max(0,streamT-dt);B.stream.visible=streamT>0;B.bot.visible=streamT>0;B.bot.children[0].material.color.setHex(streamCol);B.bot.rotation.z=Math.sin(t*9)*.03;if(streamT>0){const top=7,len=top-(.22+h);B.stream.scale.set(1,len,1);B.stream.position.set(0,.22+h+len/2,0);B.stream.material.color.setHex(streamCol);B.stream.material.opacity=Math.min(1,streamT*2)*.85;}
+ const m=new THREE.Matrix4(),q=new THREE.Quaternion(),p=new THREE.Vector3(),sc=new THREE.Vector3(),stir=(stirT>0||B.temp>55)?1:0;
+ const pile=Math.min(.9,B.fl.filter(f=>f.set).length*.00045);
+ B.fl.forEach((f,i)=>{if(!f.set){f.v=Math.min(.35,f.v+dt*.5);f.y-=f.v*dt*(.6+f.s*6);f.x+=Math.sin(t*1.7+f.ph)*dt*.08;f.z+=Math.cos(t*1.3+f.ph)*dt*.08;
+  const flo=.25+f.s;if(f.y<=flo){f.set=1;f.sy=.24+f.s+Math.random()*pile*(1-Math.hypot(f.x,f.z)/(B.R-.2)*.8);f.y=f.sy;}}
+  else if(stir){const r=Math.hypot(f.x,f.z),a=Math.atan2(f.z,f.x)+dt*3.2*(1-r/2);f.x=Math.cos(a)*r;f.z=Math.sin(a)*r;f.y+=dt*1.3;if(f.y>.6)f.set=0,f.v=0;}
+  if(stir&&!f.set){const r=Math.hypot(f.x,f.z),a=Math.atan2(f.z,f.x)+dt*3*(1-r/2);f.x=Math.cos(a)*r;f.z=Math.sin(a)*r;}
+  p.set(f.x,f.y,f.z);sc.setScalar(f.s);m.compose(p,q,sc);B.fm.setMatrixAt(i,m);B.fm.setColorAt(i,f.col);});
+ B.fm.count=B.fl.length;B.fm.instanceMatrix.needsUpdate=true;if(B.fm.instanceColor)B.fm.instanceColor.needsUpdate=true;
+ if(gasT>0){gasT-=dt;const k=Math.floor(dt*60*(gasT>1?1.6:.5));for(let i=0;i<k&&B.bu.length<300;i++){const a=rnd(0,6.28),r=Math.sqrt(Math.random())*(B.R-.3);B.bu.push({x:Math.cos(a)*r,y:.3,z:Math.sin(a)*r,s:rnd(.04,.11),ph:rnd(0,9)});}}
+ B.bu=B.bu.filter(b=>{b.y+=dt*(.8+b.s*9);b.x+=Math.sin(t*6+b.ph)*dt*.15;return b.y<.22+h});
+ B.bu.forEach((b,i)=>{p.set(b.x,b.y,b.z);sc.setScalar(b.s*(1+(b.y/h)*.3));m.compose(p,q,sc);B.bm.setMatrixAt(i,m);});B.bm.count=B.bu.length;B.bm.instanceMatrix.needsUpdate=true;
+ const sf=.22+h;
+ if(B.tc){B.liqM.color.lerp(B.tc,Math.min(1,dt*1.6));B.liqM.opacity+=((B.to||.35)-B.liqM.opacity)*Math.min(1,dt*1.6);B.surf.material.color.copy(B.liqM.color).lerp(new THREE.Color(1,1,1),.5);}
+ B.fxL.position.set(0,sf+1.5,0);B.fxL.intensity*=Math.pow(.02,dt);if(B.fxL.intensity<.02)B.fxL.intensity=0;
+ B.dp=B.dp.filter(d=>{d.vy-=9*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;d.z+=d.vz*dt;return d.y>.05&&!(Math.hypot(d.x,d.z)<B.R-.1&&d.y<sf&&d.vy<0);});
+ B.dp.forEach((d,i)=>{p.set(d.x,d.y,d.z);sc.setScalar(d.s);m.compose(p,q,sc);B.dr.setMatrixAt(i,m);});B.dr.count=B.dp.length;B.dr.instanceMatrix.needsUpdate=true;
+ B.sp=B.sp.filter(s=>{s.t+=dt;s.y+=dt*(.8+s.t*.3);s.x+=Math.sin(t+s.y)*dt*.15;return s.t<s.life;});
+ B.sp.forEach((s,i)=>{p.set(s.x,s.y,s.z);sc.setScalar(s.s*(1+s.t*1.4)*Math.sin(Math.min(1,s.t/s.life)*3.14));m.compose(p,q,sc);B.st.setMatrixAt(i,m);});B.st.count=B.sp.length;B.st.instanceMatrix.needsUpdate=true;
+ if(B.ringT>0){B.ringT=Math.max(0,B.ringT-dt*1.2);B.ring.scale.setScalar(B.R*(1+(1-B.ringT)*2.2));B.ring.material.opacity=B.ringT*.8;B.ring.position.y=sf+.02;}else B.ring.material.opacity=0;
+ if(B.flT>0){B.flT-=dt;const cx=B.bead.visible?B.bead.position.x:0,cz=B.bead.visible?B.bead.position.z:0;for(let i=0;i<5;i++)if(B.fp.length<90){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:B.ft,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));B.fg.add(s);B.fp.push({s,x:cx+rnd(-.35,.35),y:sf+.1,z:cz+rnd(-.35,.35),vy:rnd(1.4,2.6),t:0,life:rnd(.5,1),sz:rnd(.5,1)});}B.fxL.color.copy(B.flm.material.color);B.fxL.intensity=Math.max(B.fxL.intensity,5+Math.random()*3);}
+ B.fp=B.fp.filter(f=>{f.t+=dt;if(f.t>f.life){B.fg.remove(f.s);f.s.material.dispose();return false;}const k=f.t/f.life;f.y+=f.vy*dt;f.x+=Math.sin(t*9+f.z*5)*dt*.5;f.s.position.set(f.x,f.y,f.z);f.s.scale.setScalar(f.sz*(1.1-k*.8)*1.4);f.s.material.color.setRGB(1,1,.85).lerp(B.flm.material.color,Math.min(1,k*1.6));f.s.material.opacity=(1-k)*.9;return true;});
+ if(B.beadT>0){B.beadT-=dt;B.bead.visible=true;B.bead.position.set(Math.cos(t*5)*.8*Math.abs(Math.sin(t*1.7)),sf+.1,Math.sin(t*5)*.8*Math.abs(Math.sin(t*1.7)));B.bead.scale.setScalar(Math.min(1,B.beadT/1.5)+.05);}else B.bead.visible=false;
+ if(B.shake>0){B.cam.position.x+=rnd(-1,1)*B.shake*.3;B.cam.position.y+=rnd(-1,1)*B.shake*.2;B.shake=Math.max(0,B.shake-dt*1.2);}
+ {const on=B.on;B.temp+=on?((100-B.temp)*dt*.07+dt*1.2):(25-B.temp)*dt*.03;B.temp=Math.max(25,Math.min(100,B.temp));B.bl.intensity+=((on?1.3:0)-B.bl.intensity)*Math.min(1,dt*6);
+ if(on)for(let i=0;i<3;i++)if(B.bp.length<70){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:B.ft,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));B.fg.add(s);const a=rnd(0,6.28),r=rnd(0,.13);B.bp.push({s,x:Math.cos(a)*r,y:-1.05,z:Math.sin(a)*r,vy:rnd(.9,1.3),t:0,life:rnd(.7,1),sz:rnd(.35,.55)});}
+ B.bp=B.bp.filter(f=>{f.t+=dt;if(f.t>f.life||f.y>-.08){B.fg.remove(f.s);f.s.material.dispose();return false;}const k=f.t/f.life;f.y+=f.vy*dt;f.x*=1-dt*.8;f.z*=1-dt*.8;f.s.position.set(f.x+Math.sin(t*20+f.z*9)*.02,f.y,f.z);f.s.scale.setScalar(f.sz*(1-k*.6));f.s.material.color.setRGB(.55,.75,1).lerp(new THREE.Color(.25,.35,1),k);f.s.material.opacity=(1-k)*.9;return true;});
+ if(B.temp>55){const n=Math.floor(dt*60*(B.temp-55)/45*.35+Math.random());for(let i=0;i<n&&B.sp.length<160;i++){const a=rnd(0,6.28),r=Math.sqrt(Math.random())*1.3;B.sp.push({x:Math.cos(a)*r,y:sf,z:Math.sin(a)*r,t:0,life:rnd(1.5,3),s:rnd(.15,.3)});}}
+ if(B.temp>80){const n=Math.floor(dt*60*(B.temp-80)/20*1.1+Math.random());for(let i=0;i<n&&B.bu.length<300;i++){const a=rnd(0,6.28),r=Math.sqrt(Math.random())*(B.R-.3);B.bu.push({x:Math.cos(a)*r,y:.3,z:Math.sin(a)*r,s:rnd(.04,.11),ph:rnd(0,9)});}}
+ const tt=Math.round(B.temp);if(B.tl!==tt){B.tl=tt;$('#temp').textContent=tt+' °C'+(tt>=100?' (boiling)':'');}}}
+function fxGo(ev){const h=B.h||2,top=.22+h;
+ const spl=(n,v)=>{B.dr.material.color.copy(B.liqM.color).lerp(new THREE.Color(1,1,1),.4);for(let i=0;i<n&&B.dp.length<500;i++){const a=rnd(0,6.28),r=rnd(0,.8);B.dp.push({x:Math.cos(a)*r,y:top,z:Math.sin(a)*r,vx:Math.cos(a)*rnd(0,v),vy:rnd(v*.6,v*1.6),vz:Math.sin(a)*rnd(0,v),s:rnd(.04,.1)});}};
+ const steam=n=>{for(let i=0;i<n&&B.sp.length<160;i++){const a=rnd(0,6.28),r=Math.sqrt(Math.random())*1.3;B.sp.push({x:Math.cos(a)*r,y:top,z:Math.sin(a)*r,t:0,life:rnd(1.5,3),s:rnd(.15,.3)});}};
+ const flash=(c,i)=>{B.fxL.color.set(c);B.fxL.intensity=i;};const ring=c=>{B.ring.material.color.set(c);B.ringT=1;};
+ if(!ev.steps.length){spl(6,1.2);ring(0xbfe3f5);return;}
+ for(const rx of ev.steps){const ty=rx.type;
+  if(ty=='metal + water'){const m=rx.r.find(i=>i!='H2O'),k=m=='K'?1:m=='Na'?.7:.3;flash(m=='K'?0xc9a0ff:m=='Na'?0xffb040:0xffffff,18*k);ring(m=='K'?0xc9a0ff:0xffb040);spl(Math.floor(160*k),6*k+1);steam(Math.floor(60*k));B.shake=.5*k;B.flT=m=='Ca'?0:4*k;B.flm.material.color.set(m=='K'?0xb97aff:0xffa030);B.beadT=3*k+.5;B.bead.material.color.set(MET[m]?MET[m][0]:'#dddddd');gasT=Math.max(gasT,4);}
+  else if(ty=='neutralisation'||ty=='hydration'||ty=='carbonation'){flash(0xff9a50,3);steam(ty=='hydration'?50:26);ring(0xff9a50);}
+  else if(ty=='metal + acid'){gasT=Math.max(gasT,6);spl(14,2.2);steam(8);}
+  else if(ty=='gas evolution'){gasT=Math.max(gasT,6);spl(24,2.6);flash(0xffffff,1.5);}
+  else if(ty=='catalytic decomposition'){gasT=8;spl(60,4);steam(40);flash(0xfff0c0,4);B.shake=.15;}
+  else if(ty=='precipitation'){flash(0xffffff,2.2);ring(0xffffff);spl(10,1.8);stirT=Math.max(stirT,1.2);}
+  else if(ty=='single displacement'){flash(0xffc88a,2);ring(0xffc88a);spl(12,1.8);stirT=Math.max(stirT,1);}
+  else if(ty=='halogen displacement'){flash(0xffe0a0,2);ring(0xffe0a0);stirT=Math.max(stirT,1.8);}}}
+// ---------- molecular scene
+const M={};const EL={O:['#e8211a',.34],H:['#ffffff',.2],N:['#3050f8',.36],C:['#606060',.36]};
+for(const k in CA)EL[CA[k][0]]=[CA[k][2],CA[k][3]*.9];for(const k in AN)if(!AN[k][6])EL[AN[k][0]]=[AN[k][2],AN[k][3]*.85];EL.S=['#e6c619',.5];EL.P=['#ff8000',.45];
+const tet=(c,o,r)=>[[c,0,0,0],...[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].slice(0,o=='H'?4:4).map(v=>[o,v[0]*r*.58,v[1]*r*.58,v[2]*r*.58])];
+const tri=(c,o,r)=>[[c,0,0,0],...[0,1,2].map(i=>[o,Math.cos(i*2.094)*r,0,Math.sin(i*2.094)*r])];
+const MOL={H2O:[['O',0,0,0],['H',.55,.42,0],['H',-.55,.42,0]],H3O:[['O',0,0,0],['H',.55,.35,0],['H',-.3,.35,.5],['H',-.3,.35,-.5]],H2:[['H',-.22,0,0],['H',.22,0,0]],CO2:[['C',0,0,0],['O',-.75,0,0],['O',.75,0,0]],H2S:[['S',0,0,0],['H',.6,.5,0],['H',-.6,.5,0]],O2:[['O',-.3,0,0],['O',.3,0,0]],NH3g:[['N',0,0,0],['H',.5,.3,0],['H',-.3,.3,.45],['H',-.3,.3,-.45]],NH3:[['N',0,0,0],['H',.5,.3,0],['H',-.3,.3,.45],['H',-.3,.3,-.45]],Cl2:[['Cl',-.45,0,0],['Cl',.45,0,0]],Br2:[['Br',-.5,0,0],['Br',.5,0,0]],I2:[['I',-.6,0,0],['I',.6,0,0]],H2O2:[['O',-.35,0,0],['O',.35,0,0],['H',-.6,.4,0],['H',.6,-.4,0]],
+ NH4:tet('N','H',1.1),NO3:tri('N','O',.62),SO4:tet('S','O',1.2),CO3:tri('C','O',.62),PO4:tet('P','O',1.2),CrO4:tet('Cr','O',1.25),OH:[['O',0,0,0],['H',.5,.3,0]],OAc:[['C',0,0,0],['O',.55,.9,0],['O',.55,-.9,0],['C',-1.15,0,0]]};
+const ionShape=(t,k)=>{const key=t=='c'?(CA[k][6]?k:null):(AN[k][6]?k:null);if(key)return MOL[key];const e=t=='c'?CA[k][0]:AN[k][0];return[[e,0,0,0]];};
+{const cv=$('#c2');M.r=mkR(cv);M.s=new THREE.Scene();M.s.background=new THREE.Color(0x070a12);M.cam=new THREE.PerspectiveCamera(45,1,.1,100);M.up=orbit(M.cam,cv,new THREE.Vector3(0,0,0),15,.7,1.25);
+ M.s.add(new THREE.AmbientLight(0xffffff,.55));const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(6,10,8);M.s.add(dl);const dl2=new THREE.PointLight(0x6688ff,.8,40);dl2.position.set(-8,-4,-6);M.s.add(dl2);
+ M.s.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(8,8,8)),new THREE.LineBasicMaterial({color:0x35507a,transparent:true,opacity:.7})));
+ const bt=new THREE.Mesh(new THREE.PlaneGeometry(8,8),new THREE.MeshBasicMaterial({color:0x0f2a4a,transparent:true,opacity:.35,side:THREE.DoubleSide}));bt.rotation.x=-Math.PI/2;bt.position.y=-4;M.s.add(bt);
+ M.geo=new THREE.SphereGeometry(1,20,14);M.im={};M.P=[];const shg=new THREE.SphereGeometry(1,16,12);M.shP=new THREE.InstancedMesh(shg,new THREE.MeshBasicMaterial({color:0xff4d4d,transparent:true,opacity:.3,depthWrite:false}),1500);M.shN=new THREE.InstancedMesh(shg,new THREE.MeshBasicMaterial({color:0x4da6ff,transparent:true,opacity:.3,depthWrite:false}),1500);M.shP.count=M.shN.count=0;M.s.add(M.shP,M.shN);M.lab=new THREE.Group();M.s.add(M.lab);M.tex={};for(const[k,ch,col]of[['p','+','#ff5a5a'],['n','−','#5aa8ff']]){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.beginPath();g.arc(32,32,29,0,6.3);g.fillStyle='rgba(8,12,20,.8)';g.fill();g.lineWidth=4;g.strokeStyle=col;g.stroke();g.fillStyle=col;g.font='bold 52px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(ch,32,35);M.tex[k]=new THREE.CanvasTexture(cv);}}
+function elMesh(e){if(!M.im[e]){const c=EL[e]||['#aaaaaa',.4];const im=new THREE.InstancedMesh(M.geo,new THREE.MeshPhysicalMaterial({color:c[0],roughness:.28,metalness:.1,clearcoat:.6}),3200);im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);im.setColorAt(0,new THREE.Color(1,1,1));im.count=0;im.base=new THREE.Color(c[0]);im.rad=c[1];M.s.add(im);M.im[e]=im;}return M.im[e];}
+function mkP(shape,x,y,z,o={}){const p=Object.assign({shape,pos:new THREE.Vector3(x,y,z),vel:new THREE.Vector3(rnd(-1,1),rnd(-1,1),rnd(-1,1)).multiplyScalar(.45),q:new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd(0,6.28),rnd(0,6.28),rnd(0,6.28))),av:new THREE.Vector3(rnd(-1,1),rnd(-1,1),rnd(-1,1)).multiplyScalar(.8),dim:1,fixed:0},o);shape.forEach(a=>elMesh(a[0]));p.rad=p.shape.reduce((mx,a)=>Math.max(mx,Math.hypot(a[1],a[2],a[3])+(EL[a[0]]?EL[a[0]][1]:.4)),0)+.12;if(p.chg){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:M.tex[p.chg>0?'p':'n'],depthTest:false,transparent:true}));sp.scale.setScalar(Math.max(.4,(EL[p.shape[0][0]]||[0,.4])[1]*1.25));sp.renderOrder=10;p.sprite=sp;M.lab.add(sp);}M.P.push(p);return p;}
+const rp=()=>[rnd(-3.4,3.4),rnd(-3.4,3.4),rnd(-3.4,3.4)];
+function lattice(a,b,n,id,ev,dim,ca,cb){const m=Math.max(2,Math.min(5,2+Math.floor(n/1.2))),sp=1.35,o=(m-1)*sp/2;let k=0;
+ for(let i=0;i<m;i++)for(let j=0;j<m;j++)for(let l=0;l<m;l++){const sh=(i+j+l)%2?b:a,T=new THREE.Vector3(i*sp-o,-4+.9+j*sp,l*sp-o);
+  const p=mkP(sh,T.x,T.y,T.z,{fixed:1,tgt:T.clone(),dim,chg:(i+j+l)%2?cb:ca});p.vel.set(0,0,0);p.av.multiplyScalar(.05);if(ev&&ev.steps.some(r=>r.p.includes(id))){const r=rp();p.pos.set(...r);p.fixed=0;p.delay=rnd(0,2.2);p.form=1;p.av.multiplyScalar(4);}}}
+function buildMol(ev){M.P=[];while(M.lab.children.length)M.lab.remove(M.lab.children[0]);for(const k in M.im){M.s.remove(M.im[k]);M.im[k].dispose();}M.im={};const leg=new Map();
+ const act=new Set();if(ev)for(const rx of ev.steps)for(const p of rx.p)if(SP[p].st=='s')act.add(p);
+ const spect=new Set();if(ev)for(const rx of ev.steps)for(const p of rx.p)if(SP[p].kind=='salt'&&SP[p].st=='aq'){spect.add('c'+SP[p].c);spect.add('a'+SP[p].a);}
+ const L=(t,k,n)=>{const key=t+k;leg.set(key,(leg.get(key)||0)+n)};
+ for(const[id,n]of contents){const s=SP[id],u=Math.min(8,n*4);
+  if(s.kind=='salt'&&s.st=='aq'){const dim=ev&&ev.steps.length&&!(0)?(spect.has('c'+s.c)&&spect.has('a'+s.a)?.55:1):1;for(let i=0;i<u;i++){for(let a=0;a<s.nc;a++)mkP(ionShape('c',s.c),...rp(),{dim,chg:CA[s.c][1]});for(let a=0;a<s.na;a++)mkP(ionShape('a',s.a),...rp(),{dim,chg:-AN[s.a][1]});}L('c',s.c,u*s.nc);L('a',s.a,u*s.na);}
+  else if(s.kind=='salt'&&s.st=='s'){lattice(ionShape('c',s.c),ionShape('a',s.a),n,id,ev,1,CA[s.c][1],-AN[s.a][1]);L('c',s.c,0);L('a',s.a,0);}
+  else if(s.kind=='acid'){for(let i=0;i<u;i++){for(let a=0;a<s.h;a++)mkP(MOL.H3O,...rp(),{chg:1});mkP(ionShape('a',s.a),...rp(),{chg:-AN[s.a][1]});}}
+  else if(s.kind=='base'||s.kind=='peroxide'||s.kind=='halogen'){for(let i=0;i<u*1.5;i++)mkP(MOL[id],...rp());}
+  else if(s.kind=='metal'){if(s.st=='l')for(let i=0;i<10;i++)mkP([['Hg',0,0,0]],rnd(-1,1),-3.3+rnd(0,.5),rnd(-1,1));else{EL[id]=EL[id]||[s.col[0],.45];lattice([[id,0,0,0]],[[id,0,0,0]],n,id,ev,1);}}
+  else if(s.kind=='solid')lattice([[s.oxc?CA[s.oxc][0]:'Mn',0,0,0]],[['O',0,0,0]],n,id,ev,1);}
+ if($('#wat').checked)for(let i=0;i<60;i++)mkP(MOL.H2O,...rp(),{dim:.5});
+ if(ev)for(const g of ev.gas)for(let i=0;i<14;i++){const p=mkP(MOL[g],rnd(-3,3),rnd(-4,-2),rnd(-3,3),{gas:1,dim:1,delay:rnd(0,3)});p.vel.set(rnd(-.3,.3),rnd(1.2,2),rnd(-.3,.3));}
+ // legend
+ const lg=$('#legend');lg.innerHTML='<span class=chip><span class=dot style="background:#ff4d4d55;border-color:#ff4d4d"></span>red halo = positive ion</span><span class=chip><span class=dot style="background:#4da6ff55;border-color:#4da6ff"></span>blue halo = negative ion</span>';for(const[key,n]of leg){const t=key[0],k=key.slice(1),sym=t=='c'?CA[k][0]+sup(CA[k][1]):AN[k][0]+supA(AN[k][1]);const col=(t=='c'?CA[k][2]:AN[k][2])||'#e8211a';lg.innerHTML+=`<span class=chip><span class=dot style="background:${col}"></span>${sub(sym)} <b style="color:${t=='c'?'#ff7a7a':'#7ab8ff'}">${t=='c'?'cation +':'anion −'}</b></span>`;}
+ lg.innerHTML+=ev&&ev.steps.length?'<span class=mut>dim = spectator ions · glowing lattice = new solid</span>':'';
+ const net=ev&&ev.steps.map(netIonic).filter(Boolean)[0];$('#netbox').innerHTML=ev&&ev.steps.length?`<div class=eq>${eqn(ev.steps[ev.steps.length-1].r,ev.steps[ev.steps.length-1].p)}</div>${net?'<div class=net>'+net+'</div>':''}`:'<span class=mut>Mix reagents on the bench to see their ions here.</span>';}
+function molFrame(t,dt){M.up();const cnt={},m=new THREE.Matrix4(),v=new THREE.Vector3(),q0=new THREE.Quaternion(),sc=new THREE.Vector3(),dq=new THREE.Quaternion(),c=new THREE.Color();
+ for(const e in M.im)cnt[e]=0;
+ M.P=M.P.filter(p=>!(p.gas&&p.pos.y>5));let np=0,nn=0;const showC=$('#chg').checked;
+ for(const p of M.P){if(p.delay>0){p.delay-=dt;if(p.gas)continue;}
+  if(p.form&&!p.fixed){const d=p.tgt.clone().sub(p.pos);p.pos.addScaledVector(d,Math.min(1,dt*2.2));if(d.length()<.05){p.fixed=1;p.form=0;}}
+  else if(!p.fixed){p.pos.addScaledVector(p.vel,dt*(1+(B.temp-25)/35));p.vel.x+=rnd(-1,1)*dt*.6;p.vel.y+=rnd(-1,1)*dt*.6;p.vel.z+=rnd(-1,1)*dt*.6;if(!p.gas){const s=p.vel.length();if(s>.9)p.vel.multiplyScalar(.9/s);for(const k of['x','y','z']){if(Math.abs(p.pos[k])>3.6){p.pos[k]=Math.sign(p.pos[k])*3.6;p.vel[k]*=-1;}}}}
+  else{p.pos.copy(p.tgt).add(v.set(Math.sin(t*3+p.pos.x*5),Math.sin(t*2.7+p.pos.y*5),Math.cos(t*3.3+p.pos.z*5)).multiplyScalar(.025));}
+  dq.setFromAxisAngle(v.copy(p.av).normalize(),p.av.length()*dt);p.q.premultiply(dq);if(p.sprite){p.sprite.visible=showC;p.sprite.position.copy(p.pos);}if(p.chg&&showC){sc.setScalar(p.rad*(1+Math.min(2,Math.abs(p.chg))*.12));m.compose(p.pos,q0,sc);if(p.chg>0)M.shP.setMatrixAt(np++,m);else M.shN.setMatrixAt(nn++,m);}
+  for(const a of p.shape){const im=M.im[a[0]];if(!im)continue;const i=cnt[a[0]]++;if(i>=3200)continue;v.set(a[1],a[2],a[3]).applyQuaternion(p.q).add(p.pos);const r=im.rad*(p.fixed&&p.tgt?1.05:1);sc.setScalar(r);m.compose(v,q0,sc);im.setMatrixAt(i,m);c.setScalar(p.dim);im.setColorAt(i,c);}}
+ M.shP.count=np;M.shN.count=nn;M.shP.instanceMatrix.needsUpdate=M.shN.instanceMatrix.needsUpdate=true;for(const e in M.im){const im=M.im[e];im.count=Math.min(3200,cnt[e]);im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;}}
+// ---------- loop & ui wiring
+function size(){for(const[o,id]of[[B,'c1'],[M,'c2']]){const c=$('#'+id),w=c.clientWidth,h=c.clientHeight;if(w&&h&&(c.width!=w*o.r.getPixelRatio()|0)){o.r.setSize(w,h,false);o.cam.aspect=w/h;o.cam.updateProjectionMatrix();}}}
+let cur='mix',last=performance.now();
+function tab(n){cur=n;$('#mix').style.display=n=='mix'?'flex':'none';$('#mol').style.display=n=='mol'?'flex':'none';document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('on',b.dataset.t==n));size();}
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;size();const t=now/1000;
+ if(cur=='mix'){benchFrame(t,dt);B.r.render(B.s,B.cam);}else{molFrame(t,dt);M.r.render(M.s,M.cam);}}
+document.querySelectorAll('.tb').forEach(b=>b.onclick=()=>tab(b.dataset.t));
+document.querySelectorAll('.g').forEach(b=>b.onclick=()=>{grp=b.dataset.g;document.querySelectorAll('.g').forEach(x=>x.classList.toggle('on',x==b));shelf();});
+$('#q').oninput=shelf;$('#reset').onclick=reset;$('#stir').onclick=()=>{stirT=3.5};$('#burner').onclick=()=>{B.on=!B.on;$('#burner').textContent='🔥 Burner: '+(B.on?'on':'off');};$('#wat').onchange=()=>buildMol(lastEv);$('#replay').onclick=()=>buildMol(lastEv);
+$('#libb').onclick=()=>{$('#libm').style.display='flex';lib();};$('#lq').oninput=lib;$('#libx').onclick=()=>$('#libm').style.display='none';
+$('#rcount').textContent=RX.size.toLocaleString();
+shelf();reset();requestAnimationFrame(loop);
+</script></body></html>
