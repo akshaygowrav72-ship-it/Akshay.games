@@ -31,11 +31,11 @@ input[type=search]{width:100%;padding:8px 10px;border-radius:8px;border:1px soli
 <header><h1>Chem<span>Lab</span> 3D</h1><button class="tb on" data-t="mix">⚗️ Mixing bench</button><button class="tb" data-t="mol">⚛️ Ion &amp; atom view</button><span class="cnt"><b id="rcount"></b> reactions in library</span></header>
 <div class="view" id="mix">
 <aside><input id="q" type="search" placeholder="Search reagents (e.g. silver, CuSO4, acid)…">
-<div class="gs"><button class="g on" data-g="All">All</button><button class="g" data-g="Salts">Salt solutions</button><button class="g" data-g="Acids">Acids</button><button class="g" data-g="Metals">Metals</button><button class="g" data-g="Solids">Solids</button><button class="g" data-g="Other">Other</button></div>
+<div class="gs"><button class="g on" data-g="All">All</button><button class="g" data-g="Salts">Salt solutions</button><button class="g" data-g="Acids">Acids</button><button class="g" data-g="Metals">Metals</button><button class="g" data-g="Solids">Solids</button><button class="g" data-g="Other">Other</button><button class="g" data-g="Flames">🔥 Flame salts</button></div>
 <div id="shelf"></div>
 <h3>In the beaker</h3><div id="cont" class="row"></div>
 <div class="row"><button class="btn" id="stir">Stir</button><button class="btn" id="burner">🔥 Burner: off</button><span class="chip" id="temp">25 °C</span><span class="chip" id="flameStatus" aria-live="polite">Flame: off</span><button class="btn" id="reset">Empty beaker</button><button class="btn" id="libb">Browse reactions</button></div>
-<div class="mut">Virtual flame test: turn on the burner, then add a salt. The latest supported salt still in the beaker sets the flame colour. Schematic effect—not a model of heating a beaker in real life.</div><h3>Reaction log</h3><div id="log"></div></aside>
+<details class="mut"><summary>Flame-test mode &amp; colour guide</summary><p>Turn on the burner and select a salt. Flame salts lists every supported salt in this app. Colours are schematic: solubility, volatility, concentration, contamination and flame conditions affect real tests. Heating a beaker does not normally colour the burner underneath it.</p><label>Sample <select id="flameSample" style="max-width:100%;background:#0c1117;color:#e6eef6;padding:5px"><option value="">Auto: latest supported salt in beaker</option></select></label><p id="flameGuide"></p><p>Manual sample previews are independent of the beaker chemistry. Auto mode follows salts still in the beaker; it does not simulate mixed spectra or sodium masking. No diagnostic colour is assigned to unsupported ions. Virtual use only; do not recreate these combinations.</p><p>Colour references: <a href="https://www.chemguide.co.uk/inorganic/group1/flametests.html" target="_blank" rel="noopener">Chemguide</a> · <a href="https://en.wikipedia.org/wiki/Flame_test" target="_blank" rel="noopener">Flame-test limitations and copper compounds</a></p></details><h3>Reaction log</h3><div id="log"></div></aside>
 <div class="stage"><canvas id="c1"></canvas><div class="hint">Drag to rotate · scroll to zoom · tap a reagent to pour it in</div></div></div>
 <div class="view" id="mol" style="display:none"><div class="stage"><canvas id="c2"></canvas>
 <div class="ov"><div class="card" id="netbox"></div><div class="card"><div class="row" id="legend"></div></div>
@@ -52,6 +52,29 @@ const supA=(c)=>(c>1?'⁰¹²³⁴⁵⁶⁷⁸⁹'[c]:'')+'⁻';
 // key:[formula,charge,CPK colour,radius,solution tint,name,polyatomic]
 const CA={Na:['Na',1,'#ab5cf2',.5,0,'sodium'],K:['K',1,'#8f40d4',.62,0,'potassium'],NH4:['NH4',1,'#3050f8',.5,0,'ammonium',1],Ag:['Ag',1,'#c8c8d0',.5,0,'silver'],Ca:['Ca',2,'#3dff00',.5,0,'calcium'],Ba:['Ba',2,'#00c900',.66,0,'barium'],Sr:['Sr',2,'#00ff80',.58,0,'strontium'],Mg:['Mg',2,'#8aff00',.4,0,'magnesium'],Pb:['Pb',2,'#575961',.62,0,'lead(II)'],Cu:['Cu',2,'#c88033',.42,'#2a7fff','copper(II)'],Fe2:['Fe',2,'#e06633',.42,'#9ccf9a','iron(II)'],Fe3:['Fe',3,'#e06633',.38,'#d9922b','iron(III)'],Zn:['Zn',2,'#7d80b0',.42,0,'zinc'],Ni:['Ni',2,'#50d050',.4,'#57c98a','nickel(II)'],Co:['Co',2,'#f090a0',.4,'#e8728f','cobalt(II)'],Mn:['Mn',2,'#9c7ac7',.42,'#f0cfd8','manganese(II)'],Al:['Al',3,'#bfa6a6',.36,0,'aluminium'],Cr3:['Cr',3,'#8a99c7',.38,'#4f9a5a','chromium(III)'],Cd:['Cd',2,'#ffd98f',.5,0,'cadmium'],Hg:['Hg',2,'#b8b8d0',.58,0,'mercury(II)']};
 const AN={Cl:['Cl',1,'#1ff01f',.62,0,'chloride'],Br:['Br',1,'#a62929',.7,0,'bromide'],I:['I',1,'#940094',.8,0,'iodide'],NO3:['NO3',1,0,0,0,'nitrate',1],SO4:['SO4',2,0,0,0,'sulfate',1],CO3:['CO3',2,0,0,0,'carbonate',1],PO4:['PO4',3,0,0,0,'phosphate',1],OH:['OH',1,0,0,0,'hydroxide',1],S:['S',2,'#e6c619',.7,0,'sulfide'],CrO4:['CrO4',2,0,0,'#f2d200','chromate',1],OAc:['CH3COO',1,0,0,0,'acetate',1]};
+Object.assign(CA,{
+ Li:['Li',1,'#cc80ff',.38,0,'lithium'],
+ Rb:['Rb',1,'#702eb0',.68,0,'rubidium'],
+ Cs:['Cs',1,'#57178f',.75,0,'caesium']
+});
+const FLAME_TESTS={
+ Li:{hex:0xff3268,label:'Lithium · carmine red'},
+ Na:{hex:0xffce28,label:'Sodium · golden yellow'},
+ K:{hex:0xc49aff,label:'Potassium · lilac'},
+ Rb:{hex:0xe65cce,label:'Rubidium · red-violet'},
+ Cs:{hex:0x7770ff,label:'Caesium · blue-violet'},
+ Ca:{hex:0xff6636,label:'Calcium · orange-red'},
+ Sr:{hex:0xff2346,label:'Strontium · crimson'},
+ Ba:{hex:0xade873,label:'Barium · pale green'},
+ Cu:{hex:0x35cf75,label:'Copper · green'},
+ Pb:{hex:0xc6cbd3,label:'Lead · greyish-white'}
+};
+function flameFor(id){
+ const sp=SP[id];
+ if(!sp || sp.kind!=='salt' || !FLAME_TESTS[sp.c])return null;
+ if(sp.c==='Cu' && ['Cl','Br','I'].includes(sp.a))return {hex:0x22d9c9,label:'Copper halide · blue-green'};
+ return FLAME_TESTS[sp.c];
+}
 const SP={};
 const reg=(id,o)=>(SP[id]=Object.assign({f:id,st:'aq'},o));
 const part=(f,n,p)=>n==1?f:(p?'('+f+')':f)+n;
@@ -60,7 +83,7 @@ const PC={'Cu.OH':['#3f6fe0','pale blue'],'Fe2.OH':['#7aa07a','green'],'Fe3.OH':
 const BLK=['Cu','Ag','Fe2','Ni','Co','Hg','Fe3'];
 function pcol(c,a){let k=c+'.'+a;if(PC[k])return PC[k];if(a=='S'&&BLK.includes(c))return['#161616','black'];if(a=='S')return['#d8d8d0','off-white'];return['#f2f2ee','white'];}
 function ex(c,a){if(c=='NH4'&&a=='OH')return 0;if(['Al','Cr3','Fe3'].includes(c)&&['CO3','S'].includes(a))return 0;if((c=='Fe3'||c=='Cu')&&a=='I')return 0;if(c=='Hg'&&a=='CO3')return 0;return 1;}
-function sol(c,a){if(['Na','K','NH4'].includes(c)||a=='NO3'||a=='OAc')return 1;
+function sol(c,a){if(c==='Li'&&['CO3','PO4'].includes(a))return 0;if(['Li','Na','K','Rb','Cs','NH4'].includes(c)||a=='NO3'||a=='OAc')return 1;
  if(a=='Cl'||a=='Br')return!['Ag','Pb'].includes(c);if(a=='I')return!['Ag','Pb','Hg'].includes(c);
  if(a=='SO4')return!['Ba','Sr','Pb','Ca'].includes(c);if(a=='OH')return['Ba','Sr'].includes(c);
  if(a=='S')return['Ca','Ba','Sr'].includes(c);if(a=='CrO4')return['Ca','Mg','Sr'].includes(c);return 0;}
@@ -127,7 +150,7 @@ const contents=new Map();let lastEv=null,stirT=0,gasT=0,streamT=0,streamCol=0xff
 function tint(id){const s=SP[id];return s.tint||null;}
 function liquidColor(){let r=0,g=0,b=0,w=0;const c=new THREE.Color();for(const[id,n]of contents){const s=SP[id];if(s.st!='aq')continue;const t=tint(id);if(t){c.set(t);r+=c.r;g+=c.g;b+=c.b;w++;}}
  if(!w)return{c:new THREE.Color('#bfe3f5'),o:.35};const k=Math.min(1,w/2);return{c:new THREE.Color(r/w,g/w,b/w),o:.35+.3*k};}
-function pour(id){const ev={added:id,steps:[],gas:[]};const nextAmount=(contents.get(id)||0)+1;contents.delete(id);contents.set(id,nextAmount);if(SP[id].st=='g'){}
+function pour(id){const ev={added:id,steps:[],gas:[]};const amount=(contents.get(id)||0)+1;contents.delete(id);contents.set(id,amount);if(SP[id].st=='g'){}
  react(id,ev,0);if(SP[id].st=='g'&&contents.has(id)){contents.delete(id);ev.gas.push(id);}if(id=='H2O'){contents.delete('H2O');B.extra=Math.min(1.2,(B.extra||0)+.35);}lastEv=ev;streamT=1.8;const t=tint(id);streamCol=t?hex(new THREE.Color(t).getHexString().replace(/^/,'#')):(SP[id].col?hex(SP[id].col[0]):0xddeeff);
  if(ev.gas.length)gasT=5;if(SP[id].st=='g'&&!ev.steps.length){gasT=3;}
  syncBeaker();fxGo(ev);buildMol(ev);renderUI(ev);}
@@ -151,12 +174,13 @@ function renderUI(ev){const c=$('#cont');c.innerHTML='';if(!contents.size)c.inne
   else h=`<div class=mut>${sub(SP[ev.added].f)}: no reaction with the current contents.</div>`;
   logHTML=h+logHTML.slice(0,2500);$('#log').innerHTML=logHTML;}else{logHTML='';$('#log').innerHTML='<i class=mut>Reactions will be logged here.</i>';}}
 // ---------- shelf
-const GROUPS={Salts:id=>SP[id].kind=='salt',Acids:id=>SP[id].kind=='acid',Metals:id=>SP[id].kind=='metal',Solids:id=>SP[id].kind=='solid',Other:id=>['base','halogen','peroxide','gas','liq'].includes(SP[id].kind)};
+const GROUPS={Flames:id=>!!flameFor(id),Salts:id=>SP[id].kind=='salt',Acids:id=>SP[id].kind=='acid',Metals:id=>SP[id].kind=='metal',Solids:id=>SP[id].kind=='solid',Other:id=>['base','halogen','peroxide','gas','liq'].includes(SP[id].kind)};
 const shelfIds=['H2O',...SOL,...Object.keys(ACIDS),'NH3','Na','K','Ca','Mg','Al','Mn','Zn','Fe','Cd','Co','Ni','Pb','Cu','Hg',...Object.keys(OX),'MnO2','Cl2','Br2','I2','H2O2','CO2',S('Ca','OH'),S('Ca','CO3'),S('Cu','OH'),S('Fe2','S'),S('Zn','S')];
+for(const id of Object.keys(SP))if(flameFor(id)&&!shelfIds.includes(id))shelfIds.push(id);
 let grp='All';
 function shelf(){const q=$('#q').value.toLowerCase(),l=$('#shelf');l.innerHTML='';let k=0;
  for(const id of [...new Set(shelfIds)]){const s=SP[id];if(grp!='All'&&!GROUPS[grp](id))continue;const lab=sub(s.f)+' '+nm(id);if(q&&!lab.toLowerCase().includes(q)&&!s.f.toLowerCase().includes(q))continue;
-  const b=document.createElement('button');b.className='it';const dot=s.col?s.col[0]:(s.tint||'#cfe9f7');b.innerHTML=`<span class=dot style="background:${dot}"></span><b>${sub(s.f)}</b><small>${nm(id)}</small>`;b.onclick=()=>pour(id);l.appendChild(b);k++;}
+  const b=document.createElement('button');b.className='it';const dot=s.col?s.col[0]:(s.tint||'#cfe9f7');b.innerHTML=`<span class=dot style="background:${dot}"></span><b>${sub(s.f)}</b><small>${nm(id)}</small>${flameFor(id)?'<small style="color:#'+flameFor(id).hex.toString(16).padStart(6,'0')+'">🔥 '+flameFor(id).label+'</small>':''}`;b.onclick=()=>pour(id);l.appendChild(b);k++;}
  if(!k)l.innerHTML='<i class=mut>No match</i>';}
 // ---------- reaction library
 function lib(){const q=$('#lq').value.toLowerCase(),l=$('#llist');l.innerHTML='';let k=0,tot=0;
@@ -213,30 +237,22 @@ function syncBeaker(){const h=liqH(),{c,o}=liquidColor();B.th=h;B.tc=c.clone();B
  // nonreactive gases just bubble
 }
 
-const FLAME_TESTS = {
- Na: {hex:0xffcf33, label:'sodium · golden yellow'},
- K:  {hex:0xc49aff, label:'potassium · lilac'},
- Ca: {hex:0xff6a35, label:'calcium · orange-red'},
- Sr: {hex:0xff2850, label:'strontium · crimson'},
- Ba: {hex:0x99ef65, label:'barium · pale green'},
- Cu: {hex:0x25e6bb, label:'copper · blue-green'}
-};
-function updateBurnerFlame(dt) {
- let test=null;
- for (const [id,n] of [...contents].reverse()) {
-  const species=SP[id];
-  if(n>0 && species.kind==='salt' && FLAME_TESTS[species.c]) {
-   test=FLAME_TESTS[species.c]; break;
-  }
- }
+function initFlameSamples(){
+ const select=$('#flameSample');
+ const ids=[...new Set(shelfIds)].filter(id=>flameFor(id)).sort((a,b)=>nm(a).localeCompare(nm(b)));
+ for(const id of ids){const o=document.createElement('option');o.value=id;o.textContent=sub(SP[id].f)+' — '+nm(id)+' — '+flameFor(id).label;select.appendChild(o);}
+ $('#flameGuide').textContent=Object.values(FLAME_TESTS).map(t=>t.label).join(' • ')+' • Copper halides: blue-green. '+ids.length+' selectable salt samples. Lead is included only as a virtual example; it is toxic.';
+}
+function updateBurnerFlame(dt){
+ const manual=$('#flameSample').value;
+ let sample=manual||null;
+ if(!sample)for(const [id,n]of [...contents].reverse())if(n>0&&flameFor(id)){sample=id;break;}
+ const test=sample?flameFor(sample):null;
+ if(!B.burnerColor)B.burnerColor=new THREE.Color(0x568cff);
  const target=new THREE.Color(test?test.hex:0x568cff);
- if(!B.burnerColor) B.burnerColor=new THREE.Color(0x568cff);
- B.burnerColor.lerp(target,Math.min(1,dt*5));
- B.bl.color.copy(B.burnerColor);
- const label=!B.on?'Flame: off':test?'Flame: '+test.label:'Flame: blue · no supported salt';
- const status=$('#flameStatus');
- if(status.textContent!==label) status.textContent=label;
- status.style.borderColor=B.on?'#'+target.getHexString():'';
+ B.burnerColor.lerp(target,Math.min(1,dt*5));B.bl.color.copy(B.burnerColor);
+ const text=!B.on?'Flame: off':test?'Flame: '+test.label+' · '+sub(SP[sample].f)+(manual?' (preview)':''):'Flame: blue · no supported salt';
+ const status=$('#flameStatus');if(status.textContent!==text)status.textContent=text;
  status.style.color=B.on?'#'+target.getHexString():'';
 }
 
@@ -343,5 +359,5 @@ document.querySelectorAll('.g').forEach(b=>b.onclick=()=>{grp=b.dataset.g;docume
 $('#q').oninput=shelf;$('#reset').onclick=reset;$('#stir').onclick=()=>{stirT=3.5};$('#burner').onclick=()=>{B.on=!B.on;$('#burner').textContent='🔥 Burner: '+(B.on?'on':'off');};$('#wat').onchange=()=>buildMol(lastEv);$('#replay').onclick=()=>buildMol(lastEv);
 $('#libb').onclick=()=>{$('#libm').style.display='flex';lib();};$('#lq').oninput=lib;$('#libx').onclick=()=>$('#libm').style.display='none';
 $('#rcount').textContent=RX.size.toLocaleString();
-shelf();reset();requestAnimationFrame(loop);
+initFlameSamples();shelf();reset();requestAnimationFrame(loop);
 </script></body></html>
