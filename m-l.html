@@ -31,11 +31,11 @@ input[type=search]{width:100%;padding:8px 10px;border-radius:8px;border:1px soli
 <header><h1>Chem<span>Lab</span> 3D</h1><button class="tb on" data-t="mix">⚗️ Mixing bench</button><button class="tb" data-t="mol">⚛️ Ion &amp; atom view</button><span class="cnt"><b id="rcount"></b> reactions in library</span></header>
 <div class="view" id="mix">
 <aside><input id="q" type="search" placeholder="Search reagents (e.g. silver, CuSO4, acid)…">
-<div class="gs"><button class="g on" data-g="All">All</button><button class="g" data-g="Salts">Salt solutions</button><button class="g" data-g="Acids">Acids</button><button class="g" data-g="Metals">Metals</button><button class="g" data-g="Solids">Solids</button><button class="g" data-g="Other">Other</button><button class="g" data-g="Flames">🔥 Flame salts</button></div>
+<div class="gs"><button class="g on" data-g="All">All</button><button class="g" data-g="Salts">Salt solutions</button><button class="g" data-g="Acids">Acids</button><button class="g" data-g="Metals">Metals</button><button class="g" data-g="Solids">Solids</button><button class="g" data-g="Other">Other</button></div>
 <div id="shelf"></div>
 <h3>In the beaker</h3><div id="cont" class="row"></div>
-<div class="row"><button class="btn" id="stir">Stir</button><button class="btn" id="burner">🔥 Burner: off</button><span class="chip" id="temp">25 °C</span><span class="chip" id="flameStatus" aria-live="polite">Flame: off</span><button class="btn" id="reset">Empty beaker</button><button class="btn" id="libb">Browse reactions</button></div>
-<details class="mut"><summary>Flame-test mode &amp; colour guide</summary><p>Turn on the burner and select a salt. Flame salts lists every supported salt in this app. Colours are schematic: solubility, volatility, concentration, contamination and flame conditions affect real tests. Heating a beaker does not normally colour the burner underneath it.</p><label>Sample <select id="flameSample" style="max-width:100%;background:#0c1117;color:#e6eef6;padding:5px"><option value="">Auto: latest supported salt in beaker</option></select></label><p id="flameGuide"></p><p>Manual sample previews are independent of the beaker chemistry. Auto mode follows salts still in the beaker; it does not simulate mixed spectra or sodium masking. No diagnostic colour is assigned to unsupported ions. Virtual use only; do not recreate these combinations.</p><p>Colour references: <a href="https://www.chemguide.co.uk/inorganic/group1/flametests.html" target="_blank" rel="noopener">Chemguide</a> · <a href="https://en.wikipedia.org/wiki/Flame_test" target="_blank" rel="noopener">Flame-test limitations and copper compounds</a></p></details><h3>Reaction log</h3><div id="log"></div></aside>
+<div class="row"><button class="btn" id="stir">Stir</button><button class="btn" id="burner">🔥 Burner: off</button><span class="chip" id="temp">25 °C</span><button class="btn" id="solutionFire">🔥 Ignite solution</button><span class="chip" id="solutionFireStatus" aria-live="polite">Solution flame: off</span><button class="btn" id="reset">Empty beaker</button><button class="btn" id="libb">Browse reactions</button></div>
+<div class="mut">Solution flames are a virtual visual effect, not a claim that salt water burns. The latest supported salt sets the colour; the burner stays blue.</div><h3>Reaction log</h3><div id="log"></div></aside>
 <div class="stage"><canvas id="c1"></canvas><div class="hint">Drag to rotate · scroll to zoom · tap a reagent to pour it in</div></div></div>
 <div class="view" id="mol" style="display:none"><div class="stage"><canvas id="c2"></canvas>
 <div class="ov"><div class="card" id="netbox"></div><div class="card"><div class="row" id="legend"></div></div>
@@ -52,29 +52,7 @@ const supA=(c)=>(c>1?'⁰¹²³⁴⁵⁶⁷⁸⁹'[c]:'')+'⁻';
 // key:[formula,charge,CPK colour,radius,solution tint,name,polyatomic]
 const CA={Na:['Na',1,'#ab5cf2',.5,0,'sodium'],K:['K',1,'#8f40d4',.62,0,'potassium'],NH4:['NH4',1,'#3050f8',.5,0,'ammonium',1],Ag:['Ag',1,'#c8c8d0',.5,0,'silver'],Ca:['Ca',2,'#3dff00',.5,0,'calcium'],Ba:['Ba',2,'#00c900',.66,0,'barium'],Sr:['Sr',2,'#00ff80',.58,0,'strontium'],Mg:['Mg',2,'#8aff00',.4,0,'magnesium'],Pb:['Pb',2,'#575961',.62,0,'lead(II)'],Cu:['Cu',2,'#c88033',.42,'#2a7fff','copper(II)'],Fe2:['Fe',2,'#e06633',.42,'#9ccf9a','iron(II)'],Fe3:['Fe',3,'#e06633',.38,'#d9922b','iron(III)'],Zn:['Zn',2,'#7d80b0',.42,0,'zinc'],Ni:['Ni',2,'#50d050',.4,'#57c98a','nickel(II)'],Co:['Co',2,'#f090a0',.4,'#e8728f','cobalt(II)'],Mn:['Mn',2,'#9c7ac7',.42,'#f0cfd8','manganese(II)'],Al:['Al',3,'#bfa6a6',.36,0,'aluminium'],Cr3:['Cr',3,'#8a99c7',.38,'#4f9a5a','chromium(III)'],Cd:['Cd',2,'#ffd98f',.5,0,'cadmium'],Hg:['Hg',2,'#b8b8d0',.58,0,'mercury(II)']};
 const AN={Cl:['Cl',1,'#1ff01f',.62,0,'chloride'],Br:['Br',1,'#a62929',.7,0,'bromide'],I:['I',1,'#940094',.8,0,'iodide'],NO3:['NO3',1,0,0,0,'nitrate',1],SO4:['SO4',2,0,0,0,'sulfate',1],CO3:['CO3',2,0,0,0,'carbonate',1],PO4:['PO4',3,0,0,0,'phosphate',1],OH:['OH',1,0,0,0,'hydroxide',1],S:['S',2,'#e6c619',.7,0,'sulfide'],CrO4:['CrO4',2,0,0,'#f2d200','chromate',1],OAc:['CH3COO',1,0,0,0,'acetate',1]};
-Object.assign(CA,{
- Li:['Li',1,'#cc80ff',.38,0,'lithium'],
- Rb:['Rb',1,'#702eb0',.68,0,'rubidium'],
- Cs:['Cs',1,'#57178f',.75,0,'caesium']
-});
-const FLAME_TESTS={
- Li:{hex:0xff3268,label:'Lithium · carmine red'},
- Na:{hex:0xffce28,label:'Sodium · golden yellow'},
- K:{hex:0xc49aff,label:'Potassium · lilac'},
- Rb:{hex:0xe65cce,label:'Rubidium · red-violet'},
- Cs:{hex:0x7770ff,label:'Caesium · blue-violet'},
- Ca:{hex:0xff6636,label:'Calcium · orange-red'},
- Sr:{hex:0xff2346,label:'Strontium · crimson'},
- Ba:{hex:0xade873,label:'Barium · pale green'},
- Cu:{hex:0x35cf75,label:'Copper · green'},
- Pb:{hex:0xc6cbd3,label:'Lead · greyish-white'}
-};
-function flameFor(id){
- const sp=SP[id];
- if(!sp || sp.kind!=='salt' || !FLAME_TESTS[sp.c])return null;
- if(sp.c==='Cu' && ['Cl','Br','I'].includes(sp.a))return {hex:0x22d9c9,label:'Copper halide · blue-green'};
- return FLAME_TESTS[sp.c];
-}
+Object.assign(CA,{Li:['Li',1,'#cc80ff',.38,0,'lithium'],Rb:['Rb',1,'#702eb0',.68,0,'rubidium'],Cs:['Cs',1,'#57178f',.75,0,'caesium']});
 const SP={};
 const reg=(id,o)=>(SP[id]=Object.assign({f:id,st:'aq'},o));
 const part=(f,n,p)=>n==1?f:(p?'('+f+')':f)+n;
@@ -160,7 +138,7 @@ function react(id,ev,d){if(d>3||!(contents.get(id)>0))return;const others=[...co
   const prods=[];for(const p of rx.p){if(SP[p].st=='g')ev.gas.push(p);else if(p!='H2O'){contents.set(p,(contents.get(p)||0)+1);prods.push(p);}}
   ev.steps.push(rx);for(const p of prods)react(p,ev,d+1);return;}}
 function dec(k){const n=contents.get(k)-1;n>0?contents.set(k,n):contents.delete(k);}
-function reset(){contents.clear();B.extra=0;B.temp=25;lastEv=null;syncBeaker();buildMol(null);renderUI(null);}
+function reset(){setSolutionFire(false);contents.clear();B.extra=0;B.temp=25;lastEv=null;syncBeaker();buildMol(null);renderUI(null);}
 function observe(ev){const o=[];for(const rx of ev.steps){for(const p of rx.p){const s=SP[p];if(s.st=='s'&&s.kind=='salt'||s.kind=='solid')o.push(`${s.col[1]} precipitate forms (${nm(p)})`);else if(s.kind=='metal'&&s.st!='aq')o.push(`${s.col[1]} ${s.name} deposits`);else if(s.kind=='halogen')o.push(`solution turns ${({Br2:'orange',I2:'brown',Cl2:'pale green'})[p]}`);}
  for(const p of rx.p)if(SP[p].st=='g')o.push(`bubbles of ${nm(p)} gas are released`);if(rx.type=='metal + water')o.push('vigorous fizzing, heat released');if(rx.type=='neutralisation')o.push('mixture warms slightly');}
  if(ev.steps.length&&!o.length)o.push('colour/properties change in solution');return[...new Set(o)];}
@@ -174,13 +152,12 @@ function renderUI(ev){const c=$('#cont');c.innerHTML='';if(!contents.size)c.inne
   else h=`<div class=mut>${sub(SP[ev.added].f)}: no reaction with the current contents.</div>`;
   logHTML=h+logHTML.slice(0,2500);$('#log').innerHTML=logHTML;}else{logHTML='';$('#log').innerHTML='<i class=mut>Reactions will be logged here.</i>';}}
 // ---------- shelf
-const GROUPS={Flames:id=>!!flameFor(id),Salts:id=>SP[id].kind=='salt',Acids:id=>SP[id].kind=='acid',Metals:id=>SP[id].kind=='metal',Solids:id=>SP[id].kind=='solid',Other:id=>['base','halogen','peroxide','gas','liq'].includes(SP[id].kind)};
+const GROUPS={Salts:id=>SP[id].kind=='salt',Acids:id=>SP[id].kind=='acid',Metals:id=>SP[id].kind=='metal',Solids:id=>SP[id].kind=='solid',Other:id=>['base','halogen','peroxide','gas','liq'].includes(SP[id].kind)};
 const shelfIds=['H2O',...SOL,...Object.keys(ACIDS),'NH3','Na','K','Ca','Mg','Al','Mn','Zn','Fe','Cd','Co','Ni','Pb','Cu','Hg',...Object.keys(OX),'MnO2','Cl2','Br2','I2','H2O2','CO2',S('Ca','OH'),S('Ca','CO3'),S('Cu','OH'),S('Fe2','S'),S('Zn','S')];
-for(const id of Object.keys(SP))if(flameFor(id)&&!shelfIds.includes(id))shelfIds.push(id);
 let grp='All';
 function shelf(){const q=$('#q').value.toLowerCase(),l=$('#shelf');l.innerHTML='';let k=0;
  for(const id of [...new Set(shelfIds)]){const s=SP[id];if(grp!='All'&&!GROUPS[grp](id))continue;const lab=sub(s.f)+' '+nm(id);if(q&&!lab.toLowerCase().includes(q)&&!s.f.toLowerCase().includes(q))continue;
-  const b=document.createElement('button');b.className='it';const dot=s.col?s.col[0]:(s.tint||'#cfe9f7');b.innerHTML=`<span class=dot style="background:${dot}"></span><b>${sub(s.f)}</b><small>${nm(id)}</small>${flameFor(id)?'<small style="color:#'+flameFor(id).hex.toString(16).padStart(6,'0')+'">🔥 '+flameFor(id).label+'</small>':''}`;b.onclick=()=>pour(id);l.appendChild(b);k++;}
+  const b=document.createElement('button');b.className='it';const dot=s.col?s.col[0]:(s.tint||'#cfe9f7');b.innerHTML=`<span class=dot style="background:${dot}"></span><b>${sub(s.f)}</b><small>${nm(id)}</small>`;b.onclick=()=>pour(id);l.appendChild(b);k++;}
  if(!k)l.innerHTML='<i class=mut>No match</i>';}
 // ---------- reaction library
 function lib(){const q=$('#lq').value.toLowerCase(),l=$('#llist');l.innerHTML='';let k=0,tot=0;
@@ -236,27 +213,7 @@ function syncBeaker(){const h=liqH(),{c,o}=liquidColor();B.th=h;B.tc=c.clone();B
  for(const[id,n]of contents){const s=SP[id];if(s.kind!='metal')continue;const liquid=s.st=='l';for(let i=0;i<n*(liquid?7:2);i++){const m=new THREE.Mesh(liquid?new THREE.SphereGeometry(rnd(.1,.2),16,12):new THREE.DodecahedronGeometry(rnd(.2,.34)),new THREE.MeshStandardMaterial({color:s.col[0],metalness:liquid?1:.85,roughness:liquid?.05:.35}));const a=rnd(0,6.28),r=rnd(0,1);m.position.set(Math.cos(a)*r,.4,Math.sin(a)*r);m.rotation.set(rnd(0,3),rnd(0,3),0);m.castShadow=true;B.solids.add(m);}}
  // nonreactive gases just bubble
 }
-
-function initFlameSamples(){
- const select=$('#flameSample');
- const ids=[...new Set(shelfIds)].filter(id=>flameFor(id)).sort((a,b)=>nm(a).localeCompare(nm(b)));
- for(const id of ids){const o=document.createElement('option');o.value=id;o.textContent=sub(SP[id].f)+' — '+nm(id)+' — '+flameFor(id).label;select.appendChild(o);}
- $('#flameGuide').textContent=Object.values(FLAME_TESTS).map(t=>t.label).join(' • ')+' • Copper halides: blue-green. '+ids.length+' selectable salt samples. Lead is included only as a virtual example; it is toxic.';
-}
-function updateBurnerFlame(dt){
- const manual=$('#flameSample').value;
- let sample=manual||null;
- if(!sample)for(const [id,n]of [...contents].reverse())if(n>0&&flameFor(id)){sample=id;break;}
- const test=sample?flameFor(sample):null;
- if(!B.burnerColor)B.burnerColor=new THREE.Color(0x568cff);
- const target=new THREE.Color(test?test.hex:0x568cff);
- B.burnerColor.lerp(target,Math.min(1,dt*5));B.bl.color.copy(B.burnerColor);
- const text=!B.on?'Flame: off':test?'Flame: '+test.label+' · '+sub(SP[sample].f)+(manual?' (preview)':''):'Flame: blue · no supported salt';
- const status=$('#flameStatus');if(status.textContent!==text)status.textContent=text;
- status.style.color=B.on?'#'+target.getHexString():'';
-}
-
-function benchFrame(t,dt){B.up();updateBurnerFlame(dt);B.h=(B.h||2)+((B.th||2)-(B.h||2))*Math.min(1,dt*3);const h=B.h;B.liq.scale.y=h;B.liq.position.y=.22+h/2;B.surf.position.y=.22+h;B.surf.rotation.z=Math.sin(t*1.3)*.01;
+function benchFrame(t,dt){B.up();solutionFireFrame(t,dt);B.h=(B.h||2)+((B.th||2)-(B.h||2))*Math.min(1,dt*3);const h=B.h;B.liq.scale.y=h;B.liq.position.y=.22+h/2;B.surf.position.y=.22+h;B.surf.rotation.z=Math.sin(t*1.3)*.01;
  stirT=Math.max(0,stirT-dt);B.rod.visible=stirT>0;if(stirT>0){B.rod.position.set(Math.cos(t*5)*.7,h/2+1.4,Math.sin(t*5)*.7);B.rod.rotation.set(Math.sin(t*5)*.12,0,-Math.cos(t*5)*.12);}
  streamT=Math.max(0,streamT-dt);B.stream.visible=streamT>0;B.bot.visible=streamT>0;B.bot.children[0].material.color.setHex(streamCol);B.bot.rotation.z=Math.sin(t*9)*.03;if(streamT>0){const top=7,len=top-(.22+h);B.stream.scale.set(1,len,1);B.stream.position.set(0,.22+h+len/2,0);B.stream.material.color.setHex(streamCol);B.stream.material.opacity=Math.min(1,streamT*2)*.85;}
  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),p=new THREE.Vector3(),sc=new THREE.Vector3(),stir=(stirT>0||B.temp>55)?1:0;
@@ -284,7 +241,7 @@ function benchFrame(t,dt){B.up();updateBurnerFlame(dt);B.h=(B.h||2)+((B.th||2)-(
  if(B.shake>0){B.cam.position.x+=rnd(-1,1)*B.shake*.3;B.cam.position.y+=rnd(-1,1)*B.shake*.2;B.shake=Math.max(0,B.shake-dt*1.2);}
  {const on=B.on;B.temp+=on?((100-B.temp)*dt*.07+dt*1.2):(25-B.temp)*dt*.03;B.temp=Math.max(25,Math.min(100,B.temp));B.bl.intensity+=((on?1.3:0)-B.bl.intensity)*Math.min(1,dt*6);
  if(on)for(let i=0;i<3;i++)if(B.bp.length<70){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:B.ft,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));B.fg.add(s);const a=rnd(0,6.28),r=rnd(0,.13);B.bp.push({s,x:Math.cos(a)*r,y:-1.05,z:Math.sin(a)*r,vy:rnd(.9,1.3),t:0,life:rnd(.7,1),sz:rnd(.35,.55)});}
- B.bp=B.bp.filter(f=>{f.t+=dt;if(f.t>f.life||f.y>-.08){B.fg.remove(f.s);f.s.material.dispose();return false;}const k=f.t/f.life;f.y+=f.vy*dt;f.x*=1-dt*.8;f.z*=1-dt*.8;f.s.position.set(f.x+Math.sin(t*20+f.z*9)*.02,f.y,f.z);f.s.scale.setScalar(f.sz*(1-k*.6));f.s.material.color.copy(B.burnerColor).lerp(new THREE.Color(1,1,.95),(1-k)*.35);f.s.material.opacity=(1-k)*.9;return true;});
+ B.bp=B.bp.filter(f=>{f.t+=dt;if(f.t>f.life||f.y>-.08){B.fg.remove(f.s);f.s.material.dispose();return false;}const k=f.t/f.life;f.y+=f.vy*dt;f.x*=1-dt*.8;f.z*=1-dt*.8;f.s.position.set(f.x+Math.sin(t*20+f.z*9)*.02,f.y,f.z);f.s.scale.setScalar(f.sz*(1-k*.6));f.s.material.color.setRGB(.55,.75,1).lerp(new THREE.Color(.25,.35,1),k);f.s.material.opacity=(1-k)*.9;return true;});
  if(B.temp>55){const n=Math.floor(dt*60*(B.temp-55)/45*.35+Math.random());for(let i=0;i<n&&B.sp.length<160;i++){const a=rnd(0,6.28),r=Math.sqrt(Math.random())*1.3;B.sp.push({x:Math.cos(a)*r,y:sf,z:Math.sin(a)*r,t:0,life:rnd(1.5,3),s:rnd(.15,.3)});}}
  if(B.temp>80){const n=Math.floor(dt*60*(B.temp-80)/20*1.1+Math.random());for(let i=0;i<n&&B.bu.length<300;i++){const a=rnd(0,6.28),r=Math.sqrt(Math.random())*(B.R-.3);B.bu.push({x:Math.cos(a)*r,y:.3,z:Math.sin(a)*r,s:rnd(.04,.11),ph:rnd(0,9)});}}
  const tt=Math.round(B.temp);if(B.tl!==tt){B.tl=tt;$('#temp').textContent=tt+' °C'+(tt>=100?' (boiling)':'');}}}
@@ -359,5 +316,20 @@ document.querySelectorAll('.g').forEach(b=>b.onclick=()=>{grp=b.dataset.g;docume
 $('#q').oninput=shelf;$('#reset').onclick=reset;$('#stir').onclick=()=>{stirT=3.5};$('#burner').onclick=()=>{B.on=!B.on;$('#burner').textContent='🔥 Burner: '+(B.on?'on':'off');};$('#wat').onchange=()=>buildMol(lastEv);$('#replay').onclick=()=>buildMol(lastEv);
 $('#libb').onclick=()=>{$('#libm').style.display='flex';lib();};$('#lq').oninput=lib;$('#libx').onclick=()=>$('#libm').style.display='none';
 $('#rcount').textContent=RX.size.toLocaleString();
-initFlameSamples();shelf();reset();requestAnimationFrame(loop);
+
+const SOLUTION_FLAMES={Li:['#ff3268','lithium · carmine red'],Na:['#ffce28','sodium · yellow'],K:['#c49aff','potassium · lilac'],Rb:['#e65cce','rubidium · red-violet'],Cs:['#7770ff','caesium · blue-violet'],Ca:['#ff6636','calcium · orange-red'],Sr:['#ff2346','strontium · crimson'],Ba:['#ade873','barium · pale green'],Cu:['#35cf75','copper · green'],Pb:['#c6cbd3','lead · greyish-white']};
+B.solutionFire=false;B.solutionParticles=[];B.solutionSpawn=0;B.solutionLight=new THREE.PointLight(0xffffff,0,9);B.s.add(B.solutionLight);
+function solutionFlameSample(){for(const [id,n]of [...contents].reverse()){const sp=SP[id];if(n<=0||sp.kind!=='salt'||!SOLUTION_FLAMES[sp.c])continue;if(sp.c==='Cu'&&['Cl','Br','I'].includes(sp.a))return ['#22d9c9','copper halide · blue-green'];return SOLUTION_FLAMES[sp.c];}return null;}
+function setSolutionFire(on){B.solutionFire=on;B.solutionSpawn=0;if(!on){for(const p of B.solutionParticles){B.fg.remove(p.sprite);p.sprite.material.dispose();}B.solutionParticles=[];B.solutionLight.intensity=0;}$('#solutionFire').textContent=on?'Extinguish solution':'🔥 Ignite solution';if(!on)$('#solutionFireStatus').textContent='Solution flame: off';}
+function solutionFireFrame(t,dt){
+ const sample=solutionFlameSample(),active=B.solutionFire&&!!sample,y=.22+(B.h||2),color=new THREE.Color(sample?sample[0]:'#88bbff');
+ const label=!B.solutionFire?'Solution flame: off':sample?'Solution flame: '+sample[1]:'Add a supported salt to show its flame';
+ const status=$('#solutionFireStatus');if(status.textContent!==label)status.textContent=label;status.style.color=active?sample[0]:'';
+ B.solutionLight.color.copy(color);B.solutionLight.position.set(0,y+.8,0);B.solutionLight.intensity=active?1.7+Math.sin(t*15)*.25:0;
+ if(active){B.solutionSpawn+=dt*65;let count=Math.floor(B.solutionSpawn);B.solutionSpawn-=count;while(count-->0&&B.solutionParticles.length<140){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*(B.R-.25),sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:B.ft,color:color,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));B.fg.add(sprite);B.solutionParticles.push({sprite,x:Math.cos(a)*r,z:Math.sin(a)*r,age:0,life:rnd(.55,1.1),height:rnd(.9,2.1),size:rnd(.4,.7),phase:rnd(0,6.28)});}}
+ B.solutionParticles=B.solutionParticles.filter(p=>{p.age+=dt;if(p.age>=p.life){B.fg.remove(p.sprite);p.sprite.material.dispose();return false;}const k=p.age/p.life;p.sprite.position.set(p.x*(1-k*.45)+Math.sin(t*8+p.phase)*.08,y+.05+k*p.height,p.z*(1-k*.45));p.sprite.scale.set(p.size*(1-k*.65),p.size*(1.8-k*.5),1);p.sprite.material.color.copy(color).lerp(new THREE.Color(1,1,.95),Math.max(0,.3-k));p.sprite.material.opacity=Math.sin(k*Math.PI)*.8;return true;});
+}
+$('#solutionFire').onclick=()=>setSolutionFire(!B.solutionFire);
+
+shelf();reset();requestAnimationFrame(loop);
 </script></body></html>
