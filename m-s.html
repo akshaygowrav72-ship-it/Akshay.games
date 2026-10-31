@@ -419,7 +419,7 @@ ptick=dt=>{if(!['title','over','end'].includes(S.mode))RUN.t+=dt;_pt0(dt);
  for(const a of ACHS)if(!ACHD.includes(a[0])&&a[2]()){ACHD.push(a[0]);TOAST={t:3,m:'ACHIEVEMENT: '+a[0]+' - '+a[1]}}
  if(TOAST.t>0)TOAST.t-=dt};
 const _hud0=hud;
-hud=()=>{_hud0();g.textAlign='right';FONT(11);g.fillStyle='#ff0';g.fillText('RUN '+fmtT(RUN.t)+'  ACH '+ACHD.length+'/'+ACHS.length,W-6,38);
+hud=()=>{_hud0();g.textAlign='right';FONT(11);g.fillStyle='#ff0';g.fillText('RUN '+fmtT(RUN.t)+'  ACH '+ACHD.length+'/'+(ACHS.length+1),W-6,38);
  if(TOAST.t>0){g.textAlign='center';g.fillStyle='#000c';g.fillRect(90,44,460,26);g.fillStyle='#ff0';FONT(13);g.fillText(TOAST.m,320,62)}};
 const _ng2=newGame;
 newGame=()=>{RUN.t=0;ACHD=[];CHEATS=[];MATCHES=0;TALK=0;PAINTED=0;_ng2()};
@@ -566,7 +566,7 @@ const _tgo0=tgo;tgo=k=>k==1?fnf():_tgo0(k);
 // ---------- END-OF-RUN REPORT FILE ----------
 function reportTxt(){return[
  'MAPLEWOOD MIDDLE - RUN REPORT','Student: '+PL.name+(TITLE?' the '+TITLE:''),'Ending: '+endTitle()[0],'Run time: '+fmtT(RUN.t),'',
- 'ACHIEVEMENTS ('+ACHD.length+'/'+ACHS.length+')',...ACHS.map(a=>(ACHD.includes(a[0])?'[x] ':'[ ] ')+a[0]+' - '+a[1]),'',
+ 'ACHIEVEMENTS ('+ACHD.length+'/'+(ACHS.length+1)+')',...ACHS.map(a=>(ACHD.includes(a[0])?'[x] ':'[ ] ')+a[0]+' - '+a[1]),'',
  'CLUBS: '+(CL.join(', ')||'none'),'SPORT: '+(SP.join(', ')||'none'),'',
  'STATS','Quiz/lab score: '+grade+'/24','Tardies: '+tardy+'/3','Embarrassment: '+Math.round(E)+'%',
  'Popular: '+R.pop,'Nerd: '+Math.floor(R.nerd),'Feared: '+R.fear,'Respected: '+R.resp,'Friends: '+friends,
