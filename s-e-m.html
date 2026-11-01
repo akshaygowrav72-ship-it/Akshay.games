@@ -1,80 +1,672 @@
-const photoKeywords = [
-  // Original common items
-  "coffee",
-  "burger",
-  "cinema",
-  "pizza",
-  "groceries",
-  "gas-station",
-  "sneakers",
-  "jeans",
-  "headphones",
-  "smartwatch",
-  "smartphone",
-  "laptop",
-  "game-console",
-  "television",
-  "bicycle",
-  "gym",
-  "movie",
-  "beach-vacation",
-  "apartment",
-  "living-room",
-  "used-car",
-  "car",
-  "wedding",
-  "university",
-  "house",
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spend Everyone's Money</title>
 
-  // Original big items
-  "tesla",
-  "yacht",
-  "private-jet",
-  "skyscraper",
-  "basketball",
-  "moon",
-  "mars",
+<style>
+  * {
+    box-sizing: border-box;
+  }
 
-  // 30 additional items
-  "ice-cream",
-  "donut",
-  "sushi",
-  "birthday-cake",
-  "books",
-  "board-game",
-  "teddy-bear",
-  "skateboard",
-  "acoustic-guitar",
-  "digital-piano",
-  "camera",
-  "drone",
-  "virtual-reality",
-  "gaming-computer",
-  "hot-tub",
-  "motorcycle",
-  "grand-piano",
-  "diamond-ring",
-  "sports-car",
-  "motorhome",
-  "beach-house",
-  "mansion",
-  "tropical-island",
-  "castle",
-  "luxury-hotel",
-  "roller-coaster",
-  "cruise-ship",
-  "football-stadium",
-  "space-station",
-  "city-skyline"
-];
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Arial, sans-serif;
+    background: #f5f5f5;
+    color: #222;
+    text-align: center;
+  }
 
-function createItemImage(emoji, index) {
-  const keyword = photoKeywords[index] || "shopping";
+  header {
+    padding: 30px 15px;
+    background: #111;
+    color: white;
+  }
 
-  return (
-    "https://loremflickr.com/640/400/" +
-    encodeURIComponent(keyword) +
-    "?lock=" +
-    (index + 1)
-  );
-}
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 5vw, 42px);
+  }
+
+  #money {
+    margin-top: 12px;
+    color: #00ff88;
+    font-size: clamp(22px, 4vw, 34px);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .subtitle {
+    margin: 12px 0 0;
+    color: #ccc;
+  }
+
+  .container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+  }
+
+  .item {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .image-wrapper {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    background: #e8edf2;
+  }
+
+  .item-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-fallback {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 20px;
+    color: #596575;
+    font-size: 15px;
+    background: #e8edf2;
+  }
+
+  .item-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .item h2 {
+    margin: 0 0 10px;
+    font-size: 20px;
+  }
+
+  .price {
+    margin-bottom: 8px;
+    color: #137b3f;
+    font-weight: 700;
+  }
+
+  .owned {
+    margin: 5px 0 18px;
+    color: #555;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: auto;
+  }
+
+  button {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.15s;
+  }
+
+  .controls button {
+    flex: 1;
+  }
+
+  button:hover:not(:disabled) {
+    filter: brightness(0.92);
+    transform: translateY(-1px);
+  }
+
+  button:focus-visible {
+    outline: 3px solid #287bff;
+    outline-offset: 3px;
+  }
+
+  .buy {
+    background: #008c3a;
+    color: white;
+  }
+
+  .sell {
+    background: #d73535;
+    color: white;
+  }
+
+  button:disabled {
+    background: #ddd;
+    color: #777;
+    cursor: not-allowed;
+  }
+
+  footer {
+    margin: 40px 15px;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 360px) {
+    .container {
+      grid-template-columns: 1fr;
+      padding: 0 12px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Spend Everyone's Money</h1>
+  <div id="money" role="status" aria-live="polite"></div>
+  <p class="subtitle">62 things to buy. How much can you spend?</p>
+</header>
+
+<main
+  class="container"
+  id="shop"
+  aria-label="Items to buy"
+></main>
+
+<footer>
+  Fictional spending game. Prices are illustrative, not market quotes.
+  <br>
+  The starting balance is fictional and does not represent anyone's net worth.
+  <br>
+  Photos are representative and may not show the exact item.
+</footer>
+
+<script>
+  const startingBalance = 570_000_000_000_000;
+  let balance = startingBalance;
+
+  const items = [
+    // Original common items: 25
+    {
+      name: "Cup of Coffee",
+      price: 4,
+      photo: "coffee"
+    },
+    {
+      name: "Big Mac",
+      price: 5,
+      photo: "burger"
+    },
+    {
+      name: "Movie Ticket",
+      price: 15,
+      photo: "cinema"
+    },
+    {
+      name: "Pizza",
+      price: 20,
+      photo: "pizza"
+    },
+    {
+      name: "Groceries (1 week)",
+      price: 120,
+      photo: "groceries"
+    },
+    {
+      name: "Gas Tank Fill-Up",
+      price: 60,
+      photo: "gas-station"
+    },
+    {
+      name: "Sneakers",
+      price: 100,
+      photo: "sneakers"
+    },
+    {
+      name: "Jeans",
+      price: 80,
+      photo: "jeans"
+    },
+    {
+      name: "Headphones",
+      price: 150,
+      photo: "headphones"
+    },
+    {
+      name: "Smartwatch",
+      price: 300,
+      photo: "smartwatch"
+    },
+    {
+      name: "Smartphone",
+      price: 1_000,
+      photo: "smartphone"
+    },
+    {
+      name: "Laptop",
+      price: 2_000,
+      photo: "laptop"
+    },
+    {
+      name: "Gaming Console",
+      price: 500,
+      photo: "game-console"
+    },
+    {
+      name: "4K TV",
+      price: 1_200,
+      photo: "television"
+    },
+    {
+      name: "Bicycle",
+      price: 800,
+      photo: "bicycle"
+    },
+    {
+      name: "Gym Membership (1 year)",
+      price: 600,
+      photo: "gym"
+    },
+    {
+      name: "Netflix Subscription (1 year)",
+      price: 180,
+      photo: "movie"
+    },
+    {
+      name: "Vacation Trip",
+      price: 3_500,
+      photo: "beach-vacation"
+    },
+    {
+      name: "Rent (1 month)",
+      price: 1_800,
+      photo: "apartment"
+    },
+    {
+      name: "Furniture Set",
+      price: 5_000,
+      photo: "living-room"
+    },
+    {
+      name: "Used Car",
+      price: 15_000,
+      photo: "used-car"
+    },
+    {
+      name: "New Car",
+      price: 35_000,
+      photo: "car"
+    },
+    {
+      name: "Wedding",
+      price: 30_000,
+      photo: "wedding"
+    },
+    {
+      name: "College Tuition (1 year)",
+      price: 25_000,
+      photo: "university"
+    },
+    {
+      name: "Home Down Payment",
+      price: 60_000,
+      photo: "house"
+    },
+
+    // Original big items: 7
+    {
+      name: "Tesla Model 3",
+      price: 40_000,
+      photo: "tesla"
+    },
+    {
+      name: "Luxury Yacht",
+      price: 150_000_000,
+      photo: "yacht"
+    },
+    {
+      name: "Private Jet",
+      price: 75_000_000,
+      photo: "private-jet"
+    },
+    {
+      name: "Skyscraper",
+      price: 1_200_000_000,
+      photo: "skyscraper"
+    },
+    {
+      name: "NBA Team",
+      price: 2_500_000_000,
+      photo: "basketball"
+    },
+    {
+      name: "Moon Base",
+      price: 50_000_000_000,
+      photo: "moon"
+    },
+    {
+      name: "Mars Colony",
+      price: 120_000_000_000,
+      photo: "mars"
+    },
+
+    // 30 new items
+    {
+      name: "Ice Cream Cone",
+      price: 3,
+      photo: "ice-cream"
+    },
+    {
+      name: "Donut",
+      price: 2,
+      photo: "donut"
+    },
+    {
+      name: "Sushi Dinner",
+      price: 50,
+      photo: "sushi"
+    },
+    {
+      name: "Birthday Cake",
+      price: 40,
+      photo: "birthday-cake"
+    },
+    {
+      name: "Book",
+      price: 18,
+      photo: "books"
+    },
+    {
+      name: "Board Game",
+      price: 35,
+      photo: "board-game"
+    },
+    {
+      name: "Teddy Bear",
+      price: 25,
+      photo: "teddy-bear"
+    },
+    {
+      name: "Skateboard",
+      price: 120,
+      photo: "skateboard"
+    },
+    {
+      name: "Acoustic Guitar",
+      price: 400,
+      photo: "acoustic-guitar"
+    },
+    {
+      name: "Digital Piano",
+      price: 1_500,
+      photo: "digital-piano"
+    },
+    {
+      name: "Camera",
+      price: 2_500,
+      photo: "camera"
+    },
+    {
+      name: "Drone",
+      price: 1_000,
+      photo: "drone"
+    },
+    {
+      name: "VR Headset",
+      price: 500,
+      photo: "virtual-reality"
+    },
+    {
+      name: "Gaming PC",
+      price: 3_000,
+      photo: "gaming-computer"
+    },
+    {
+      name: "Hot Tub",
+      price: 8_000,
+      photo: "hot-tub"
+    },
+    {
+      name: "Motorcycle",
+      price: 18_000,
+      photo: "motorcycle"
+    },
+    {
+      name: "Grand Piano",
+      price: 80_000,
+      photo: "grand-piano"
+    },
+    {
+      name: "Diamond Ring",
+      price: 25_000,
+      photo: "diamond-ring"
+    },
+    {
+      name: "Sports Car",
+      price: 250_000,
+      photo: "sports-car"
+    },
+    {
+      name: "Luxury RV",
+      price: 300_000,
+      photo: "motorhome"
+    },
+    {
+      name: "Beach House",
+      price: 2_000_000,
+      photo: "beach-house"
+    },
+    {
+      name: "Mansion",
+      price: 20_000_000,
+      photo: "mansion"
+    },
+    {
+      name: "Private Island",
+      price: 80_000_000,
+      photo: "tropical-island"
+    },
+    {
+      name: "Castle",
+      price: 100_000_000,
+      photo: "castle"
+    },
+    {
+      name: "Luxury Hotel",
+      price: 500_000_000,
+      photo: "luxury-hotel"
+    },
+    {
+      name: "Theme Park",
+      price: 1_000_000_000,
+      photo: "roller-coaster"
+    },
+    {
+      name: "Cruise Ship",
+      price: 1_500_000_000,
+      photo: "cruise-ship"
+    },
+    {
+      name: "Football Stadium",
+      price: 2_000_000_000,
+      photo: "football-stadium"
+    },
+    {
+      name: "Space Station",
+      price: 150_000_000_000,
+      photo: "space-station"
+    },
+    {
+      name: "Futuristic City",
+      price: 1_000_000_000_000,
+      photo: "city-skyline"
+    }
+  ].map(item => ({
+    ...item,
+    count: 0
+  }));
+
+  const shop = document.getElementById("shop");
+  const moneyDisplay = document.getElementById("money");
+
+  const moneyFormatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  });
+
+  const countFormatter = new Intl.NumberFormat("en-US");
+  const cardViews = [];
+
+  function formatMoney(value) {
+    return moneyFormatter.format(value);
+  }
+
+  function createItemImage(item, index) {
+    return (
+      "https://loremflickr.com/640/400/" +
+      encodeURIComponent(item.photo) +
+      "?lock=" +
+      (index + 1)
+    );
+  }
+
+  function updateDisplay() {
+    moneyDisplay.textContent = formatMoney(balance);
+
+    items.forEach((item, index) => {
+      const view = cardViews[index];
+
+      view.owned.textContent =
+        `Owned: ${countFormatter.format(item.count)}`;
+
+      view.buy.disabled = balance < item.price;
+      view.sell.disabled = item.count === 0;
+    });
+  }
+
+  function buyItem(index) {
+    const item = items[index];
+
+    if (balance < item.price) {
+      return;
+    }
+
+    balance -= item.price;
+    item.count += 1;
+
+    updateDisplay();
+  }
+
+  function sellItem(index) {
+    const item = items[index];
+
+    if (item.count === 0) {
+      return;
+    }
+
+    balance += item.price;
+    item.count -= 1;
+
+    updateDisplay();
+  }
+
+  function renderShop() {
+    const fragment = document.createDocumentFragment();
+
+    items.forEach((item, index) => {
+      const card = document.createElement("article");
+      card.className = "item";
+
+      const imageWrapper = document.createElement("div");
+      imageWrapper.className = "image-wrapper";
+
+      const fallback = document.createElement("div");
+      fallback.className = "image-fallback";
+      fallback.textContent = `Photo unavailable: ${item.name}`;
+
+      const image = document.createElement("img");
+      image.className = "item-image";
+      image.alt = `Photo representing ${item.name}`;
+      image.width = 640;
+      image.height = 400;
+      image.loading = "lazy";
+      image.decoding = "async";
+      image.referrerPolicy = "no-referrer";
+
+      image.addEventListener("error", () => {
+        image.hidden = true;
+        image.style.display = "none";
+        fallback.style.display = "flex";
+      }, { once: true });
+
+      image.src = createItemImage(item, index);
+
+      imageWrapper.append(image, fallback);
+
+      const content = document.createElement("div");
+      content.className = "item-content";
+
+      const heading = document.createElement("h2");
+      heading.textContent = item.name;
+
+      const price = document.createElement("div");
+      price.className = "price";
+      price.textContent = formatMoney(item.price);
+
+      const owned = document.createElement("p");
+      owned.className = "owned";
+
+      const controls = document.createElement("div");
+      controls.className = "controls";
+
+      const sell = document.createElement("button");
+      sell.type = "button";
+      sell.className = "sell";
+      sell.textContent = "Sell";
+      sell.setAttribute("aria-label", `Sell ${item.name}`);
+      sell.addEventListener("click", () => sellItem(index));
+
+      const buy = document.createElement("button");
+      buy.type = "button";
+      buy.className = "buy";
+      buy.textContent = "Buy";
+      buy.setAttribute("aria-label", `Buy ${item.name}`);
+      buy.addEventListener("click", () => buyItem(index));
+
+      controls.append(sell, buy);
+      content.append(heading, price, owned, controls);
+      card.append(imageWrapper, content);
+      fragment.appendChild(card);
+
+      cardViews.push({
+        owned,
+        buy,
+        sell
+      });
+    });
+
+    shop.appendChild(fragment);
+    updateDisplay();
+  }
+
+  renderShop();
+</script>
+
+</body>
+</html>
