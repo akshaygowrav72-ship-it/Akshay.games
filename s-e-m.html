@@ -117,7 +117,6 @@
 
   .controls {
     display: flex;
-    justify-content: center;
     gap: 10px;
     width: 100%;
     margin-top: auto;
@@ -210,316 +209,334 @@
 </footer>
 
 <script>
-  "use strict";
+"use strict";
 
-  const startingBalance = 570_000_000_000_000;
-  let balance = startingBalance;
+const startingBalance = 570_000_000_000_000;
+let balance = startingBalance;
 
-  const photoIds = {
-    coffee: "1509042239860-f550ce710b93",
-    burger: "1568901346375-23c9450c58cd",
-    cinema: "1489599849927-2ee91cede3ba",
-    pizza: "1513104890138-7c749659a591",
-    groceries: "1542838132-92c53300491e",
-    sneakers: "1542291026-7eec264c27ff",
-    jeans: "1542272604-787c3835535d",
-    headphones: "1505740420928-5e560c06d30e",
-    watch: "1523275335684-37898b6baf30",
-    smartphone: "1511707171634-5f897ff02aa9",
-    laptop: "1496181133206-80ce9b88a853",
-    gaming: "1486401899868-0e435ed85128",
-    television: "1593359677879-a4bb92f829d1",
-    bicycle: "1485965120184-e220f721d03e",
-    gym: "1534438327276-14e5300c3a48",
-    beach: "1507525428034-b723cf961d3e",
-    house: "1600596542815-ffad4c1539a9",
-    furniture: "1555041469-a586c61ea9bc",
-    car: "1492144534655-ae79c964c9d7",
-    wedding: "1519741497674-611481863552",
-    tesla: "1560958089-b8a1929cea89",
-    yacht: "1567899378494-47b22a2ae96a",
-    airplane: "1436491865332-7a61a109cc05",
-    skyscraper: "1486406146926-c627a92ad1ab",
-    basketball: "1546519638-68e109498ffc",
-    moon: "1446776811953-b23d57bd21aa",
-    space: "1451187580459-43490279c0fa",
-    icecream: "1563805042-7684c019e1cb",
-    donut: "1551024601-bec78aea704b",
-    sushi: "1579871494447-9811cf80d66c",
-    cake: "1578985545062-69928b1d9587",
-    books: "1507842217343-583bb7270b66",
-    boardgame: "1610890716171-6b1bb98ffd09",
-    teddy: "1556012018-50c5c0da73bf",
-    skateboard: "1520045892732-304bc3ac5d8e",
-    guitar: "1510915361894-db8b60106cb1",
-    piano: "1520523839897-bd0b52f945a0",
-    camera: "1516035069371-29a1b244cc32",
-    drone: "1473968512647-3e447244af8f",
-    vr: "1622979135225-d2ba269cf1ac",
-    computer: "1587202372634-32705e3bf49c",
-    pool: "1576013551627-0cc20b96c2a7",
-    motorcycle: "1558981806-ec527fa84c39",
-    ring: "1605100804763-247f67b3557e",
-    island: "1500375592092-40eb2168fd21",
-    castle: "1514539079130-25950c84af65",
-    hotel: "1566073771259-6a8506099945",
-    themepark: "1513889961551-628c1e5e2ee9",
-    ship: "1548574505-5e239809ee19",
-    stadium: "1522778119026-d647f0596c20",
-    city: "1477959858617-67f85cf4f1df"
-  };
+const photoIds = {
+  coffee: "1509042239860-f550ce710b93",
+  burger: "1568901346375-23c9450c58cd",
+  cinema: "1489599849927-2ee91cede3ba",
+  pizza: "1513104890138-7c749659a591",
+  groceries: "1542838132-92c53300491e",
+  sneakers: "1542291026-7eec264c27ff",
+  jeans: "1542272604-787c3835535d",
+  headphones: "1505740420928-5e560c06d30e",
+  watch: "1523275335684-37898b6baf30",
+  smartphone: "1511707171634-5f897ff02aa9",
+  laptop: "1496181133206-80ce9b88a853",
+  gaming: "1486401899868-0e435ed85128",
+  television: "1593359677879-a4bb92f829d1",
+  bicycle: "1485965120184-e220f721d03e",
+  gym: "1534438327276-14e5300c3a48",
+  beach: "1507525428034-b723cf961d3e",
+  house: "1600596542815-ffad4c1539a9",
+  furniture: "1555041469-a586c61ea9bc",
+  sportsCar: "1544829099-b9a0c07fad1a",
+  wedding: "1519741497674-611481863552",
+  tesla: "1560958089-b8a1929cea89",
+  yacht: "1567899378494-47b22a2ae96a",
+  airplane: "1436491865332-7a61a109cc05",
+  skyscraper: "1486406146926-c627a92ad1ab",
+  basketball: "1546519638-68e109498ffc",
+  moon: "1446776811953-b23d57bd21aa",
+  space: "1451187580459-43490279c0fa",
+  icecream: "1563805042-7684c019e1cb",
+  donut: "1551024601-bec78aea704b",
+  sushi: "1579871494447-9811cf80d66c",
+  cake: "1578985545062-69928b1d9587",
+  books: "1507842217343-583bb7270b66",
+  boardgame: "1610890716171-6b1bb98ffd09",
+  teddy: "1556012018-50c5c0da73bf",
+  skateboard: "1520045892732-304bc3ac5d8e",
+  guitar: "1510915361894-db8b60106cb1",
+  piano: "1520523839897-bd0b52f945a0",
+  camera: "1516035069371-29a1b244cc32",
+  drone: "1473968512647-3e447244af8f",
+  vr: "1622979135225-d2ba269cf1ac",
+  computer: "1587202372634-32705e3bf49c",
+  pool: "1576013551627-0cc20b96c2a7",
+  motorcycle: "1558981806-ec527fa84c39",
+  ring: "1605100804763-247f67b3557e",
+  island: "1500375592092-40eb2168fd21",
+  castle: "1514539079130-25950c84af65",
+  hotel: "1566073771259-6a8506099945",
+  themepark: "1513889961551-628c1e5e2ee9",
+  ship: "1548574505-5e239809ee19",
+  stadium: "1522778119026-d647f0596c20",
+  city: "1477959858617-67f85cf4f1df"
+};
 
-  // Each entry contains: name, price, photo subject.
-  const items = [
-    ["Cup of Coffee", 4, "coffee"],
-    ["Big Mac", 5, "burger"],
-    ["Movie Ticket", 15, "cinema"],
-    ["Pizza", 20, "pizza"],
-    ["Groceries (1 week)", 120, "groceries"],
+// These four items use separate direct photo URLs.
+const replacementPhotos = {
+  "Luxury RV":
+    "https://images.pexels.com/photos/7474289/pexels-photo-7474289.jpeg",
 
-    // Changed to a representative car photo.
-    ["Gas Tank Fill-Up", 60, "car"],
+  "New Car":
+    "https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg",
 
-    ["Sneakers", 100, "sneakers"],
-    ["Jeans", 80, "jeans"],
-    ["Headphones", 150, "headphones"],
-    ["Smartwatch", 300, "watch"],
-    ["Smartphone", 1_000, "smartphone"],
-    ["Laptop", 2_000, "laptop"],
-    ["Gaming Console", 500, "gaming"],
-    ["4K TV", 1_200, "television"],
-    ["Bicycle", 800, "bicycle"],
-    ["Gym Membership (1 year)", 600, "gym"],
-    ["Netflix Subscription (1 year)", 180, "cinema"],
-    ["Vacation Trip", 3_500, "beach"],
-    ["Rent (1 month)", 1_800, "house"],
-    ["Furniture Set", 5_000, "furniture"],
-    ["Used Car", 15_000, "car"],
-    ["New Car", 35_000, "car"],
-    ["Wedding", 30_000, "wedding"],
+  "Used Car":
+    "https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg",
 
-    // Changed to a representative books photo.
-    ["College Tuition (1 year)", 25_000, "books"],
+  "Gas Tank Fill-Up":
+    "https://images.pexels.com/photos/9796/car-refill-transportation-transport.jpg"
+};
 
-    ["Home Down Payment", 60_000, "house"],
-    ["Tesla Model 3", 40_000, "tesla"],
-    ["Luxury Yacht", 150_000_000, "yacht"],
-    ["Private Jet", 75_000_000, "airplane"],
-    ["Skyscraper", 1_200_000_000, "skyscraper"],
-    ["NBA Team", 2_500_000_000, "basketball"],
-    ["Moon Base", 50_000_000_000, "moon"],
-    ["Mars Colony", 120_000_000_000, "space"],
-    ["Ice Cream Cone", 3, "icecream"],
-    ["Donut", 2, "donut"],
-    ["Sushi Dinner", 50, "sushi"],
-    ["Birthday Cake", 40, "cake"],
-    ["Book", 18, "books"],
-    ["Board Game", 35, "boardgame"],
-    ["Teddy Bear", 25, "teddy"],
-    ["Skateboard", 120, "skateboard"],
-    ["Acoustic Guitar", 400, "guitar"],
-    ["Digital Piano", 1_500, "piano"],
-    ["Camera", 2_500, "camera"],
-    ["Drone", 1_000, "drone"],
-    ["VR Headset", 500, "vr"],
-    ["Gaming PC", 3_000, "computer"],
-    ["Hot Tub", 8_000, "pool"],
-    ["Motorcycle", 18_000, "motorcycle"],
-    ["Grand Piano", 80_000, "piano"],
-    ["Diamond Ring", 25_000, "ring"],
-    ["Sports Car", 250_000, "car"],
-    ["Luxury RV", 300_000, "car"],
-    ["Beach House", 2_000_000, "house"],
-    ["Mansion", 20_000_000, "house"],
-    ["Private Island", 80_000_000, "island"],
-    ["Castle", 100_000_000, "castle"],
-    ["Luxury Hotel", 500_000_000, "hotel"],
-    ["Theme Park", 1_000_000_000, "themepark"],
-    ["Cruise Ship", 1_500_000_000, "ship"],
-    ["Football Stadium", 2_000_000_000, "stadium"],
-    ["Space Station", 150_000_000_000, "space"],
-    ["Futuristic City", 1_000_000_000_000, "city"],
+const items = [
+  ["Cup of Coffee", 4, "coffee"],
+  ["Big Mac", 5, "burger"],
+  ["Movie Ticket", 15, "cinema"],
+  ["Pizza", 20, "pizza"],
+  ["Groceries (1 week)", 120, "groceries"],
+  ["Gas Tank Fill-Up", 60, null],
+  ["Sneakers", 100, "sneakers"],
+  ["Jeans", 80, "jeans"],
+  ["Headphones", 150, "headphones"],
+  ["Smartwatch", 300, "watch"],
+  ["Smartphone", 1_000, "smartphone"],
+  ["Laptop", 2_000, "laptop"],
+  ["Gaming Console", 500, "gaming"],
+  ["4K TV", 1_200, "television"],
+  ["Bicycle", 800, "bicycle"],
+  ["Gym Membership (1 year)", 600, "gym"],
+  ["Netflix Subscription (1 year)", 180, "cinema"],
+  ["Vacation Trip", 3_500, "beach"],
+  ["Rent (1 month)", 1_800, "house"],
+  ["Furniture Set", 5_000, "furniture"],
+  ["Used Car", 15_000, null],
+  ["New Car", 35_000, null],
+  ["Wedding", 30_000, "wedding"],
+  ["College Tuition (1 year)", 25_000, "books"],
+  ["Home Down Payment", 60_000, "house"],
+  ["Tesla Model 3", 40_000, "tesla"],
+  ["Luxury Yacht", 150_000_000, "yacht"],
+  ["Private Jet", 75_000_000, "airplane"],
+  ["Skyscraper", 1_200_000_000, "skyscraper"],
+  ["NBA Team", 2_500_000_000, "basketball"],
+  ["Moon Base", 50_000_000_000, "moon"],
+  ["Mars Colony", 120_000_000_000, "space"],
+  ["Ice Cream Cone", 3, "icecream"],
+  ["Donut", 2, "donut"],
+  ["Sushi Dinner", 50, "sushi"],
+  ["Birthday Cake", 40, "cake"],
+  ["Book", 18, "books"],
+  ["Board Game", 35, "boardgame"],
+  ["Teddy Bear", 25, "teddy"],
+  ["Skateboard", 120, "skateboard"],
+  ["Acoustic Guitar", 400, "guitar"],
+  ["Digital Piano", 1_500, "piano"],
+  ["Camera", 2_500, "camera"],
+  ["Drone", 1_000, "drone"],
+  ["VR Headset", 500, "vr"],
+  ["Gaming PC", 3_000, "computer"],
+  ["Hot Tub", 8_000, "pool"],
+  ["Motorcycle", 18_000, "motorcycle"],
+  ["Grand Piano", 80_000, "piano"],
+  ["Diamond Ring", 25_000, "ring"],
+  ["Sports Car", 250_000, "sportsCar"],
+  ["Luxury RV", 300_000, null],
+  ["Beach House", 2_000_000, "house"],
+  ["Mansion", 20_000_000, "house"],
+  ["Private Island", 80_000_000, "island"],
+  ["Castle", 100_000_000, "castle"],
+  ["Luxury Hotel", 500_000_000, "hotel"],
+  ["Theme Park", 1_000_000_000, "themepark"],
+  ["Cruise Ship", 1_500_000_000, "ship"],
+  ["Football Stadium", 2_000_000_000, "stadium"],
+  ["Space Station", 150_000_000_000, "space"],
+  ["Futuristic City", 1_000_000_000_000, "city"],
+  ["Helicopter", 5_000_000, "airplane"],
+  ["Luxury Watch", 50_000, "watch"]
+].map(([name, price, photo]) => ({
+  name,
+  price,
+  photo,
+  count: 0
+}));
 
-    // Two new items. Aircraft and watch photos are representative.
-    ["Helicopter", 5_000_000, "airplane"],
-    ["Luxury Watch", 50_000, "watch"]
-  ].map(([name, price, photo]) => ({
-    name,
-    price,
-    photo,
-    count: 0
-  }));
+const shop = document.getElementById("shop");
+const moneyDisplay = document.getElementById("money");
+const subtitle = document.getElementById("subtitle");
+const cardViews = [];
 
-  const shop = document.getElementById("shop");
-  const moneyDisplay = document.getElementById("money");
-  const subtitle = document.getElementById("subtitle");
-  const cardViews = [];
+const moneyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0
+});
 
-  const moneyFormatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0
+const countFormatter = new Intl.NumberFormat("en-US");
+
+subtitle.textContent =
+  `${items.length} things to buy. How much can you spend?`;
+
+function formatMoney(value) {
+  return moneyFormatter.format(value);
+}
+
+function createItemImage(item) {
+  const replacement = replacementPhotos[item.name];
+
+  if (replacement) {
+    return replacement + "?auto=compress&cs=tinysrgb&w=640";
+  }
+
+  const photoId = photoIds[item.photo] || photoIds.city;
+
+  return (
+    `https://images.unsplash.com/photo-${photoId}` +
+    "?auto=format&fit=crop&w=640&q=80"
+  );
+}
+
+function updateDisplay() {
+  moneyDisplay.textContent = formatMoney(balance);
+
+  items.forEach((item, index) => {
+    const view = cardViews[index];
+
+    view.owned.textContent =
+      `Owned: ${countFormatter.format(item.count)}`;
+
+    view.buy.disabled = balance < item.price;
+    view.sell.disabled = item.count === 0;
+  });
+}
+
+function buyItem(index) {
+  const item = items[index];
+
+  if (balance < item.price) return;
+
+  balance -= item.price;
+  item.count += 1;
+
+  updateDisplay();
+}
+
+function sellItem(index) {
+  const item = items[index];
+
+  if (item.count === 0) return;
+
+  balance += item.price;
+  item.count -= 1;
+
+  updateDisplay();
+}
+
+function createImageSection(item) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "image-wrapper";
+
+  const image = document.createElement("img");
+  image.className = "item-image";
+  image.alt = `Representative photo for ${item.name}`;
+  image.width = 640;
+  image.height = 400;
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.referrerPolicy = "no-referrer";
+
+  const fallback = document.createElement("div");
+  fallback.className = "image-fallback";
+  fallback.hidden = true;
+
+  const message = document.createElement("span");
+  message.textContent = `Could not load photo for ${item.name}.`;
+
+  const retry = document.createElement("button");
+  retry.type = "button";
+  retry.className = "retry";
+  retry.textContent = "Retry photo";
+  retry.setAttribute("aria-label", `Retry photo for ${item.name}`);
+
+  fallback.append(message, retry);
+
+  image.addEventListener("load", () => {
+    image.hidden = false;
+    fallback.hidden = true;
   });
 
-  const countFormatter = new Intl.NumberFormat("en-US");
+  image.addEventListener("error", () => {
+    image.hidden = true;
+    fallback.hidden = false;
 
-  subtitle.textContent =
-    `${items.length} things to buy. How much can you spend?`;
-
-  function formatMoney(value) {
-    return moneyFormatter.format(value);
-  }
-
-  function createItemImage(item) {
-    const photoId = photoIds[item.photo] || photoIds.city;
-
-    return (
-      `https://images.unsplash.com/photo-${photoId}` +
-      "?auto=format&fit=crop&w=640&q=80"
+    console.error(
+      `Image failed for ${item.name}:`,
+      image.currentSrc || image.src
     );
-  }
+  });
 
-  function updateDisplay() {
-    moneyDisplay.textContent = formatMoney(balance);
-
-    items.forEach((item, index) => {
-      const view = cardViews[index];
-
-      view.owned.textContent =
-        `Owned: ${countFormatter.format(item.count)}`;
-
-      view.buy.disabled = balance < item.price;
-      view.sell.disabled = item.count === 0;
-    });
-  }
-
-  function buyItem(index) {
-    const item = items[index];
-
-    if (balance < item.price) return;
-
-    balance -= item.price;
-    item.count += 1;
-    updateDisplay();
-  }
-
-  function sellItem(index) {
-    const item = items[index];
-
-    if (item.count === 0) return;
-
-    balance += item.price;
-    item.count -= 1;
-    updateDisplay();
-  }
-
-  function createImageSection(item) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "image-wrapper";
-
-    const image = document.createElement("img");
-    image.className = "item-image";
-    image.alt = `Representative photo for ${item.name}`;
-    image.width = 640;
-    image.height = 400;
-    image.loading = "lazy";
-    image.decoding = "async";
-    image.referrerPolicy = "no-referrer";
-
-    const fallback = document.createElement("div");
-    fallback.className = "image-fallback";
+  retry.addEventListener("click", () => {
     fallback.hidden = true;
+    image.hidden = false;
 
-    const message = document.createElement("span");
-    message.textContent = `Could not load photo for ${item.name}.`;
+    const url = new URL(createItemImage(item));
+    url.searchParams.set("retry", Date.now().toString());
 
-    const retry = document.createElement("button");
-    retry.type = "button";
-    retry.className = "retry";
-    retry.textContent = "Retry photo";
-    retry.setAttribute("aria-label", `Retry photo for ${item.name}`);
+    image.src = url.href;
+  });
 
-    fallback.append(message, retry);
+  image.src = createItemImage(item);
 
-    image.addEventListener("load", () => {
-      image.hidden = false;
-      fallback.hidden = true;
-    });
+  wrapper.append(image, fallback);
+  return wrapper;
+}
 
-    image.addEventListener("error", () => {
-      image.hidden = true;
-      fallback.hidden = false;
+function renderShop() {
+  const fragment = document.createDocumentFragment();
 
-      console.error(
-        `Image failed for ${item.name}:`,
-        image.currentSrc || image.src
-      );
-    });
+  items.forEach((item, index) => {
+    const card = document.createElement("article");
+    card.className = "item";
 
-    retry.addEventListener("click", () => {
-      fallback.hidden = true;
-      image.hidden = false;
-      image.src = createItemImage(item) + "&retry=" + Date.now();
-    });
+    const imageSection = createImageSection(item);
 
-    image.src = createItemImage(item);
-    wrapper.append(image, fallback);
+    const content = document.createElement("div");
+    content.className = "item-content";
 
-    return wrapper;
-  }
+    const heading = document.createElement("h2");
+    heading.textContent = item.name;
 
-  function renderShop() {
-    const fragment = document.createDocumentFragment();
+    const price = document.createElement("div");
+    price.className = "price";
+    price.textContent = formatMoney(item.price);
 
-    items.forEach((item, index) => {
-      const card = document.createElement("article");
-      card.className = "item";
+    const owned = document.createElement("p");
+    owned.className = "owned";
 
-      const imageSection = createImageSection(item);
+    const controls = document.createElement("div");
+    controls.className = "controls";
 
-      const content = document.createElement("div");
-      content.className = "item-content";
+    const sell = document.createElement("button");
+    sell.type = "button";
+    sell.className = "sell";
+    sell.textContent = "Sell";
+    sell.setAttribute("aria-label", `Sell ${item.name}`);
+    sell.addEventListener("click", () => sellItem(index));
 
-      const heading = document.createElement("h2");
-      heading.textContent = item.name;
+    const buy = document.createElement("button");
+    buy.type = "button";
+    buy.className = "buy";
+    buy.textContent = "Buy";
+    buy.setAttribute("aria-label", `Buy ${item.name}`);
+    buy.addEventListener("click", () => buyItem(index));
 
-      const price = document.createElement("div");
-      price.className = "price";
-      price.textContent = formatMoney(item.price);
+    controls.append(sell, buy);
+    content.append(heading, price, owned, controls);
+    card.append(imageSection, content);
+    fragment.appendChild(card);
 
-      const owned = document.createElement("p");
-      owned.className = "owned";
+    cardViews.push({ owned, buy, sell });
+  });
 
-      const controls = document.createElement("div");
-      controls.className = "controls";
+  shop.appendChild(fragment);
+  updateDisplay();
+}
 
-      const sell = document.createElement("button");
-      sell.type = "button";
-      sell.className = "sell";
-      sell.textContent = "Sell";
-      sell.setAttribute("aria-label", `Sell ${item.name}`);
-      sell.addEventListener("click", () => sellItem(index));
-
-      const buy = document.createElement("button");
-      buy.type = "button";
-      buy.className = "buy";
-      buy.textContent = "Buy";
-      buy.setAttribute("aria-label", `Buy ${item.name}`);
-      buy.addEventListener("click", () => buyItem(index));
-
-      controls.append(sell, buy);
-      content.append(heading, price, owned, controls);
-      card.append(imageSection, content);
-      fragment.appendChild(card);
-
-      cardViews.push({ owned, buy, sell });
-    });
-
-    shop.appendChild(fragment);
-    updateDisplay();
-  }
-
-  renderShop();
+renderShop();
 </script>
 
 </body>
