@@ -62,7 +62,6 @@
   }
 
   .image-wrapper {
-    position: relative;
     height: 180px;
     overflow: hidden;
     background: #e8edf2;
@@ -76,7 +75,7 @@
   }
 
   .image-fallback {
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     height: 100%;
@@ -84,6 +83,10 @@
     color: #596575;
     font-size: 15px;
     background: #e8edf2;
+  }
+
+  [hidden] {
+    display: none !important;
   }
 
   .item-content {
@@ -200,321 +203,158 @@
   const startingBalance = 570_000_000_000_000;
   let balance = startingBalance;
 
+  // Direct photo IDs instead of a keyword-search image service.
+  const photoIds = {
+    coffee: "1509042239860-f550ce710b93",
+    burger: "1568901346375-23c9450c58cd",
+    cinema: "1489599849927-2ee91cede3ba",
+    pizza: "1513104890138-7c749659a591",
+    groceries: "1542838132-92c53300491e",
+    gas: "1545459720-aac8509eb02d",
+    sneakers: "1542291026-7eec264c27ff",
+    jeans: "1542272604-787c3835535d",
+    headphones: "1505740420928-5e560c06d30e",
+    watch: "1523275335684-37898b6baf30",
+    smartphone: "1511707171634-5f897ff02aa9",
+    laptop: "1496181133206-80ce9b88a853",
+    gaming: "1486401899868-0e435ed85128",
+    television: "1593359677879-a4bb92f829d1",
+    bicycle: "1485965120184-e220f721d03e",
+    gym: "1534438327276-14e5300c3a48",
+    beach: "1507525428034-b723cf961d3e",
+    house: "1600596542815-ffad4c1539a9",
+    furniture: "1555041469-a586c61ea9bc",
+    car: "1492144534655-ae79c964c9d7",
+    wedding: "1519741497674-611481863552",
+    university: "1523050854058-8df90110c9f1",
+    tesla: "1560958089-b8a1929cea89",
+    yacht: "1567899378494-47b22a2ae96a",
+    airplane: "1436491865332-7a61a109cc05",
+    skyscraper: "1486406146926-c627a92ad1ab",
+    basketball: "1546519638-68e109498ffc",
+    moon: "1446776811953-b23d57bd21aa",
+    space: "1451187580459-43490279c0fa",
+    icecream: "1563805042-7684c019e1cb",
+    donut: "1551024601-bec78aea704b",
+    sushi: "1579871494447-9811cf80d66c",
+    cake: "1578985545062-69928b1d9587",
+    books: "1507842217343-583bb7270b66",
+    boardgame: "1610890716171-6b1bb98ffd09",
+    teddy: "1556012018-50c5c0da73bf",
+    skateboard: "1520045892732-304bc3ac5d8e",
+    guitar: "1510915361894-db8b60106cb1",
+    piano: "1520523839897-bd0b52f945a0",
+    camera: "1516035069371-29a1b244cc32",
+    drone: "1473968512647-3e447244af8f",
+    vr: "1622979135225-d2ba269cf1ac",
+    computer: "1587202372634-32705e3bf49c",
+    pool: "1576013551627-0cc20b96c2a7",
+    motorcycle: "1558981806-ec527fa84c39",
+    ring: "1605100804763-247f67b3557e",
+    island: "1500375592092-40eb2168fd21",
+    castle: "1514539079130-25950c84af65",
+    hotel: "1566073771259-6a8506099945",
+    themepark: "1513889961551-628c1e5e2ee9",
+    ship: "1548574505-5e239809ee19",
+    stadium: "1522778119026-d647f0596c20",
+    city: "1477959858617-67f85cf4f1df"
+  };
+
   const items = [
     // Original common items: 25
-    {
-      name: "Cup of Coffee",
-      price: 4,
-      photo: "coffee"
-    },
-    {
-      name: "Big Mac",
-      price: 5,
-      photo: "burger"
-    },
-    {
-      name: "Movie Ticket",
-      price: 15,
-      photo: "cinema"
-    },
-    {
-      name: "Pizza",
-      price: 20,
-      photo: "pizza"
-    },
-    {
-      name: "Groceries (1 week)",
-      price: 120,
-      photo: "groceries"
-    },
-    {
-      name: "Gas Tank Fill-Up",
-      price: 60,
-      photo: "gas-station"
-    },
-    {
-      name: "Sneakers",
-      price: 100,
-      photo: "sneakers"
-    },
-    {
-      name: "Jeans",
-      price: 80,
-      photo: "jeans"
-    },
-    {
-      name: "Headphones",
-      price: 150,
-      photo: "headphones"
-    },
-    {
-      name: "Smartwatch",
-      price: 300,
-      photo: "smartwatch"
-    },
-    {
-      name: "Smartphone",
-      price: 1_000,
-      photo: "smartphone"
-    },
-    {
-      name: "Laptop",
-      price: 2_000,
-      photo: "laptop"
-    },
-    {
-      name: "Gaming Console",
-      price: 500,
-      photo: "game-console"
-    },
-    {
-      name: "4K TV",
-      price: 1_200,
-      photo: "television"
-    },
-    {
-      name: "Bicycle",
-      price: 800,
-      photo: "bicycle"
-    },
-    {
-      name: "Gym Membership (1 year)",
-      price: 600,
-      photo: "gym"
-    },
+    { name: "Cup of Coffee", price: 4, photo: "coffee" },
+    { name: "Big Mac", price: 5, photo: "burger" },
+    { name: "Movie Ticket", price: 15, photo: "cinema" },
+    { name: "Pizza", price: 20, photo: "pizza" },
+    { name: "Groceries (1 week)", price: 120, photo: "groceries" },
+    { name: "Gas Tank Fill-Up", price: 60, photo: "gas" },
+    { name: "Sneakers", price: 100, photo: "sneakers" },
+    { name: "Jeans", price: 80, photo: "jeans" },
+    { name: "Headphones", price: 150, photo: "headphones" },
+    { name: "Smartwatch", price: 300, photo: "watch" },
+    { name: "Smartphone", price: 1_000, photo: "smartphone" },
+    { name: "Laptop", price: 2_000, photo: "laptop" },
+    { name: "Gaming Console", price: 500, photo: "gaming" },
+    { name: "4K TV", price: 1_200, photo: "television" },
+    { name: "Bicycle", price: 800, photo: "bicycle" },
+    { name: "Gym Membership (1 year)", price: 600, photo: "gym" },
     {
       name: "Netflix Subscription (1 year)",
       price: 180,
-      photo: "movie"
+      photo: "cinema"
     },
-    {
-      name: "Vacation Trip",
-      price: 3_500,
-      photo: "beach-vacation"
-    },
-    {
-      name: "Rent (1 month)",
-      price: 1_800,
-      photo: "apartment"
-    },
-    {
-      name: "Furniture Set",
-      price: 5_000,
-      photo: "living-room"
-    },
-    {
-      name: "Used Car",
-      price: 15_000,
-      photo: "used-car"
-    },
-    {
-      name: "New Car",
-      price: 35_000,
-      photo: "car"
-    },
-    {
-      name: "Wedding",
-      price: 30_000,
-      photo: "wedding"
-    },
+    { name: "Vacation Trip", price: 3_500, photo: "beach" },
+    { name: "Rent (1 month)", price: 1_800, photo: "house" },
+    { name: "Furniture Set", price: 5_000, photo: "furniture" },
+    { name: "Used Car", price: 15_000, photo: "car" },
+    { name: "New Car", price: 35_000, photo: "car" },
+    { name: "Wedding", price: 30_000, photo: "wedding" },
     {
       name: "College Tuition (1 year)",
       price: 25_000,
       photo: "university"
     },
-    {
-      name: "Home Down Payment",
-      price: 60_000,
-      photo: "house"
-    },
+    { name: "Home Down Payment", price: 60_000, photo: "house" },
 
     // Original big items: 7
-    {
-      name: "Tesla Model 3",
-      price: 40_000,
-      photo: "tesla"
-    },
-    {
-      name: "Luxury Yacht",
-      price: 150_000_000,
-      photo: "yacht"
-    },
-    {
-      name: "Private Jet",
-      price: 75_000_000,
-      photo: "private-jet"
-    },
+    { name: "Tesla Model 3", price: 40_000, photo: "tesla" },
+    { name: "Luxury Yacht", price: 150_000_000, photo: "yacht" },
+    { name: "Private Jet", price: 75_000_000, photo: "airplane" },
     {
       name: "Skyscraper",
       price: 1_200_000_000,
       photo: "skyscraper"
     },
-    {
-      name: "NBA Team",
-      price: 2_500_000_000,
-      photo: "basketball"
-    },
-    {
-      name: "Moon Base",
-      price: 50_000_000_000,
-      photo: "moon"
-    },
-    {
-      name: "Mars Colony",
-      price: 120_000_000_000,
-      photo: "mars"
-    },
+    { name: "NBA Team", price: 2_500_000_000, photo: "basketball" },
+    { name: "Moon Base", price: 50_000_000_000, photo: "moon" },
+    { name: "Mars Colony", price: 120_000_000_000, photo: "space" },
 
-    // 30 new items
-    {
-      name: "Ice Cream Cone",
-      price: 3,
-      photo: "ice-cream"
-    },
-    {
-      name: "Donut",
-      price: 2,
-      photo: "donut"
-    },
-    {
-      name: "Sushi Dinner",
-      price: 50,
-      photo: "sushi"
-    },
-    {
-      name: "Birthday Cake",
-      price: 40,
-      photo: "birthday-cake"
-    },
-    {
-      name: "Book",
-      price: 18,
-      photo: "books"
-    },
-    {
-      name: "Board Game",
-      price: 35,
-      photo: "board-game"
-    },
-    {
-      name: "Teddy Bear",
-      price: 25,
-      photo: "teddy-bear"
-    },
-    {
-      name: "Skateboard",
-      price: 120,
-      photo: "skateboard"
-    },
-    {
-      name: "Acoustic Guitar",
-      price: 400,
-      photo: "acoustic-guitar"
-    },
-    {
-      name: "Digital Piano",
-      price: 1_500,
-      photo: "digital-piano"
-    },
-    {
-      name: "Camera",
-      price: 2_500,
-      photo: "camera"
-    },
-    {
-      name: "Drone",
-      price: 1_000,
-      photo: "drone"
-    },
-    {
-      name: "VR Headset",
-      price: 500,
-      photo: "virtual-reality"
-    },
-    {
-      name: "Gaming PC",
-      price: 3_000,
-      photo: "gaming-computer"
-    },
-    {
-      name: "Hot Tub",
-      price: 8_000,
-      photo: "hot-tub"
-    },
-    {
-      name: "Motorcycle",
-      price: 18_000,
-      photo: "motorcycle"
-    },
-    {
-      name: "Grand Piano",
-      price: 80_000,
-      photo: "grand-piano"
-    },
-    {
-      name: "Diamond Ring",
-      price: 25_000,
-      photo: "diamond-ring"
-    },
-    {
-      name: "Sports Car",
-      price: 250_000,
-      photo: "sports-car"
-    },
-    {
-      name: "Luxury RV",
-      price: 300_000,
-      photo: "motorhome"
-    },
-    {
-      name: "Beach House",
-      price: 2_000_000,
-      photo: "beach-house"
-    },
-    {
-      name: "Mansion",
-      price: 20_000_000,
-      photo: "mansion"
-    },
-    {
-      name: "Private Island",
-      price: 80_000_000,
-      photo: "tropical-island"
-    },
-    {
-      name: "Castle",
-      price: 100_000_000,
-      photo: "castle"
-    },
-    {
-      name: "Luxury Hotel",
-      price: 500_000_000,
-      photo: "luxury-hotel"
-    },
+    // 30 additional items
+    { name: "Ice Cream Cone", price: 3, photo: "icecream" },
+    { name: "Donut", price: 2, photo: "donut" },
+    { name: "Sushi Dinner", price: 50, photo: "sushi" },
+    { name: "Birthday Cake", price: 40, photo: "cake" },
+    { name: "Book", price: 18, photo: "books" },
+    { name: "Board Game", price: 35, photo: "boardgame" },
+    { name: "Teddy Bear", price: 25, photo: "teddy" },
+    { name: "Skateboard", price: 120, photo: "skateboard" },
+    { name: "Acoustic Guitar", price: 400, photo: "guitar" },
+    { name: "Digital Piano", price: 1_500, photo: "piano" },
+    { name: "Camera", price: 2_500, photo: "camera" },
+    { name: "Drone", price: 1_000, photo: "drone" },
+    { name: "VR Headset", price: 500, photo: "vr" },
+    { name: "Gaming PC", price: 3_000, photo: "computer" },
+    { name: "Hot Tub", price: 8_000, photo: "pool" },
+    { name: "Motorcycle", price: 18_000, photo: "motorcycle" },
+    { name: "Grand Piano", price: 80_000, photo: "piano" },
+    { name: "Diamond Ring", price: 25_000, photo: "ring" },
+    { name: "Sports Car", price: 250_000, photo: "car" },
+    { name: "Luxury RV", price: 300_000, photo: "car" },
+    { name: "Beach House", price: 2_000_000, photo: "house" },
+    { name: "Mansion", price: 20_000_000, photo: "house" },
+    { name: "Private Island", price: 80_000_000, photo: "island" },
+    { name: "Castle", price: 100_000_000, photo: "castle" },
+    { name: "Luxury Hotel", price: 500_000_000, photo: "hotel" },
     {
       name: "Theme Park",
       price: 1_000_000_000,
-      photo: "roller-coaster"
+      photo: "themepark"
     },
-    {
-      name: "Cruise Ship",
-      price: 1_500_000_000,
-      photo: "cruise-ship"
-    },
+    { name: "Cruise Ship", price: 1_500_000_000, photo: "ship" },
     {
       name: "Football Stadium",
       price: 2_000_000_000,
-      photo: "football-stadium"
+      photo: "stadium"
     },
     {
       name: "Space Station",
       price: 150_000_000_000,
-      photo: "space-station"
+      photo: "space"
     },
     {
       name: "Futuristic City",
       price: 1_000_000_000_000,
-      photo: "city-skyline"
+      photo: "city"
     }
   ].map(item => ({
     ...item,
@@ -523,6 +363,7 @@
 
   const shop = document.getElementById("shop");
   const moneyDisplay = document.getElementById("money");
+  const cardViews = [];
 
   const moneyFormatter = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -531,18 +372,17 @@
   });
 
   const countFormatter = new Intl.NumberFormat("en-US");
-  const cardViews = [];
 
   function formatMoney(value) {
     return moneyFormatter.format(value);
   }
 
-  function createItemImage(item, index) {
+  function createItemImage(item) {
+    const photoId = photoIds[item.photo];
+
     return (
-      "https://loremflickr.com/640/400/" +
-      encodeURIComponent(item.photo) +
-      "?lock=" +
-      (index + 1)
+      `https://images.unsplash.com/photo-${photoId}` +
+      "?auto=format&fit=crop&w=640&q=80"
     );
   }
 
@@ -563,9 +403,7 @@
   function buyItem(index) {
     const item = items[index];
 
-    if (balance < item.price) {
-      return;
-    }
+    if (balance < item.price) return;
 
     balance -= item.price;
     item.count += 1;
@@ -576,9 +414,7 @@
   function sellItem(index) {
     const item = items[index];
 
-    if (item.count === 0) {
-      return;
-    }
+    if (item.count === 0) return;
 
     balance += item.price;
     item.count -= 1;
@@ -599,10 +435,11 @@
       const fallback = document.createElement("div");
       fallback.className = "image-fallback";
       fallback.textContent = `Photo unavailable: ${item.name}`;
+      fallback.hidden = true;
 
       const image = document.createElement("img");
       image.className = "item-image";
-      image.alt = `Photo representing ${item.name}`;
+      image.alt = `Representative photo for ${item.name}`;
       image.width = 640;
       image.height = 400;
       image.loading = "lazy";
@@ -611,11 +448,10 @@
 
       image.addEventListener("error", () => {
         image.hidden = true;
-        image.style.display = "none";
-        fallback.style.display = "flex";
+        fallback.hidden = false;
       }, { once: true });
 
-      image.src = createItemImage(item, index);
+      image.src = createItemImage(item);
 
       imageWrapper.append(image, fallback);
 
@@ -654,11 +490,7 @@
       card.append(imageWrapper, content);
       fragment.appendChild(card);
 
-      cardViews.push({
-        owned,
-        buy,
-        sell
-      });
+      cardViews.push({ owned, buy, sell });
     });
 
     shop.appendChild(fragment);
