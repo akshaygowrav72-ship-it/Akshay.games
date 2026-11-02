@@ -85,7 +85,7 @@ button{font-family:inherit;color:var(--txt)}
     <div class="cdesc" id="cdesc"></div>
     <div id="mount"></div>
     <div class="lockbar">
-      <button id="lock" disabled>LOCK IT IN</button>
+      <button id="lock" disabled>LOCK IT IN (ENTER)</button>
     </div>
   </div>
 </div>
@@ -141,14 +141,16 @@ function complete(){
   overlay('VOLUME SET: '+S.target+'%',pick(SNARK),'NEXT CONTROL',()=>{hideOverlay();S.playing=true;nextRound()});
 }
 E.lock.onclick=()=>{if(inRange())complete()};
+window.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.repeat&&!typing()&&inRange()){e.preventDefault();complete()}});
 overlay('WORST VOLUME CONTROL',CH_INTRO(),'START',start);
 function CH_INTRO(){return 'A set of truly terrible volume controls.\nSet the volume. Lock it in. Survive.'}
 
 let last=performance.now();
 (function frame(t){
+  requestAnimationFrame(frame);
   const dt=Math.min(.05,(t-last)/1000);last=t;
   if(S.playing){
-    if(cur&&cur.tick)cur.tick(dt);
+    try{if(cur&&cur.tick)cur.tick(dt)}catch(err){console.error(err)}
     const ok=inRange();E.lock.disabled=!ok;E.lock.classList.toggle('ready',ok);
     E.time.textContent=fmt(performance.now()-S.t0);
   }
@@ -156,7 +158,6 @@ let last=performance.now();
   E.now.textContent=shown+'%';E.fill.style.width=S.volume+'%';
   E.mark.style.left='calc('+S.target+'% - 1px)';
   E.fill.classList.toggle('ok',inRange());
-  requestAnimationFrame(frame);
 })(last);
 
 /* Shared helper: drag a knob along a track, returns 0..1 */
@@ -183,7 +184,7 @@ const CH=[
 {cat:'PHYSICS',tol:1,name:'The Slanted Slider',desc:'A slider on a slope. Let go and gravity drags it back to 0%. Hold on tight.',
  mount(root,api){
   const tr=mk('div','track tilt',root),kn=mk('div','knob',tr);
-  mk('div','mid',root,'Drag the knob. Physics handles the rest.');
+  mk('div','mid',root,'Hold the knob on target, then press ENTER to lock (you cannot click while holding).');
   let x=0,v=0,held=false;
   const offs=dragKnob(tr,kn,f=>{held=true;x=f;v=0;api.set(f*100)},()=>{held=false},-9*Math.PI/180);
   return{tick(dt){if(!held){v+=.9*dt;v*=Math.pow(.55,dt);x=clamp(x-v*dt,0,1);if(x<=0)v=0;api.set(x*100)}
@@ -195,7 +196,7 @@ const CH=[
   const bar=mk('div','track',w);bar.style.cssText+='height:26px;margin:20px auto';
   const fill=mk('div',null,bar);fill.style.cssText='height:100%;background:var(--good);border-radius:25px;width:0';
   const b=mk('button','btn',w,'PUMP (+0.8%)');
-  const stroke=()=>api.set(S.volume+.8);
+  const stroke=()=>{if(S.playing)api.set(S.volume+.8)};
   const offs=[listen(b,'pointerdown',e=>{e.preventDefault();stroke()}),
     listen(window,'keydown',e=>{if(e.code==='Space'&&!e.repeat&&!typing()){e.preventDefault();stroke()}})];
   return{tick(dt){api.set(Math.max(0,S.volume-(1.1+S.volume*.02)*dt));fill.style.width=S.volume+'%'},cleanup(){offs.forEach(f=>f())}};
@@ -297,7 +298,7 @@ const CH=[
     dice.forEach((d,i)=>{if(!holds[i].checked)d.textContent=rand(1,6)});if(++n>9){clearInterval(iv);upd()}},70)};
   upd();return{cleanup(){clearInterval(iv)}};
  }},
-{cat:'PHYSICS',tol:1,name:'The Shaking Bar',desc:'The higher you push the knob, the more violently it vibrates. Above 70% it also slips from sweaty fingers.',
+{cat:'PHYSICS',tol:1,name:'The Shaking Bar',desc:'The higher you push the knob, the more violently it vibrates. Above 70% it also slips from sweaty fingers. Hold it and press ENTER to lock.',
  mount(root,api){
   const tr=mk('div','track',root),kn=mk('div','knob',tr);let vol=0,held=false,t=0,slip=0;
   const offs=dragKnob(tr,kn,f=>{held=true;vol=f*100;api.set(vol)},()=>{held=false});
@@ -306,32 +307,39 @@ const CH=[
    if(vol>70&&!held&&slip>1.4){slip=0;vol=Math.max(0,vol-12);api.set(vol);api.toast('The knob slipped. Sweaty fingers.')}},
    cleanup(){offs.forEach(f=>f())}};
  }},
-{cat:'PHYSICS',tol:2,name:'The Slingshot',desc:'Pull the ball back and release. Volume is the horizontal distance it travels. Yes, ballistics.',
+{cat:'PHYSICS',tol:3,name:'The Slingshot',desc:'Pull the ball back and release. Volume is the horizontal distance it travels. Yes, ballistics.',
  mount(root,api){const cv=mkcv(root,640,340),c=cv.getContext('2d'),k=K();
   const AX=110,AY=240,G=900,GR=300,MAXD=470;let drag=null,ball=null,trail=[],vol=0;
   const offs=[
    listen(cv,'pointerdown',e=>{const p=P(cv,e);if(!ball&&Math.hypot(p.x-AX,p.y-AY)<60){drag={x:p.x,y:p.y};trail=[];cv.setPointerCapture(e.pointerId)}}),
    listen(cv,'pointermove',e=>{if(!drag)return;const p=P(cv,e),s=Math.min(1,120/Math.max(1,Math.hypot(p.x-AX,p.y-AY)));drag={x:AX+(p.x-AX)*s,y:AY+(p.y-AY)*s}}),
-   listen(cv,'pointerup',()=>{if(!drag)return;const b={x:drag.x,y:drag.y,vx:clamp((AX-drag.x)*5,-900,900),vy:clamp((AY-drag.y)*5,-900,900)};drag=null;if(Math.hypot(b.vx,b.vy)>=40)ball=b})];
+   listen(cv,'pointerup',()=>{if(!drag)return;const b={x:drag.x,y:drag.y,vx:clamp((AX-drag.x)*5.5,-900,900),vy:clamp((AY-drag.y)*5.5,-900,900)};drag=null;if(Math.hypot(b.vx,b.vy)>=40)ball=b})];
   return{tick(dt){
    if(ball){ball.vy+=G*dt;ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;trail.push([ball.x,ball.y]);if(trail.length>90)trail.shift();
     if(ball.y>=GR){vol=clamp((ball.x-AX)/MAXD*100,0,100);api.set(vol);ball=null}}
    const b=ball||drag||{x:AX,y:AY};c.clearRect(0,0,640,340);
    c.fillStyle=k.line;c.fillRect(0,GR+10,640,40);
-   c.strokeStyle=k.dim;c.lineWidth=4;c.beginPath();c.moveTo(AX-8,AY-10);c.lineTo(b.x,b.y);c.lineTo(AX+8,AY-10);c.stroke();
+   c.lineCap='round';c.lineJoin='round';
+   /* handle + fork */
+   c.strokeStyle='#8a5a2b';c.lineWidth=12;
+   c.beginPath();c.moveTo(AX,GR+10);c.lineTo(AX,AY+34);c.stroke();
+   c.beginPath();c.moveTo(AX,AY+34);c.lineTo(AX-24,AY-26);c.moveTo(AX,AY+34);c.lineTo(AX+24,AY-26);c.stroke();
+   /* elastic bands to the ball */
+   c.strokeStyle=k.bad;c.lineWidth=4;
+   c.beginPath();c.moveTo(AX-24,AY-26);c.lineTo(b.x,b.y);c.lineTo(AX+24,AY-26);c.stroke();
    c.fillStyle=k.dim;trail.forEach(q=>{c.fillRect(q[0],q[1],3,3)});
    c.fillStyle=k.acc;c.beginPath();c.arc(b.x,b.y,13,0,7);c.fill();
    T(c,vol?'distance: '+vol.toFixed(1)+'%':'drag the ball back and release',20,28,k.txt)},
    cleanup(){offs.forEach(f=>f())}};
  }},
-{cat:'PHYSICS',tol:2,name:'The Catapult',desc:'Hold LAUNCH to charge. It overcharges and drops back to zero, because of course it does. Release to fling.',
+{cat:'PHYSICS',tol:3,name:'The Catapult',desc:'Hold LAUNCH to charge. It overcharges and drops back to zero, because of course it does. Release to fling.',
  mount(root,api){const cv=mkcv(root,640,340),c=cv.getContext('2d'),k=K();
   const BX=100,G=900,GR=300,MAXD=470;let ch=false,pw=0,up=true,pr=null,vol=0;
   const b=mk('button','btn',mk('div','row',root),'HOLD TO CHARGE \u2014 RELEASE TO LAUNCH');
   const offs=[listen(b,'pointerdown',e=>{e.preventDefault();ch=true;pw=0;up=true;pr=null}),
    listen(window,'pointerup',()=>{if(!ch)return;ch=false;const s=pw*560;pr={x:BX+30,y:GR-110,vx:Math.cos(-Math.PI/4)*s,vy:Math.sin(-Math.PI/4)*s}})];
   return{tick(dt){
-   if(ch){pw+=(up?.55:-.55)*dt;if(pw>=1){pw=1;up=false}if(pw<=0){pw=0;up=true}}
+   if(ch){pw+=(up?.4:-.4)*dt;if(pw>=1){pw=1;up=false}if(pw<=0){pw=0;up=true}}
    if(pr){pr.vy+=G*dt;pr.x+=pr.vx*dt;pr.y+=pr.vy*dt;if(pr.y>=GR){vol=clamp((pr.x-BX)/MAXD*100,0,100);api.set(vol);pr=null}}
    c.clearRect(0,0,640,340);c.fillStyle=k.line;c.fillRect(0,GR+10,640,40);
    const a=-Math.PI/4-pw*Math.PI/3.2;c.strokeStyle=k.dim;c.lineWidth=7;c.lineCap='round';
@@ -368,7 +376,7 @@ const CH=[
    listen(fr,'pointerdown',e=>{e.preventDefault();drag=true;sx=e.clientX;st=tilt;fr.setPointerCapture(e.pointerId)}),
    listen(fr,'pointermove',e=>{if(drag)tilt=clamp(st+(e.clientX-sx)*.006,-.5,.5)}),
    listen(fr,'pointerup',()=>{drag=false}),listen(fr,'pointercancel',()=>{drag=false})];
-  return{tick(dt){v+=1.2*Math.sin(tilt)*dt;v*=Math.pow(.35,dt);x+=v*dt;
+  return{tick(dt){if(!drag)tilt*=Math.pow(.6,dt);v+=1.2*Math.sin(tilt)*dt;v*=Math.pow(.35,dt);x+=v*dt;
    if(x<0){x=0;v*=-.4}if(x>1){x=1;v*=-.4}api.set(x*100);ball.style.left=x*100+'%';fr.style.transform='rotate('+(tilt*.3)+'rad)'},
    cleanup(){offs.forEach(f=>f())}};
  }},
@@ -411,25 +419,28 @@ const CH=[
    c.fillStyle=k.txt;c.beginPath();c.arc(ball.x,ball.y,7,0,7);c.fill();
    T(c,'move the pointer over the court'+(last?'  \u2022  last hit: '+last:''),180,388,k.dim)},cleanup:off};
  }},
-{cat:'MINI-GAME',tol:2,name:'The Curling Slider',desc:'Hurl the stone. The closer it stops to the button, the higher the volume. It curls. Because curling.',
+{cat:'MINI-GAME',tol:4,name:'The Curling Slider',desc:'Hurl the stone. The closer it stops to the button, the higher the volume. It curls. Because curling.',
  mount(root,api){const cv=mkcv(root,640,420),c=cv.getContext('2d'),k=K();
-  const HX=520,HY=210,R=95,SX=90,SY=210;let st={x:SX,y:SY,vx:0,vy:0,mv:false},drag=null,vol=null;
+  const HX=520,HY=210,R=250,SX=90,SY=210,MAXP=110;let st={x:SX,y:SY,vx:0,vy:0,mv:false},drag=null,vol=null;
+  const lim=p=>{const dx=p.x-SX,dy=p.y-SY,d=Math.hypot(dx,dy),s=d>MAXP?MAXP/d:1;return{x:SX+dx*s,y:SY+dy*s}};
   const offs=[
-   listen(cv,'pointerdown',e=>{const p=P(cv,e);if(!st.mv&&Math.hypot(p.x-st.x,p.y-st.y)<50){drag=p;cv.setPointerCapture(e.pointerId)}}),
-   listen(cv,'pointermove',e=>{if(drag)drag=P(cv,e)}),
-   listen(cv,'pointerup',()=>{if(!drag)return;let vx=(SX-drag.x)*3,vy=(SY-drag.y)*3;const s=Math.hypot(vx,vy);if(s>620){vx*=620/s;vy*=620/s}
+   listen(cv,'pointerdown',e=>{const p=P(cv,e);if(!st.mv&&(Math.hypot(p.x-SX,p.y-SY)<60||Math.hypot(p.x-st.x,p.y-st.y)<50)){st={x:SX,y:SY,vx:0,vy:0,mv:false};vol=null;drag=lim(p);cv.setPointerCapture(e.pointerId)}}),
+   listen(cv,'pointermove',e=>{if(drag)drag=lim(P(cv,e))}),
+   listen(cv,'pointerup',()=>{if(!drag)return;let vx=(SX-drag.x)*4.5,vy=(SY-drag.y)*4.5;const s=Math.hypot(vx,vy);if(s>620){vx*=620/s;vy*=620/s}
     drag=null;if(s<20)return;st={x:SX,y:SY,vx,vy,mv:true};vol=null})];
   return{tick(dt){
-   if(st.mv){const s=Math.hypot(st.vx,st.vy);if(s>5){const cu=34*(1-s/620)*dt;st.vx+=-st.vy/s*cu;st.vy+=st.vx/s*cu}
+   if(st.mv){const s=Math.hypot(st.vx,st.vy);if(s>5){const cu=14*(1-s/620)*dt,ux=st.vx,uy=st.vy;st.vx+=-uy/s*cu;st.vy+=ux/s*cu}
     const f=Math.pow(.35,dt);st.vx*=f;st.vy*=f;st.x+=st.vx*dt;st.y+=st.vy*dt;
     if(st.x<24){st.x=24;st.vx=Math.abs(st.vx)*.5}if(st.x>616){st.x=616;st.vx=-Math.abs(st.vx)*.5}
     if(st.y<24){st.y=24;st.vy=Math.abs(st.vy)*.5}if(st.y>396){st.y=396;st.vy=-Math.abs(st.vy)*.5}
     if(Math.hypot(st.vx,st.vy)<6){st.mv=false;vol=clamp(100-Math.hypot(st.x-HX,st.y-HY)/R*100,0,100);api.set(vol)}}
    c.clearRect(0,0,640,420);[[95,'#cfd7f0'],[62,'#ffd166'],[30,'#ff5c7a']].forEach(q=>{c.fillStyle=q[1];c.beginPath();c.arc(HX,HY,q[0],0,7);c.fill()});
    c.fillStyle='#fff';c.beginPath();c.arc(HX,HY,8,0,7);c.fill();
+   c.strokeStyle=k.good;c.lineWidth=2;c.setLineDash([4,5]);c.beginPath();c.arc(HX,HY,(100-S.target)/100*R,0,7);c.stroke();c.setLineDash([]);
    if(drag){c.strokeStyle=k.dim;c.setLineDash([6,6]);c.beginPath();c.moveTo(SX,SY);c.lineTo(SX+(SX-drag.x),SY+(SY-drag.y));c.stroke();c.setLineDash([])}
-   c.fillStyle='#222';c.beginPath();c.arc(st.x,st.y,22,0,7);c.fill();c.fillStyle='#ffd166';c.beginPath();c.arc(st.x,st.y,10,0,7);c.fill();
-   T(c,vol!==null?'closeness to button: '+vol.toFixed(1)+'%':'drag the stone backwards and release (top-down)',20,30,k.txt)},
+   const sp=drag||st;
+   c.fillStyle='#222';c.beginPath();c.arc(sp.x,sp.y,22,0,7);c.fill();c.fillStyle='#ffd166';c.beginPath();c.arc(sp.x,sp.y,10,0,7);c.fill();
+   T(c,vol!==null?'closeness to button: '+vol.toFixed(1)+'%':'drag the stone back and release. Stop on the dashed green ring.',20,30,k.txt)},
    cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'MINI-GAME',tol:0,name:'The Seesaw / Balance',desc:'Place weights on the beam to build the volume. The beam must be perfectly balanced before you can lock in.',
@@ -440,7 +451,7 @@ const CH=[
   const offs=[listen(cv,'pointerdown',e=>{const p=P(cv,e);
    for(let i=0;i<shelf.length;i++)if(shelf[i]!==null&&Math.hypot(p.x-(30+i*44),p.y-290)<18){sel=sel===i?-1:i;return}
    const rx=p.x-PX,ry=p.y-PY,bx=rx*Math.cos(-ang)-ry*Math.sin(-ang),by=rx*Math.sin(-ang)+ry*Math.cos(-ang);
-   for(let s=-5;s<=5;s++)if(s&&Math.abs(bx-s*46)<20&&Math.abs(by)<120){
+   for(let s=-5;s<=5;s++)if(s&&Math.abs(bx-s*46)<20&&by>-130&&by<22){
     if(sel>=0){placed.push({w:shelf[sel],p:s});shelf[sel]=null;sel=-1}
     else{const i=placed.map(t=>t.p).lastIndexOf(s);if(i>=0){const t=placed.splice(i,1)[0];shelf[shelf.indexOf(null)]=t.w}}
     return}})];
@@ -456,7 +467,7 @@ const CH=[
    T(c,'volume: '+sum+'%   beam: '+(tq===0?'BALANCED':'TILTED'),20,24,k.txt);T(c,'pick a weight, then click a beam slot. click a slot to remove.',20,310,k.dim,'12px Georgia')},
    cleanup(){offs.forEach(f=>f())}};
  }},
-{cat:'MINI-GAME',tol:0,name:'The Snake Game',desc:'Play Snake. Every food is +5%. Hit a wall or yourself and the snake restarts (volume stays). Arrows, WASD or swipe.',
+{cat:'MINI-GAME',tol:0,name:'The Snake Game',desc:'Play Snake. Every food is +5%. Hit a wall or yourself and the snake restarts and the volume drops 10%. Arrows, WASD or swipe.',
  target(){return rand(1,20)*5},
  mount(root,api){const N=22,CS=20,cv=mkcv(root,N*CS,N*CS),c=cv.getContext('2d'),k=K();cv.style.maxWidth=N*CS+'px';
   const init=()=>[{x:5,y:11},{x:4,y:11},{x:3,y:11}];
@@ -470,7 +481,7 @@ const CH=[
     if(Math.abs(dx)>Math.abs(dy))turn(Math.sign(dx),0);else turn(0,Math.sign(dy))})];
   return{tick(dt){dead=Math.max(0,dead-dt);acc+=dt;
    while(acc>.13){acc-=.13;if(dead>0)continue;dir=nd;const h={x:sn[0].x+dir.x,y:sn[0].y+dir.y};
-    if(h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(q=>q.x===h.x&&q.y===h.y)){dead=1;sn=init();dir={x:1,y:0};nd=dir}
+    if(h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(q=>q.x===h.x&&q.y===h.y)){dead=1;sn=init();dir={x:1,y:0};nd=dir;api.set(S.volume-10);api.toast('Snake died. Volume -10%.')}
     else{sn.unshift(h);if(h.x===food.x&&h.y===food.y){api.set(S.volume+5);do{food={x:rand(0,N-1),y:rand(0,N-1)}}while(sn.some(q=>q.x===food.x&&q.y===food.y))}else sn.pop()}}
    c.clearRect(0,0,N*CS,N*CS);c.fillStyle=k.bad;c.beginPath();c.arc(food.x*CS+10,food.y*CS+10,7,0,7);c.fill();
    sn.forEach((q,i)=>{c.fillStyle=dead>0?k.dim:i?k.good:k.txt;c.fillRect(q.x*CS+1,q.y*CS+1,CS-2,CS-2)});
@@ -485,7 +496,7 @@ const CH=[
   const offs=[listen(window,'keydown',e=>{if(e.code==='Space'&&!typing()){e.preventDefault();space=true}}),listen(window,'keyup',e=>{if(e.code==='Space')space=false})];
   if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
    navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{if(!cur||!cur.__alive){s.getTracks().forEach(t=>t.stop());return}
-    stream=s;ac=new(window.AudioContext||window.webkitAudioContext)();an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(s).connect(an);
+    stream=s;ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.resume)ac.resume();an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(s).connect(an);
     data=new Uint8Array(an.frequencyBinCount);st.textContent='MIC LIVE \u2014 make noise.'}).catch(()=>{st.textContent='MIC DENIED \u2014 hold SPACE and scream at it.'});
   }else st.textContent='NO MIC \u2014 hold SPACE and scream at it.';
   const o={__alive:true,tick(dt){let loud=0;
