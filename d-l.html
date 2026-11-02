@@ -1,191 +1,550 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Draw Logos - One at a Time</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Worst Volume Control: The Game</title>
 <style>
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-    background: #f5f5f5;
-    text-align: center;
-  }
-
-  h1 {
-    margin-top: 20px;
-    font-size: 42px;
-  }
-
-  #logoName {
-    font-size: 32px;
-    font-weight: 600;
-    margin: 10px 0;
-  }
-
-  #timer {
-    font-size: 24px;
-    margin-bottom: 10px;
-  }
-
-  canvas {
-    background: #fff;
-    border: 3px solid #000;
-    border-radius: 12px;
-    cursor: crosshair;
-    display: block;
-    margin: 0 auto;
-  }
-
-  button, select {
-    margin: 10px 5px;
-    padding: 12px 20px;
-    font-size: 18px;
-    border-radius: 10px;
-    border: 2px solid #000;
-    background: #fff;
-    cursor: pointer;
-  }
-
-  button:hover, select:hover {
-    background: #eee;
-  }
-
-  #realLogo img {
-    max-width: 250px;
-    margin-top: 10px;
-  }
+:root{--bg:#fff;--card:#fff;--field:#f3f1ea;--line:#c9c9c9;--txt:#111;--dim:#666;--acc:#9a6b00;--accfg:#fff;--good:#177a4c;--bad:#c9203f;color-scheme:light;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12141c;--card:#1b1e2a;--field:#0d0f16;--line:#3a3f55;--txt:#f1f1f1;--dim:#9aa0b8;--acc:#ffd166;--accfg:#241c04;--good:#3ddc91;--bad:#ff5c7a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12141c;--card:#1b1e2a;--field:#0d0f16;--line:#3a3f55;--txt:#f1f1f1;--dim:#9aa0b8;--acc:#ffd166;--accfg:#241c04;--good:#3ddc91;--bad:#ff5c7a;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:Georgia,"Times New Roman",serif;min-height:100vh;-webkit-user-select:none;user-select:none}
+input{-webkit-user-select:text;user-select:text}
+#wrap{max-width:760px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:20px;letter-spacing:1px;margin:10px 2px 2px}h1 span{color:var(--acc)}
+.sub{color:var(--dim);font-size:13px;margin:0 2px 12px}
+#hud{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px;min-width:80px}
+.stat.grow{flex:1;min-width:220px}
+.label{display:block;font-size:10px;letter-spacing:1.5px;color:var(--dim)}
+.big{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+#volbar{position:relative;height:14px;background:var(--field);border:1px solid var(--line);border-radius:8px;margin:6px 0 4px;overflow:hidden}
+#volfill{height:100%;width:0;background:var(--acc);transition:background .15s}
+#volfill.ok{background:var(--good)}
+#volmark{position:absolute;top:0;bottom:0;width:3px;background:var(--txt)}
+#volnow{font-size:12px;color:var(--dim)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.cat{display:inline-block;font-size:10px;letter-spacing:1.5px;color:var(--acc);border:1px solid var(--acc);border-radius:6px;padding:2px 8px;margin-bottom:6px}
+.cname{font-size:20px;font-weight:700}.cdesc{color:var(--dim);font-size:14px;line-height:1.45;margin-top:2px}
+#mount{min-height:200px;margin-top:12px}
+canvas{display:block;width:100%;max-width:640px;margin:0 auto;border-radius:10px;background:var(--field);touch-action:none}
+.lockbar{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+button{font-family:inherit;color:var(--txt)}
+.btn{background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-size:14px;cursor:pointer}
+.btn:hover{border-color:var(--acc)}
+#lock{flex:1;min-width:160px;font-size:17px;font-weight:700;letter-spacing:1px;padding:14px;background:var(--field);color:var(--dim);border:1px solid var(--line);border-radius:12px;cursor:not-allowed}
+#lock.ready{background:var(--good);color:#fff;border-color:var(--good);cursor:pointer}
+#toasts{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:var(--card);color:var(--txt);border:1px solid var(--bad);padding:9px 16px;border-radius:10px;font-size:13px;max-width:80vw;text-align:center;animation:tout .4s ease 2.2s forwards}
+@keyframes tout{to{opacity:0;transform:translateY(-8px)}}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100}
+#ovbox{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px 36px;max-width:520px;text-align:center;margin:14px}
+#ovtitle{font-size:24px;font-weight:800;margin-bottom:10px}
+#ovsub{color:var(--dim);font-size:14px;line-height:1.55;margin-bottom:20px;white-space:pre-line}
+.bigbtn{background:var(--acc);color:var(--accfg);font-weight:800;font-size:16px;border:none;border-radius:12px;padding:13px 32px;cursor:pointer}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.mid{text-align:center;color:var(--dim);font-size:13px;margin-top:8px}
+.field{width:min(360px,90%);font-size:22px;text-align:center;font-family:ui-monospace,Consolas,monospace;background:var(--field);color:var(--txt);caret-color:var(--txt);border:2px solid var(--line);border-radius:10px;padding:10px;outline:none}
+.field:focus{border-color:var(--acc)}
+.field.err{border-color:var(--bad);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pi{text-align:center;padding:16px}.pi b{font:26px ui-monospace,monospace;color:var(--acc);margin-right:6px}
+.track{position:relative;height:50px;margin:46px auto;width:min(480px,92%);background:var(--field);border:2px solid var(--line);border-radius:25px;touch-action:none}
+.track.tilt{transform:rotate(-9deg)}
+.knob{position:absolute;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:var(--acc);cursor:grab;touch-action:none}
+#grid{height:280px;overflow-y:auto;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;grid-template-columns:repeat(auto-fill,30px);gap:3px}
+#grid button{height:24px;font-size:10px;padding:0;background:var(--card);border:1px solid var(--line);border-radius:4px;cursor:pointer}
+#grid button:hover{background:var(--acc);color:var(--accfg)}
+.bits{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:18px 0}
+.bit{text-align:center;font-size:12px;color:var(--dim)}
+.bitbox{width:56px;height:56px;margin-top:4px;font-size:26px;font-weight:800;border-radius:12px;background:var(--field);border:2px solid var(--line);cursor:pointer}
+.bitbox.on{background:var(--acc);color:var(--accfg);border-color:var(--acc)}
+.dice{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;padding:14px 0 6px}
+.die{width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;background:#f4f6ff;color:#1a1d33;border:1px solid var(--line);border-radius:12px}
+.dice label{display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--dim);cursor:pointer}
 </style>
 </head>
 <body>
-
-<h1>Draw a Logo</h1>
-<div id="logoName"></div>
-<div id="timer">Time: 30</div>
-
-<canvas id="canvas" width="500" height="400"></canvas><br>
-
-<label>Pen color: 
-  <select id="color">
-    <option value="#000000">Black</option>
-    <option value="#ff0000">Red</option>
-    <option value="#0000ff">Blue</option>
-    <option value="#00cc00">Green</option>
-    <option value="#ffa500">Orange</option>
-  </select>
-</label>
-
-<div>
-  <button onclick="clearCanvas()">Clear</button>
-  <button onclick="giveUp()">Give Up</button>
-  <button onclick="nextLogo()" id="nextBtn" style="display:none;">Next Logo</button>
+<div id="toasts" aria-live="polite"></div>
+<div id="wrap">
+  <h1>WORST VOLUME CONTROL <span>THE GAME</span></h1>
+  <p class="sub">Inspired by the r/ProgrammerHumor Worst Volume Control UI competition. Set the volume to the target. Good luck.</p>
+  <div id="hud">
+    <div class="stat"><span class="label">TARGET</span><span class="big" id="target">--%</span></div>
+    <div class="stat grow"><span class="label">YOUR VOLUME <span id="tolnote"></span></span>
+      <div id="volbar"><div id="volfill"></div><div id="volmark"></div></div><span id="volnow">0%</span></div>
+    <div class="stat"><span class="label">TAMED</span><span class="big" id="done">0</span></div>
+    <div class="stat"><span class="label">TIME</span><span class="big" id="time">0:00</span></div>
+  </div>
+  <div class="card">
+    <span class="cat" id="ccat"></span>
+    <div class="cname" id="cname"></div>
+    <div class="cdesc" id="cdesc"></div>
+    <div id="mount"></div>
+    <div class="lockbar">
+      <button id="lock" disabled>LOCK IT IN</button>
+    </div>
+  </div>
 </div>
-
-<div id="realLogo" style="display:none;">
-  <h2>Actual Logo</h2>
-  <img id="logoImage">
-</div>
+<div id="overlay"><div id="ovbox"><div id="ovtitle"></div><div id="ovsub"></div><button class="bigbtn" id="ovbtn">START</button></div></div>
 
 <script>
-const logos = [
-  { name: "Apple", img: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" },
-  { name: "Nike", img: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" },
-  { name: "McDonald's", img: "https://upload.wikimedia.org/wikipedia/commons/4/4b/McDonald%27s_logo.svg" },
-  { name: "Twitter (X)", img: "https://upload.wikimedia.org/wikipedia/commons/6/6f/Logo_of_Twitter.svg" },
-  { name: "Starbucks", img: "https://upload.wikimedia.org/wikipedia/sco/d/d3/Starbucks_Corporation_Logo_2011.svg" },
-  { name: "Google", img: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
-  { name: "YouTube", img: "https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg" },
-  { name: "Coca-Cola", img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Coca-Cola_logo.svg" },
-  { name: "Pepsi", img: "https://upload.wikimedia.org/wikipedia/commons/a/a2/Pepsi_logo_2014.svg" },
-  { name: "Adidas", img: "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg" },
-  { name: "Amazon", img: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" },
-  { name: "Facebook (Meta)", img: "https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" },
-  { name: "Microsoft", img: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" },
-  { name: "Intel", img: "https://upload.wikimedia.org/wikipedia/commons/c/c9/Intel_logo_%282020%29.svg" },
-  { name: "Tesla", img: "https://upload.wikimedia.org/wikipedia/commons/b/bd/Tesla_Motors.svg" },
-  { name: "Sony", img: "https://upload.wikimedia.org/wikipedia/commons/2/2e/Sony_Logo.svg" },
-  { name: "Disney", img: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Walt_Disney_Pictures_logo.svg" },
-  { name: "Burger King", img: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Burger_King_Logo.svg" },
-  { name: "Lego", img: "https://upload.wikimedia.org/wikipedia/commons/6/6b/LEGO_logo.svg" },
-  { name: "Instagram", img: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" },
-  { name: "Snapchat", img: "https://upload.wikimedia.org/wikipedia/en/thumb/c/c4/Snapchat_logo.svg/1200px-Snapchat_logo.svg.png" },
-  { name: "Netflix", img: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" },
-  { name: "Red Bull", img: "https://upload.wikimedia.org/wikipedia/commons/f/f8/Red_Bull_logo.svg" },
-  { name: "Visa", img: "https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.svg" }
-];
+'use strict';
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const mk=(tag,cls,parent,text)=>{const d=document.createElement(tag);if(cls)d.className=cls;if(text!=null)d.textContent=text;if(parent)parent.appendChild(d);return d};
+const listen=(el,ev,fn,o)=>{el.addEventListener(ev,fn,o);return()=>el.removeEventListener(ev,fn,o)};
+const typing=()=>/^(INPUT|TEXTAREA)$/.test(document.activeElement&&document.activeElement.tagName);
+const fmt=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 
-let currentLogo = 0;
-let time = 30;
-let timerInterval;
+const S={target:0,volume:0,tol:0,round:0,done:0,playing:false,t0:0,extraOK:true};
+const E={target:$('#target'),fill:$('#volfill'),mark:$('#volmark'),now:$('#volnow'),done:$('#done'),time:$('#time'),tol:$('#tolnote'),
+  mount:$('#mount'),lock:$('#lock'),cat:$('#ccat'),name:$('#cname'),desc:$('#cdesc'),
+  ov:$('#overlay'),ovt:$('#ovtitle'),ovs:$('#ovsub'),ovb:$('#ovbtn')};
+let cur=null,bag=[],audio=null;
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+function toast(m){const d=mk('div','toast',$('#toasts'),m);setTimeout(()=>d.remove(),2700)}
+function setVolume(v){S.volume=clamp(v,0,100)}
+const inRange=()=>S.playing&&S.extraOK&&Math.abs(Math.round(S.volume)-S.target)<=S.tol;
+function beep(f){try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();
+  o.type='triangle';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+.2)}catch(e){}}
 
-function startLogo(index) {
-  document.getElementById("logoName").textContent = logos[index].name;
-  document.getElementById("realLogo").style.display = "none";
-  document.getElementById("nextBtn").style.display = "none";
-  clearCanvas();
-  canvas.style.display = "block";
-  canvas.style.pointerEvents = "auto";
+const SNARK=['Settings saved. Somewhere, a UX designer is crying.','Incredible. You fought the interface and won.','The volume is set. Was it worth it?',
+ 'Certified. You may proceed to the next abomination.','Your perseverance has been noted and will be used against you.','Achievement unlocked: Temporarily Defeated Bad Design.'];
 
-  time = 30;
-  document.getElementById("timer").textContent = `Time: ${time}`;
-  timerInterval = setInterval(() => {
-    time--;
-    document.getElementById("timer").textContent = `Time: ${time}`;
-    if (time <= 0) showRealLogo();
-  }, 1000);
+function overlay(title,sub,btn,fn){E.ovt.textContent=title;E.ovs.textContent=sub;E.ovb.textContent=btn;E.ovb.onclick=fn;E.ov.hidden=false;E.ov.style.display='flex';E.ovb.focus()}
+function hideOverlay(){E.ov.style.display='none'}
+
+function nextRound(){
+  if(cur&&cur.cleanup)cur.cleanup();
+  cur=null;E.mount.replaceChildren();
+  if(!bag.length)bag=CH.slice().sort(()=>Math.random()-.5);
+  const ch=bag.pop();
+  S.round++;S.tol=ch.tol;S.extraOK=true;
+  S.target=ch.target?ch.target():rand(5,95);
+  setVolume(0);
+  E.target.textContent=S.target+'%';
+  E.tol.textContent=ch.tol?'(\u00b1'+ch.tol+')':'(exact)';
+  E.cat.textContent=ch.cat+' \u2022 ROUND '+S.round;
+  E.name.textContent=ch.name;E.desc.textContent=ch.desc;
+  E.done.textContent=S.done;
+  cur=ch.mount(E.mount,{set:setVolume,extra:ok=>{S.extraOK=ok},toast})||{};
 }
-
-function clearCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function start(){hideOverlay();S.playing=true;S.t0=performance.now();S.done=0;S.round=0;nextRound()}
+function complete(){
+  S.done++;S.playing=false;beep(220+S.target*8);
+  overlay('VOLUME SET: '+S.target+'%',pick(SNARK),'NEXT CONTROL',()=>{hideOverlay();S.playing=true;nextRound()});
 }
+E.lock.onclick=()=>{if(inRange())complete()};
+overlay('WORST VOLUME CONTROL',CH_INTRO(),'START',start);
+function CH_INTRO(){return 'A set of truly terrible volume controls.\nSet the volume. Lock it in. Survive.'}
 
-function showRealLogo() {
-  clearInterval(timerInterval);
-  document.getElementById("logoImage").src = logos[currentLogo].img;
-  document.getElementById("realLogo").style.display = "block";
-  document.getElementById("nextBtn").style.display = "inline-block";
-  canvas.style.pointerEvents = "none";
-}
-
-function giveUp() {
-  showRealLogo();
-}
-
-function nextLogo() {
-  currentLogo++;
-  if (currentLogo >= logos.length) {
-    alert("You finished all logos!");
-    currentLogo = 0; // restart
+let last=performance.now();
+(function frame(t){
+  const dt=Math.min(.05,(t-last)/1000);last=t;
+  if(S.playing){
+    if(cur&&cur.tick)cur.tick(dt);
+    const ok=inRange();E.lock.disabled=!ok;E.lock.classList.toggle('ready',ok);
+    E.time.textContent=fmt(performance.now()-S.t0);
   }
-  startLogo(currentLogo);
+  const shown=Math.round(S.volume);
+  E.now.textContent=shown+'%';E.fill.style.width=S.volume+'%';
+  E.mark.style.left='calc('+S.target+'% - 1px)';
+  E.fill.classList.toggle('ok',inRange());
+  requestAnimationFrame(frame);
+})(last);
+
+/* Shared helper: drag a knob along a track, returns 0..1 */
+function dragKnob(track,knob,onMove,onEnd,angle=0){
+  let held=false;
+  const frac=e=>{const r=track.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+    const dx=e.clientX-cx,dy=e.clientY-cy,u=dx*Math.cos(angle)+dy*Math.sin(angle);
+    return clamp(u/(track.offsetWidth)+.5,0,1)};
+  return[
+    listen(knob,'pointerdown',e=>{e.preventDefault();held=true;knob.setPointerCapture(e.pointerId);onMove(frac(e))}),
+    listen(knob,'pointermove',e=>{if(held)onMove(frac(e))}),
+    listen(knob,'pointerup',()=>{held=false;onEnd&&onEnd()}),
+    listen(knob,'pointercancel',()=>{held=false;onEnd&&onEnd()})];
 }
+const safeEval=s=>{let i=0;
+  const f=()=>{if(s[i]==='-'){i++;return -f()}
+    if(s[i]==='('){i++;const v=e();if(s[i++]!==')')throw 0;return v}
+    const m=/^\d+(\.\d+)?/.exec(s.slice(i));if(!m)throw 0;i+=m[0].length;return +m[0]};
+  const t=()=>{let v=f();while(s[i]==='*'||s[i]==='/'){const o=s[i++],r=f();v=o==='*'?v*r:v/r}return v};
+  const e=()=>{let v=t();while(s[i]==='+'||s[i]==='-'){const o=s[i++],r=t();v=o==='+'?v+r:v-r}return v};
+  const v=e();if(i<s.length)throw 0;return v};
 
-// Drawing
-let drawing = false;
-canvas.addEventListener("mousedown", () => drawing = true);
-canvas.addEventListener("mouseup", () => { drawing = false; ctx.beginPath(); });
-canvas.addEventListener("mouseleave", () => { drawing = false; ctx.beginPath(); });
-canvas.addEventListener("mousemove", e => {
-  if (!drawing) return;
-  const rect = canvas.getBoundingClientRect();
-  ctx.lineWidth = 4;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = document.getElementById("color").value;
-  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-});
-
-// Start first logo
-startLogo(currentLogo);
+const CH=[
+{cat:'PHYSICS',tol:1,name:'The Slanted Slider',desc:'A slider on a slope. Let go and gravity drags it back to 0%. Hold on tight.',
+ mount(root,api){
+  const tr=mk('div','track tilt',root),kn=mk('div','knob',tr);
+  mk('div','mid',root,'Drag the knob. Physics handles the rest.');
+  let x=0,v=0,held=false;
+  const offs=dragKnob(tr,kn,f=>{held=true;x=f;v=0;api.set(f*100)},()=>{held=false},-9*Math.PI/180);
+  return{tick(dt){if(!held){v+=.9*dt;v*=Math.pow(.55,dt);x=clamp(x-v*dt,0,1);if(x<=0)v=0;api.set(x*100)}
+    kn.style.left=x*100+'%'},cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'PHYSICS',tol:1,name:'The Bike Pump',desc:'Pump to build pressure. Stop and it deflates. Click the pump or press SPACE.',
+ mount(root,api){
+  const w=mk('div','mid',root);
+  const bar=mk('div','track',w);bar.style.cssText+='height:26px;margin:20px auto';
+  const fill=mk('div',null,bar);fill.style.cssText='height:100%;background:var(--good);border-radius:25px;width:0';
+  const b=mk('button','btn',w,'PUMP (+0.8%)');
+  const stroke=()=>api.set(S.volume+.8);
+  const offs=[listen(b,'pointerdown',e=>{e.preventDefault();stroke()}),
+    listen(window,'keydown',e=>{if(e.code==='Space'&&!e.repeat&&!typing()){e.preventDefault();stroke()}})];
+  return{tick(dt){api.set(Math.max(0,S.volume-(1.1+S.volume*.02)*dt));fill.style.width=S.volume+'%'},cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'DATA ENTRY',tol:0,name:'The Pi Requirement',desc:'Type the digits of Pi. Each correct digit is +1%. One typo resets everything.',
+ target(){return rand(5,30)},
+ mount(root,api){
+  const PI='14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196';
+  const w=mk('div','pi',root);mk('b',null,w,'3.');
+  const inp=mk('input','field',w);inp.inputMode='numeric';inp.autocomplete='off';inp.spellcheck=false;inp.placeholder='type decimals\u2026';inp.setAttribute('aria-label','Digits of pi');
+  mk('div','mid',w,'Correct digits = volume %.');
+  const off=listen(inp,'input',()=>{
+    const val=inp.value.replace(/\D/g,'');inp.value=val;
+    if(PI.startsWith(val))api.set(val.length);
+    else{api.set(0);inp.value='';inp.classList.remove('err');void inp.offsetWidth;inp.classList.add('err');api.toast('WRONG DIGIT. The audio is gone.')}});
+  setTimeout(()=>inp.focus(),50);
+  return{cleanup:off};
+ }},
+{cat:'DATA ENTRY',tol:0,name:'The Radio Button Grid',desc:'One thousand numbered buttons. Somewhere in here is your exact volume. No sort function.',
+ mount(root,api){
+  const g=mk('div',null,root);g.id='grid';
+  const labels=Array.from({length:1000},()=>rand(0,100));
+  for(let k=0;k<8;k++)labels[rand(0,999)]=S.target;
+  labels.forEach(n=>{const b=mk('button',null,g,n);b.onclick=()=>api.set(n)});
+  return{};
+ }},
+{cat:'DATA ENTRY',tol:0,name:'The Binary Selector',desc:'Seven bits: 64 32 16 8 4 2 1. Assemble the number yourself.',
+ mount(root,api){
+  const W=[64,32,16,8,4,2,1],bits=W.map(()=>false);
+  const wrap=mk('div','bits',root),out=mk('div','mid',root);
+  const render=()=>{
+    wrap.replaceChildren();let total=0;
+    W.forEach((w,i)=>{const c=mk('div','bit',wrap,w);const b=mk('button','bitbox'+(bits[i]?' on':''),c,bits[i]?'1':'0');
+      if(bits[i])total+=w;b.onclick=()=>{bits[i]=!bits[i];render()}});
+    out.textContent=bits.map(b=>+b).join('')+' = '+total+'%';api.set(total)};
+  render();return{};
+ }},
+{cat:'DATA ENTRY',tol:0,name:'The Calculation Slider',desc:'Type an expression that equals the target exactly. Plain numbers are rejected.',
+ target(){return rand(3,97)},
+ mount(root,api){
+  const w=mk('div','pi',root);
+  const inp=mk('input','field',w);inp.placeholder='e.g. (7*8)+1';inp.autocomplete='off';inp.spellcheck=false;inp.setAttribute('aria-label','Expression');
+  const res=mk('div','mid',w);
+  const go=()=>{
+    const s=inp.value.replace(/\s+/g,'');
+    if(!s)return res.textContent='Type some math.';
+    if(!/^[0-9+\-*/().]+$/.test(s))return res.textContent='Digits and + - * / ( ) only.';
+    if(!/[+\-*/]/.test(s.replace(/^-/,'')))return res.textContent='That is just a number. Make it earn the volume.';
+    try{const v=safeEval(s);
+      if(!Number.isFinite(v))return res.textContent='Not a number. A cry for help.';
+      if(!Number.isInteger(v))return res.textContent='Result '+v.toFixed(4)+' is not an integer.';
+      api.set(v);res.textContent='Result: '+v+'%'}catch(e){res.textContent='Syntax error.'}};
+  const b=mk('button','btn',mk('div','row',w),'EVALUATE');b.onclick=go;
+  const off=listen(inp,'keydown',e=>{if(e.key==='Enter')go()});
+  setTimeout(()=>inp.focus(),50);
+  return{cleanup:off};
+ }},
+{cat:'SURVIVAL',tol:1,name:'Beat a Dead Horse',desc:'Click the button. Each click nudges the volume up. Stop and it plummets.',
+ mount(root,api){
+  const w=mk('div','mid',root);
+  const b=mk('button','btn',w,'\u{1F40E} BEAT THE HORSE (+0.5%)');b.style.cssText+='font-size:20px;padding:22px 30px';
+  const st=mk('div','mid',w);let clicks=[];
+  const off=listen(b,'pointerdown',e=>{e.preventDefault();api.set(S.volume+.5);clicks.push(performance.now())});
+  return{tick(dt){api.set(Math.max(0,S.volume-(1.6+S.volume*.03)*dt));
+    const n=performance.now();clicks=clicks.filter(t=>n-t<1000);
+    st.textContent='click rate: '+clicks.length+'/sec \u2022 '+(clicks.length>=5?'the horse appreciates you':clicks.length>=2?'faster, the volume is fleeing':'the horse is disappointed')},cleanup:off};
+ }},
+{cat:'SURVIVAL',tol:0,name:'The Car Window Crank',desc:'One full revolution = 1% volume. Grab the handle and wind.',
+ target(){return rand(8,25)},
+ mount(root,api){
+  const cv=mk('canvas',null,root);cv.width=cv.height=320;cv.style.maxWidth='320px';
+  const c=cv.getContext('2d'),C=160,R=90;
+  let a=-Math.PI/2,la=null,rot=0;
+  const pos=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*320/r.width,y:(e.clientY-r.top)*320/r.height}};
+  const offs=[
+   listen(cv,'pointerdown',e=>{const p=pos(e);if(Math.hypot(p.x-C-Math.cos(a)*R,p.y-C-Math.sin(a)*R)<44){la=Math.atan2(p.y-C,p.x-C);cv.setPointerCapture(e.pointerId)}}),
+   listen(cv,'pointermove',e=>{if(la===null)return;const p=pos(e),n=Math.atan2(p.y-C,p.x-C);let d=n-la;
+     if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;rot+=d;a=n;la=n;api.set(Math.max(0,Math.floor(rot/(2*Math.PI))))}),
+   listen(cv,'pointerup',()=>{la=null}),listen(cv,'pointercancel',()=>{la=null})];
+  const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n);
+  return{tick(){c.clearRect(0,0,320,320);
+    c.fillStyle=col('--card');c.beginPath();c.arc(C,C,40,0,7);c.fill();
+    c.strokeStyle=col('--dim');c.lineWidth=10;c.lineCap='round';c.beginPath();c.moveTo(C,C);c.lineTo(C+Math.cos(a)*R,C+Math.sin(a)*R);c.stroke();
+    c.fillStyle=col('--acc');c.beginPath();c.arc(C+Math.cos(a)*R,C+Math.sin(a)*R,17,0,7);c.fill();
+    c.fillStyle=col('--txt');c.font='13px Georgia';c.textAlign='center';c.fillText(Math.max(0,Math.floor(rot/(2*Math.PI)))+' rev',C,C+4)},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'SURVIVAL',tol:0,name:'The Dice Hold',desc:'Roll five dice, hold the ones you want, re-roll the rest. Volume is the sum of held dice.',
+ target(){return rand(5,30)},
+ mount(root,api){
+  const row=mk('div','dice',root),dice=[],holds=[];
+  for(let i=0;i<5;i++){const d=mk('div',null,row),die=mk('div','die',d,rand(1,6)),l=mk('label',null,d),cb=mk('input',null,l);
+    cb.type='checkbox';l.append(' hold');dice.push(die);holds.push(cb);cb.onchange=upd}
+  const total=mk('div','mid',root);
+  function upd(){const t=dice.reduce((s,d,i)=>s+(holds[i].checked?+d.textContent:0),0);total.textContent='held total: '+t+'%';api.set(t)}
+  let iv=null;
+  const b=mk('button','btn',mk('div','row',root),'ROLL UNHELD DICE');
+  b.onclick=()=>{let n=0;clearInterval(iv);iv=setInterval(()=>{
+    dice.forEach((d,i)=>{if(!holds[i].checked)d.textContent=rand(1,6)});if(++n>9){clearInterval(iv);upd()}},70)};
+  upd();return{cleanup(){clearInterval(iv)}};
+ }},
+{cat:'PHYSICS',tol:1,name:'The Shaking Bar',desc:'The higher you push the knob, the more violently it vibrates. Above 70% it also slips from sweaty fingers.',
+ mount(root,api){
+  const tr=mk('div','track',root),kn=mk('div','knob',tr);let vol=0,held=false,t=0,slip=0;
+  const offs=dragKnob(tr,kn,f=>{held=true;vol=f*100;api.set(vol)},()=>{held=false});
+  return{tick(dt){t+=dt;slip+=dt;const a=Math.pow(vol/100,1.5)*14;
+   kn.style.transform='translate('+(Math.sin(t*31)*a+(Math.random()-.5)*a*.5)+'px,'+(Math.cos(t*47)*a*.6)+'px)';kn.style.left=vol+'%';
+   if(vol>70&&!held&&slip>1.4){slip=0;vol=Math.max(0,vol-12);api.set(vol);api.toast('The knob slipped. Sweaty fingers.')}},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'PHYSICS',tol:2,name:'The Slingshot',desc:'Pull the ball back and release. Volume is the horizontal distance it travels. Yes, ballistics.',
+ mount(root,api){const cv=mkcv(root,640,340),c=cv.getContext('2d'),k=K();
+  const AX=110,AY=240,G=900,GR=300,MAXD=470;let drag=null,ball=null,trail=[],vol=0;
+  const offs=[
+   listen(cv,'pointerdown',e=>{const p=P(cv,e);if(!ball&&Math.hypot(p.x-AX,p.y-AY)<60){drag={x:p.x,y:p.y};trail=[];cv.setPointerCapture(e.pointerId)}}),
+   listen(cv,'pointermove',e=>{if(!drag)return;const p=P(cv,e),s=Math.min(1,120/Math.max(1,Math.hypot(p.x-AX,p.y-AY)));drag={x:AX+(p.x-AX)*s,y:AY+(p.y-AY)*s}}),
+   listen(cv,'pointerup',()=>{if(!drag)return;const b={x:drag.x,y:drag.y,vx:clamp((AX-drag.x)*5,-900,900),vy:clamp((AY-drag.y)*5,-900,900)};drag=null;if(Math.hypot(b.vx,b.vy)>=40)ball=b})];
+  return{tick(dt){
+   if(ball){ball.vy+=G*dt;ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;trail.push([ball.x,ball.y]);if(trail.length>90)trail.shift();
+    if(ball.y>=GR){vol=clamp((ball.x-AX)/MAXD*100,0,100);api.set(vol);ball=null}}
+   const b=ball||drag||{x:AX,y:AY};c.clearRect(0,0,640,340);
+   c.fillStyle=k.line;c.fillRect(0,GR+10,640,40);
+   c.strokeStyle=k.dim;c.lineWidth=4;c.beginPath();c.moveTo(AX-8,AY-10);c.lineTo(b.x,b.y);c.lineTo(AX+8,AY-10);c.stroke();
+   c.fillStyle=k.dim;trail.forEach(q=>{c.fillRect(q[0],q[1],3,3)});
+   c.fillStyle=k.acc;c.beginPath();c.arc(b.x,b.y,13,0,7);c.fill();
+   T(c,vol?'distance: '+vol.toFixed(1)+'%':'drag the ball back and release',20,28,k.txt)},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'PHYSICS',tol:2,name:'The Catapult',desc:'Hold LAUNCH to charge. It overcharges and drops back to zero, because of course it does. Release to fling.',
+ mount(root,api){const cv=mkcv(root,640,340),c=cv.getContext('2d'),k=K();
+  const BX=100,G=900,GR=300,MAXD=470;let ch=false,pw=0,up=true,pr=null,vol=0;
+  const b=mk('button','btn',mk('div','row',root),'HOLD TO CHARGE \u2014 RELEASE TO LAUNCH');
+  const offs=[listen(b,'pointerdown',e=>{e.preventDefault();ch=true;pw=0;up=true;pr=null}),
+   listen(window,'pointerup',()=>{if(!ch)return;ch=false;const s=pw*560;pr={x:BX+30,y:GR-110,vx:Math.cos(-Math.PI/4)*s,vy:Math.sin(-Math.PI/4)*s}})];
+  return{tick(dt){
+   if(ch){pw+=(up?.55:-.55)*dt;if(pw>=1){pw=1;up=false}if(pw<=0){pw=0;up=true}}
+   if(pr){pr.vy+=G*dt;pr.x+=pr.vx*dt;pr.y+=pr.vy*dt;if(pr.y>=GR){vol=clamp((pr.x-BX)/MAXD*100,0,100);api.set(vol);pr=null}}
+   c.clearRect(0,0,640,340);c.fillStyle=k.line;c.fillRect(0,GR+10,640,40);
+   const a=-Math.PI/4-pw*Math.PI/3.2;c.strokeStyle=k.dim;c.lineWidth=7;c.lineCap='round';
+   c.beginPath();c.moveTo(BX,GR-60);c.lineTo(BX+Math.cos(a)*54,GR-60+Math.sin(a)*54);c.stroke();
+   c.strokeRect(20,20,200,16);c.fillStyle=pw>.85?k.bad:k.acc;c.fillRect(20,20,200*pw,16);
+   if(pr){c.fillStyle=k.acc;c.beginPath();c.arc(pr.x,pr.y,12,0,7);c.fill()}else if(vol)T(c,'distance: '+vol.toFixed(1)+'%',20,60,k.txt)},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'PHYSICS',tol:0,name:'The Pendulum / Metronome',desc:'Drag the bob back and release. Each swing through the bar adds 5%. Pass 100% and the speakers explode back to 0.',
+ target(){return rand(1,20)*5},
+ mount(root,api){const cv=mkcv(root,640,320),c=cv.getContext('2d'),k=K();
+  const PX=320,PY=30,L=215;let th=.6,om=0,drag=false,vol=0,cool=0,fl=0;
+  const bob=()=>({x:PX+L*Math.sin(th),y:PY+L*Math.cos(th)});
+  const offs=[
+   listen(cv,'pointerdown',e=>{const p=P(cv,e),b=bob();if(Math.hypot(p.x-b.x,p.y-b.y)<45){drag=true;om=0;cv.setPointerCapture(e.pointerId)}}),
+   listen(cv,'pointermove',e=>{if(drag){const p=P(cv,e);th=clamp(Math.atan2(p.x-PX,p.y-PY),-1.45,1.45)}}),
+   listen(cv,'pointerup',()=>{drag=false}),listen(cv,'pointercancel',()=>{drag=false})];
+  return{tick(dt){cool=Math.max(0,cool-dt);fl=Math.max(0,fl-dt);const pv=th;
+   if(!drag){om-=5.2*Math.sin(th)*dt;om*=Math.pow(.998,dt*60);th+=om*dt}
+   if(!drag&&cool<=0&&((pv<0&&th>=0)||(pv>0&&th<=0))&&Math.abs(om)>.35){cool=.32;fl=.25;vol+=5;if(vol>100){vol=0;api.toast('TOO LOUD. Speakers destroyed.')}api.set(vol)}
+   c.clearRect(0,0,640,320);const b=bob();
+   c.strokeStyle=k.dim;c.lineWidth=4;c.beginPath();c.moveTo(PX,PY);c.lineTo(b.x,b.y);c.stroke();
+   c.fillStyle=k.acc;c.beginPath();c.arc(b.x,b.y,22,0,7);c.fill();
+   c.strokeStyle=fl>0?k.good:k.line;c.lineWidth=fl>0?9:6;c.beginPath();c.moveTo(PX,PY+L+6);c.lineTo(PX,PY+L+52);c.stroke();
+   T(c,'volume: '+vol+'%  \u2022  drag the bob, release, let it hit the bar',20,22,k.txt)},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'PHYSICS',tol:1,name:'The Tilted Device',desc:'Drag the screen sideways to tilt it. The ball rolls. Its position is the volume. Momentum is real.',
+ mount(root,api){
+  const fr=mk('div','track',root),ball=mk('div','knob',fr);fr.style.cursor='ew-resize';fr.style.height='110px';ball.style.cursor='default';
+  mk('div','mid',root,'Drag left or right on the bar to tilt.');
+  let tilt=0,x=0,v=0,drag=false,sx=0,st=0;
+  const offs=[
+   listen(fr,'pointerdown',e=>{e.preventDefault();drag=true;sx=e.clientX;st=tilt;fr.setPointerCapture(e.pointerId)}),
+   listen(fr,'pointermove',e=>{if(drag)tilt=clamp(st+(e.clientX-sx)*.006,-.5,.5)}),
+   listen(fr,'pointerup',()=>{drag=false}),listen(fr,'pointercancel',()=>{drag=false})];
+  return{tick(dt){v+=1.2*Math.sin(tilt)*dt;v*=Math.pow(.35,dt);x+=v*dt;
+   if(x<0){x=0;v*=-.4}if(x>1){x=1;v*=-.4}api.set(x*100);ball.style.left=x*100+'%';fr.style.transform='rotate('+(tilt*.3)+'rad)'},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'DATA ENTRY',tol:0,name:'The Polka Dot Text Matcher',desc:'Drag the dots into the dotted outlines until they form the target number, then press APPLY. The scanner is strict.',
+ mount(root,api){const cv=mkcv(root,640,400),c=cv.getContext('2d'),k=K();
+  const o=document.createElement('canvas');o.width=640;o.height=400;const oc=o.getContext('2d'),s=String(S.target);
+  oc.fillStyle='#000';oc.font='bold '+(s.length>=3?170:230)+'px Arial';oc.textAlign='center';oc.textBaseline='middle';oc.fillText(s,320,190);
+  const d=oc.getImageData(0,0,640,400).data,slots=[];
+  for(let y=0;y<400;y+=20)for(let x=0;x<640;x+=20)if(d[(y*640+x)*4+3]>128)slots.push({x,y});
+  const dots=slots.map((_,i)=>({x:30+(i*53)%580,y:i%2?rand(360,385):rand(18,40)}));let drag=-1;
+  const offs=[
+   listen(cv,'pointerdown',e=>{const p=P(cv,e);for(let i=dots.length-1;i>=0;i--)if(Math.hypot(p.x-dots[i].x,p.y-dots[i].y)<22){drag=i;cv.setPointerCapture(e.pointerId);return}}),
+   listen(cv,'pointermove',e=>{if(drag>=0){const p=P(cv,e);dots[drag].x=p.x;dots[drag].y=p.y}}),
+   listen(cv,'pointerup',()=>{drag=-1}),listen(cv,'pointercancel',()=>{drag=-1})];
+  const b=mk('button','btn',mk('div','row',root),'APPLY (SCREENSHOT)');
+  b.onclick=()=>{const used=new Set();let n=0;
+   for(const dt of dots){let best=-1,bd=26;slots.forEach((sl,j)=>{if(used.has(j))return;const q=Math.hypot(dt.x-sl.x,dt.y-sl.y);if(q<bd){bd=q;best=j}});if(best>=0){used.add(best);n++}}
+   if(n===slots.length){api.set(S.target);api.toast('Pattern accepted. Somehow.')}
+   else{api.set(Math.min(S.target-1,Math.round(n/slots.length*S.target)));api.toast('Scanner: pattern incomplete ('+n+'/'+slots.length+' dots).')}};
+  return{tick(){c.clearRect(0,0,640,400);c.strokeStyle=k.dim;c.lineWidth=1.5;c.setLineDash([3,3]);
+   slots.forEach(q=>{c.beginPath();c.arc(q.x,q.y,9,0,7);c.stroke()});c.setLineDash([]);
+   dots.forEach((q,i)=>{c.fillStyle=i===drag?k.acc:k.txt;c.beginPath();c.arc(q.x,q.y,9,0,7);c.fill()})},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'MINI-GAME',tol:1,name:'The Pong Volume',desc:'A working game of Pong. Where the ball hits your paddle shifts the volume. If the computer scores, volume drops.',
+ mount(root,api){const cv=mkcv(root,640,400),c=cv.getContext('2d'),k=K();
+  const PH=80;let py=160,ay=160,sp=320,ball,last='';
+  const reset=d=>{ball={x:320,y:200,vx:d*sp*.7,vy:(Math.random()*2-1)*sp*.5}};reset(1);
+  const off=listen(cv,'pointermove',e=>{py=clamp(P(cv,e).y-PH/2,0,400-PH)});
+  return{tick(dt){ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
+   if(ball.y<6){ball.y=6;ball.vy=Math.abs(ball.vy)}if(ball.y>394){ball.y=394;ball.vy=-Math.abs(ball.vy)}
+   if(ball.x<40&&ball.vx<0&&ball.y>py-8&&ball.y<py+PH+8){const f=(ball.y-(py+PH/2))/(PH/2);
+    ball.vx=Math.min(900,Math.abs(ball.vx)*1.06);ball.vy=clamp(ball.vy+f*130,-600,600);ball.x=40;sp=Math.min(700,sp*1.04);
+    api.set(S.volume+f*6);last=(f>=0?'+':'')+(f*6).toFixed(1)+'%'}
+   if(ball.x>600&&ball.vx>0&&ball.y>ay-8&&ball.y<ay+PH+8){ball.vx=-Math.abs(ball.vx)*1.06;ball.x=600}
+   if(ball.x<-10){api.set(S.volume-8);api.toast('Computer scored. -8%. Rude.');reset(1)}
+   if(ball.x>650)reset(-1);
+   const av=Math.min(260,165+S.round*4);ay=clamp(ay+clamp(ball.y-PH/2-ay,-av*dt,av*dt),0,400-PH);
+   c.clearRect(0,0,640,400);c.fillStyle=k.acc;c.fillRect(30,py,10,PH);c.fillStyle=k.bad;c.fillRect(600,ay,10,PH);
+   c.fillStyle=k.txt;c.beginPath();c.arc(ball.x,ball.y,7,0,7);c.fill();
+   T(c,'move the pointer over the court'+(last?'  \u2022  last hit: '+last:''),180,388,k.dim)},cleanup:off};
+ }},
+{cat:'MINI-GAME',tol:2,name:'The Curling Slider',desc:'Hurl the stone. The closer it stops to the button, the higher the volume. It curls. Because curling.',
+ mount(root,api){const cv=mkcv(root,640,420),c=cv.getContext('2d'),k=K();
+  const HX=520,HY=210,R=95,SX=90,SY=210;let st={x:SX,y:SY,vx:0,vy:0,mv:false},drag=null,vol=null;
+  const offs=[
+   listen(cv,'pointerdown',e=>{const p=P(cv,e);if(!st.mv&&Math.hypot(p.x-st.x,p.y-st.y)<50){drag=p;cv.setPointerCapture(e.pointerId)}}),
+   listen(cv,'pointermove',e=>{if(drag)drag=P(cv,e)}),
+   listen(cv,'pointerup',()=>{if(!drag)return;let vx=(SX-drag.x)*3,vy=(SY-drag.y)*3;const s=Math.hypot(vx,vy);if(s>620){vx*=620/s;vy*=620/s}
+    drag=null;if(s<20)return;st={x:SX,y:SY,vx,vy,mv:true};vol=null})];
+  return{tick(dt){
+   if(st.mv){const s=Math.hypot(st.vx,st.vy);if(s>5){const cu=34*(1-s/620)*dt;st.vx+=-st.vy/s*cu;st.vy+=st.vx/s*cu}
+    const f=Math.pow(.35,dt);st.vx*=f;st.vy*=f;st.x+=st.vx*dt;st.y+=st.vy*dt;
+    if(st.x<24){st.x=24;st.vx=Math.abs(st.vx)*.5}if(st.x>616){st.x=616;st.vx=-Math.abs(st.vx)*.5}
+    if(st.y<24){st.y=24;st.vy=Math.abs(st.vy)*.5}if(st.y>396){st.y=396;st.vy=-Math.abs(st.vy)*.5}
+    if(Math.hypot(st.vx,st.vy)<6){st.mv=false;vol=clamp(100-Math.hypot(st.x-HX,st.y-HY)/R*100,0,100);api.set(vol)}}
+   c.clearRect(0,0,640,420);[[95,'#cfd7f0'],[62,'#ffd166'],[30,'#ff5c7a']].forEach(q=>{c.fillStyle=q[1];c.beginPath();c.arc(HX,HY,q[0],0,7);c.fill()});
+   c.fillStyle='#fff';c.beginPath();c.arc(HX,HY,8,0,7);c.fill();
+   if(drag){c.strokeStyle=k.dim;c.setLineDash([6,6]);c.beginPath();c.moveTo(SX,SY);c.lineTo(SX+(SX-drag.x),SY+(SY-drag.y));c.stroke();c.setLineDash([])}
+   c.fillStyle='#222';c.beginPath();c.arc(st.x,st.y,22,0,7);c.fill();c.fillStyle='#ffd166';c.beginPath();c.arc(st.x,st.y,10,0,7);c.fill();
+   T(c,vol!==null?'closeness to button: '+vol.toFixed(1)+'%':'drag the stone backwards and release (top-down)',20,30,k.txt)},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'MINI-GAME',tol:0,name:'The Seesaw / Balance',desc:'Place weights on the beam to build the volume. The beam must be perfectly balanced before you can lock in.',
+ target(){const w=[1,2,2,5,5,10,10,20,20,25];
+  for(let i=0;i<5000;i++){let L=0,R=0;for(const x of w){const r=Math.random();if(r<.33)L+=x;else if(r<.66)R+=x}if(L===R&&L>=8&&L<=50)return L*2}return 60},
+ mount(root,api){const cv=mkcv(root,640,320),c=cv.getContext('2d'),k=K();
+  const PX=320,PY=230;let placed=[],shelf=[1,2,2,5,5,10,10,20,20,25],sel=-1,ang=0;
+  const offs=[listen(cv,'pointerdown',e=>{const p=P(cv,e);
+   for(let i=0;i<shelf.length;i++)if(shelf[i]!==null&&Math.hypot(p.x-(30+i*44),p.y-290)<18){sel=sel===i?-1:i;return}
+   const rx=p.x-PX,ry=p.y-PY,bx=rx*Math.cos(-ang)-ry*Math.sin(-ang),by=rx*Math.sin(-ang)+ry*Math.cos(-ang);
+   for(let s=-5;s<=5;s++)if(s&&Math.abs(bx-s*46)<20&&Math.abs(by)<120){
+    if(sel>=0){placed.push({w:shelf[sel],p:s});shelf[sel]=null;sel=-1}
+    else{const i=placed.map(t=>t.p).lastIndexOf(s);if(i>=0){const t=placed.splice(i,1)[0];shelf[shelf.indexOf(null)]=t.w}}
+    return}})];
+  return{tick(dt){const tq=placed.reduce((s,t)=>s+t.w*t.p,0),sum=placed.reduce((s,t)=>s+t.w,0);
+   ang+=(clamp(tq*.045,-.5,.5)-ang)*Math.min(1,dt*4);api.set(sum);api.extra(tq===0);
+   c.clearRect(0,0,640,320);c.fillStyle=k.line;c.beginPath();c.moveTo(PX,PY);c.lineTo(PX-26,PY+52);c.lineTo(PX+26,PY+52);c.fill();
+   c.save();c.translate(PX,PY);c.rotate(ang);c.fillStyle=k.dim;c.fillRect(-260,-8,520,16);
+   c.textAlign='center';const cnt={};
+   for(let s=-5;s<=5;s++)if(s)T(c,s,s*46,18,k.dim,'10px Georgia');
+   placed.forEach(t=>{const n=cnt[t.p]=(cnt[t.p]||0)+1,y=-8-16-(n-1)*30;c.fillStyle=k.acc;c.beginPath();c.arc(t.p*46,y,14,0,7);c.fill();T(c,t.w,t.p*46,y+4,'#000','bold 12px Georgia')});
+   c.restore();c.textAlign='left';
+   shelf.forEach((w,i)=>{if(w===null)return;c.fillStyle=sel===i?k.txt:k.acc;c.beginPath();c.arc(30+i*44,290,15,0,7);c.fill();c.textAlign='center';T(c,w,30+i*44,294,sel===i?k.bg:'#000','bold 12px Georgia');c.textAlign='left'});
+   T(c,'volume: '+sum+'%   beam: '+(tq===0?'BALANCED':'TILTED'),20,24,k.txt);T(c,'pick a weight, then click a beam slot. click a slot to remove.',20,310,k.dim,'12px Georgia')},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'MINI-GAME',tol:0,name:'The Snake Game',desc:'Play Snake. Every food is +5%. Hit a wall or yourself and the snake restarts (volume stays). Arrows, WASD or swipe.',
+ target(){return rand(1,20)*5},
+ mount(root,api){const N=22,CS=20,cv=mkcv(root,N*CS,N*CS),c=cv.getContext('2d'),k=K();cv.style.maxWidth=N*CS+'px';
+  const init=()=>[{x:5,y:11},{x:4,y:11},{x:3,y:11}];
+  let sn=init(),dir={x:1,y:0},nd=dir,food={x:15,y:11},acc=0,dead=0,sx=0,sy=0;
+  const map={arrowup:[0,-1],w:[0,-1],arrowdown:[0,1],s:[0,1],arrowleft:[-1,0],a:[-1,0],arrowright:[1,0],d:[1,0]};
+  const turn=(x,y)=>{if(x!==-dir.x||y!==-dir.y)nd={x,y}};
+  const offs=[
+   listen(window,'keydown',e=>{const m=map[e.key.toLowerCase()];if(m&&!typing()){e.preventDefault();turn(m[0],m[1])}}),
+   listen(cv,'pointerdown',e=>{sx=e.clientX;sy=e.clientY}),
+   listen(cv,'pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<18)return;
+    if(Math.abs(dx)>Math.abs(dy))turn(Math.sign(dx),0);else turn(0,Math.sign(dy))})];
+  return{tick(dt){dead=Math.max(0,dead-dt);acc+=dt;
+   while(acc>.13){acc-=.13;if(dead>0)continue;dir=nd;const h={x:sn[0].x+dir.x,y:sn[0].y+dir.y};
+    if(h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(q=>q.x===h.x&&q.y===h.y)){dead=1;sn=init();dir={x:1,y:0};nd=dir}
+    else{sn.unshift(h);if(h.x===food.x&&h.y===food.y){api.set(S.volume+5);do{food={x:rand(0,N-1),y:rand(0,N-1)}}while(sn.some(q=>q.x===food.x&&q.y===food.y))}else sn.pop()}}
+   c.clearRect(0,0,N*CS,N*CS);c.fillStyle=k.bad;c.beginPath();c.arc(food.x*CS+10,food.y*CS+10,7,0,7);c.fill();
+   sn.forEach((q,i)=>{c.fillStyle=dead>0?k.dim:i?k.good:k.txt;c.fillRect(q.x*CS+1,q.y*CS+1,CS-2,CS-2)});
+   T(c,'volume: '+Math.round(S.volume)+'%',6,14,k.dim,'12px Georgia')},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'SURVIVAL',tol:2,name:'The Voice / Screaming Sensor',desc:'Volume is your real microphone level. Scream, clap, or blow. Go quiet and it bleeds away. Mic denied? Hold SPACE.',
+ mount(root,api){const w=mk('div','mid',root),vu=mk('div',null,w);vu.style.cssText='display:flex;gap:3px;align-items:flex-end;justify-content:center;height:70px;margin:12px 0';
+  const bars=[];for(let i=0;i<24;i++){const b=mk('i',null,vu);b.style.cssText='width:9px;height:8px;border-radius:2px;background:var(--line)';bars.push(b)}
+  const st=mk('div','mid',w,'requesting microphone\u2026');
+  let an=null,data=null,stream=null,ac=null,space=false;
+  const offs=[listen(window,'keydown',e=>{if(e.code==='Space'&&!typing()){e.preventDefault();space=true}}),listen(window,'keyup',e=>{if(e.code==='Space')space=false})];
+  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+   navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{if(!cur||!cur.__alive){s.getTracks().forEach(t=>t.stop());return}
+    stream=s;ac=new(window.AudioContext||window.webkitAudioContext)();an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(s).connect(an);
+    data=new Uint8Array(an.frequencyBinCount);st.textContent='MIC LIVE \u2014 make noise.'}).catch(()=>{st.textContent='MIC DENIED \u2014 hold SPACE and scream at it.'});
+  }else st.textContent='NO MIC \u2014 hold SPACE and scream at it.';
+  const o={__alive:true,tick(dt){let loud=0;
+   if(an){an.getByteTimeDomainData(data);let s=0;for(let i=0;i<data.length;i++){const v=(data[i]-128)/128;s+=v*v}loud=clamp(Math.sqrt(s/data.length)*900,0,100)}
+   else loud=space?78+Math.sin(performance.now()/90)*8:0;
+   if(loud>S.volume)api.set(loud);else api.set(Math.max(0,S.volume-(16+S.volume*.2)*dt));
+   const lv=Math.round(S.volume);bars.forEach((b,i)=>{const lit=(i+1)/bars.length*100<=lv+3;b.style.background=lit?(i>bars.length*.8?'var(--bad)':'var(--good)'):'var(--line)';b.style.height=lit?(10+Math.random()*8)+'px':'8px'})},
+   cleanup(){o.__alive=false;offs.forEach(f=>f());if(stream)stream.getTracks().forEach(t=>t.stop());if(ac)ac.close().catch(()=>{})}};
+  return o;
+ }},
+{cat:'SURVIVAL',tol:1,name:'The Firewood Survivalist',desc:'The volume is a campfire that constantly dies toward silence. Keep adding wood or lose your audio to the night.',
+ mount(root,api){const cv=mkcv(root,640,300),c=cv.getContext('2d'),k=K();
+  const b=mk('button','btn',mk('div','row',root),'ADD WOOD');
+  const off=listen(b,'pointerdown',e=>{e.preventDefault();api.set(S.volume+rand(3,6))});
+  return{tick(dt){api.set(Math.max(0,S.volume-(.85+S.volume*.018)*dt));const v=S.volume,t=performance.now()/1000;
+   c.clearRect(0,0,640,300);
+   if(v>2){const g=c.createRadialGradient(320,250,10,320,250,190*(.4+v/100));g.addColorStop(0,'rgba(255,140,50,'+(.12+v/100*.25)+')');g.addColorStop(1,'rgba(255,140,50,0)');c.fillStyle=g;c.fillRect(0,0,640,300)}
+   c.fillStyle=k.line;c.fillRect(0,258,640,42);c.strokeStyle='#8a6a4a';c.lineWidth=13;c.lineCap='round';
+   [[300,262],[340,262],[320,268]].forEach(q=>{c.beginPath();c.moveTo(q[0]-22,q[1]);c.lineTo(q[0]+22,q[1]+6);c.stroke()});
+   for(let i=0;i<7;i++){const fx=300+i*13,h=(10+v*1.35)*(.75+.35*Math.sin(t*11+i*2.1)),w=9+v*.06;
+    c.fillStyle=i%3===1?'rgba(255,209,102,.9)':'rgba(255,110,60,.85)';c.beginPath();c.moveTo(fx-w,262);
+    c.quadraticCurveTo(fx-w*.4,262-h*.6,fx+Math.sin(t*9+i)*4,262-h);c.quadraticCurveTo(fx+w*.5,262-h*.55,fx+w,262);c.fill()}
+   c.textAlign='center';if(v<8)T(c,'the fire is dying. the volume is dying. everything is dying.',320,120,k.dim);c.textAlign='left';
+   T(c,'fire temperature = volume: '+Math.round(v)+'%',20,26,k.txt)},cleanup:off};
+ }},
+{cat:'SURVIVAL',tol:0,name:'The Electrical Circuit',desc:'No circuit, no sound. Click a branch (or drag the amp terminal onto it) to connect it. Each branch adds its own percentage.',
+ target(){const vals=[1,2,5,11,23,58];let t=0;do{t=0;for(const v of vals)if(Math.random()<.5)t+=v}while(!t);return t},
+ mount(root,api){const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('viewBox','0 0 640 320');svg.style.cssText='display:block;width:100%;max-width:640px;margin:0 auto;touch-action:none';root.appendChild(svg);
+  const sv=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const n in a)e.setAttribute(n,a[n]);(p||svg).appendChild(e);return e};
+  const tx=(x,y,s,st,p)=>{const e=sv('text',{x,y,'text-anchor':'middle',style:st},p);e.textContent=s};
+  const box='fill:var(--field);stroke:var(--line)',AX=118,AY=160,BX=240;
+  const rows=[1,2,5,11,23,58].map((v,i)=>({v,y:44+i*45,on:false}));
+  sv('rect',{x:26,y:120,width:64,height:80,rx:8,style:box});tx(58,165,'AMP','fill:var(--acc);font:13px Georgia');
+  sv('rect',{x:546,y:120,width:64,height:80,rx:8,style:box});tx(578,165,'SPKR','fill:var(--acc);font:12px Georgia');
+  const items=rows.map(r=>{const g=sv('g',{style:'cursor:pointer'});
+   sv('line',{x1:BX,y1:r.y,x2:BX+120,y2:r.y,style:'stroke:var(--line);stroke-width:3;stroke-dasharray:7 5'},g);
+   sv('rect',{x:BX+42,y:r.y-11,width:36,height:22,rx:5,style:box},g);tx(BX+60,r.y+5,r.v+'\u03a9','fill:var(--txt);font:12px Georgia',g);
+   sv('circle',{cx:BX,cy:r.y,r:8,style:box+';stroke-width:2'},g);sv('rect',{x:BX-16,y:r.y-18,width:140,height:36,fill:'transparent'},g);
+   const w=sv('path',{fill:'none',style:'stroke:var(--good);stroke-width:3;stroke-dasharray:10 6;opacity:0'});return{g,r,w}});
+  const live=sv('line',{x1:AX,y1:AY,x2:AX,y2:AY,style:'stroke:var(--acc);stroke-width:3;opacity:0'});
+  const term=sv('circle',{cx:AX,cy:AY,r:10,style:'fill:var(--acc);stroke:var(--txt);stroke-width:2;cursor:grab'});
+  let drag=false;
+  const redraw=()=>{let t=0;items.forEach(({r,w})=>{if(r.on){t+=r.v;w.setAttribute('d','M'+AX+','+AY+' L'+BX+','+r.y);w.style.opacity=1}else w.style.opacity=0});api.set(t)};
+  const xy=e=>{const b=svg.getBoundingClientRect();return[(e.clientX-b.left)*640/b.width,(e.clientY-b.top)*320/b.height]};
+  const offs=[
+   listen(term,'pointerdown',e=>{e.preventDefault();drag=true;svg.setPointerCapture(e.pointerId);live.style.opacity=1}),
+   listen(svg,'pointermove',e=>{if(!drag)return;const p=xy(e);live.setAttribute('x2',p[0]);live.setAttribute('y2',p[1])}),
+   listen(svg,'pointerup',e=>{if(!drag)return;drag=false;live.style.opacity=0;live.setAttribute('x2',AX);live.setAttribute('y2',AY);
+    const p=xy(e);items.forEach(({r})=>{if(Math.hypot(p[0]-BX,p[1]-r.y)<30)r.on=!r.on});redraw()}),
+   ...items.map(({g,r})=>listen(g,'click',()=>{r.on=!r.on;redraw()}))];
+  redraw();return{cleanup(){offs.forEach(f=>f())}};
+ }}
+];
+const V=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const K=()=>({acc:V('--acc'),txt:V('--txt'),dim:V('--dim'),good:V('--good'),bad:V('--bad'),line:V('--line'),bg:V('--bg')});
+const T=(c,s,x,y,col,f)=>{c.fillStyle=col;c.font=f||'13px Georgia';c.fillText(s,x,y)};
+const mkcv=(root,w,h)=>{const c=mk('canvas',null,root);c.width=w;c.height=h;return c};
+const P=(cv,e)=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*cv.width/r.width,y:(e.clientY-r.top)*cv.height/r.height}};
 </script>
-
 </body>
 </html>
-
-
-
