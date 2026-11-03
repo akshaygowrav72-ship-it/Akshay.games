@@ -21,6 +21,7 @@ h1{font-size:20px;letter-spacing:1px;margin:10px 2px 2px}h1 span{color:var(--acc
 .stat.grow{flex:1;min-width:220px}
 .label{display:block;font-size:10px;letter-spacing:1.5px;color:var(--dim)}
 .big{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+#lives{color:var(--bad)}
 #volbar{position:relative;height:14px;background:var(--field);border:1px solid var(--line);border-radius:8px;margin:6px 0 4px;overflow:hidden}
 #volfill{height:100%;width:0;background:var(--acc);transition:background .15s}
 #volfill.ok{background:var(--good)}
@@ -54,6 +55,7 @@ button{font-family:inherit;color:var(--txt)}
 .pi{text-align:center;padding:16px}.pi b{font:26px ui-monospace,monospace;color:var(--acc);margin-right:6px}
 .track{position:relative;height:50px;margin:46px auto;width:min(480px,92%);background:var(--field);border:2px solid var(--line);border-radius:25px;touch-action:none}
 .track.tilt{transform:rotate(-9deg)}
+.vtrack{position:relative;height:280px;width:54px;margin:16px auto;background:var(--field);border:2px solid var(--line);border-radius:27px;touch-action:none}
 .knob{position:absolute;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:var(--acc);cursor:grab;touch-action:none}
 #grid{height:280px;overflow-y:auto;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;grid-template-columns:repeat(auto-fill,30px);gap:3px}
 #grid button{height:24px;font-size:10px;padding:0;background:var(--card);border:1px solid var(--line);border-radius:4px;cursor:pointer}
@@ -65,18 +67,22 @@ button{font-family:inherit;color:var(--txt)}
 .dice{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;padding:14px 0 6px}
 .die{width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;background:#f4f6ff;color:#1a1d33;border:1px solid var(--line);border-radius:12px}
 .dice label{display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--dim);cursor:pointer}
+.radios{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px}
+.radios label{font-size:11px;display:flex;gap:3px;align-items:center;cursor:pointer}
 </style>
 </head>
 <body>
 <div id="toasts" aria-live="polite"></div>
 <div id="wrap">
   <h1>WORST VOLUME CONTROL <span>THE GAME</span></h1>
-  <p class="sub">Inspired by the r/ProgrammerHumor Worst Volume Control UI competition. Set the volume to the target. Good luck.</p>
+  <p class="sub">Inspired by the r/ProgrammerHumor Worst Volume Control UI competition. Set the volume to the target. Good luck. You will need it.</p>
   <div id="hud">
     <div class="stat"><span class="label">TARGET</span><span class="big" id="target">--%</span></div>
     <div class="stat grow"><span class="label">YOUR VOLUME <span id="tolnote"></span></span>
       <div id="volbar"><div id="volfill"></div><div id="volmark"></div></div><span id="volnow">0%</span></div>
     <div class="stat"><span class="label">TAMED</span><span class="big" id="done">0</span></div>
+    <div class="stat"><span class="label">LIVES</span><span class="big" id="lives">&#9829;&#9829;&#9829;</span></div>
+    <div class="stat"><span class="label">ROUND LEFT</span><span class="big" id="rt">0</span></div>
     <div class="stat"><span class="label">TIME</span><span class="big" id="time">0:00</span></div>
   </div>
   <div class="card">
@@ -102,11 +108,15 @@ const listen=(el,ev,fn,o)=>{el.addEventListener(ev,fn,o);return()=>el.removeEven
 const typing=()=>/^(INPUT|TEXTAREA)$/.test(document.activeElement&&document.activeElement.tagName);
 const fmt=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 
-const S={target:0,volume:0,tol:0,round:0,done:0,playing:false,t0:0,extraOK:true};
+const S={target:0,volume:0,tol:0,round:0,done:0,lives:3,rt:0,playing:false,t0:0,extraOK:true};
 const E={target:$('#target'),fill:$('#volfill'),mark:$('#volmark'),now:$('#volnow'),done:$('#done'),time:$('#time'),tol:$('#tolnote'),
+  lives:$('#lives'),rt:$('#rt'),
   mount:$('#mount'),lock:$('#lock'),cat:$('#ccat'),name:$('#cname'),desc:$('#cdesc'),
   ov:$('#overlay'),ovt:$('#ovtitle'),ovs:$('#ovsub'),ovb:$('#ovbtn')};
 let cur=null,bag=[],audio=null;
+
+/* Difficulty: decay and drift get stronger with every control you tame. */
+const HD=()=>1+Math.min(1.6,S.done*.12);
 
 function toast(m){const d=mk('div','toast',$('#toasts'),m);setTimeout(()=>d.remove(),2700)}
 function setVolume(v){S.volume=clamp(v,0,100)}
@@ -119,31 +129,43 @@ const SNARK=['Settings saved. Somewhere, a UX designer is crying.','Incredible. 
 
 function overlay(title,sub,btn,fn){E.ovt.textContent=title;E.ovs.textContent=sub;E.ovb.textContent=btn;E.ovb.onclick=fn;E.ov.hidden=false;E.ov.style.display='flex';E.ovb.focus()}
 function hideOverlay(){E.ov.style.display='none'}
+const hearts=()=>S.lives>0?'\u2665'.repeat(S.lives):'\u2014';
 
 function nextRound(){
   if(cur&&cur.cleanup)cur.cleanup();
   cur=null;E.mount.replaceChildren();
   if(!bag.length)bag=CH.slice().sort(()=>Math.random()-.5);
   const ch=bag.pop();
-  S.round++;S.tol=ch.tol;S.extraOK=true;
+  S.round++;
+  /* much tighter tolerances: halve them, and exact stays exact */
+  S.tol=ch.tol?Math.max(1,Math.ceil(ch.tol/2)):0;
+  S.extraOK=true;
+  S.rt=Math.max(35,90-S.done*4);
   S.target=ch.target?ch.target():rand(5,95);
   setVolume(0);
   E.target.textContent=S.target+'%';
-  E.tol.textContent=ch.tol?'(\u00b1'+ch.tol+')':'(exact)';
+  E.tol.textContent=S.tol?'(\u00b1'+S.tol+')':'(exact)';
   E.cat.textContent=ch.cat+' \u2022 ROUND '+S.round;
   E.name.textContent=ch.name;E.desc.textContent=ch.desc;
-  E.done.textContent=S.done;
-  cur=ch.mount(E.mount,{set:setVolume,extra:ok=>{S.extraOK=ok},toast})||{};
+  E.done.textContent=S.done;E.lives.textContent=hearts();
+  cur=ch.mount(E.mount,{set:setVolume,extra:ok=>{S.extraOK=ok},toast,skip:()=>{if(S.playing)nextRound()}})||{};
 }
-function start(){hideOverlay();S.playing=true;S.t0=performance.now();S.done=0;S.round=0;nextRound()}
+function start(){hideOverlay();S.playing=true;S.t0=performance.now();S.done=0;S.round=0;S.lives=3;bag=[];nextRound()}
 function complete(){
   S.done++;S.playing=false;beep(220+S.target*8);
   overlay('VOLUME SET: '+S.target+'%',pick(SNARK),'NEXT CONTROL',()=>{hideOverlay();S.playing=true;nextRound()});
 }
+function fail(){
+  S.lives--;E.lives.textContent=hearts();beep(110);
+  if(S.lives<=0){
+    S.playing=false;
+    overlay('GAME OVER','You tamed '+S.done+' control'+(S.done===1?'':'s')+' in '+fmt(performance.now()-S.t0)+'.\nThe volume stays at 0%. As it should.','TRY AGAIN',start);
+  }else{toast('Out of time. You lost a life.');nextRound()}
+}
 E.lock.onclick=()=>{if(inRange())complete()};
 window.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.repeat&&!typing()&&inRange()){e.preventDefault();complete()}});
 overlay('WORST VOLUME CONTROL',CH_INTRO(),'START',start);
-function CH_INTRO(){return 'A set of truly terrible volume controls.\nSet the volume. Lock it in. Survive.'}
+function CH_INTRO(){return 'A set of truly terrible volume controls.\nSet the volume exactly. Lock it in.\nEvery control has a time limit. Run out and you lose a life.\nThree lives. Controls get nastier the more you tame.'}
 
 let last=performance.now();
 (function frame(t){
@@ -151,8 +173,11 @@ let last=performance.now();
   const dt=Math.min(.05,(t-last)/1000);last=t;
   if(S.playing){
     try{if(cur&&cur.tick)cur.tick(dt)}catch(err){console.error(err)}
+    S.rt-=dt;
+    if(S.rt<=0){S.rt=0;fail()}
     const ok=inRange();E.lock.disabled=!ok;E.lock.classList.toggle('ready',ok);
     E.time.textContent=fmt(performance.now()-S.t0);
+    E.rt.textContent=Math.ceil(S.rt);E.rt.style.color=S.rt<10?'var(--bad)':'';
   }
   const shown=Math.round(S.volume);
   E.now.textContent=shown+'%';E.fill.style.width=S.volume+'%';
@@ -180,6 +205,20 @@ const safeEval=s=>{let i=0;
   const e=()=>{let v=t();while(s[i]==='+'||s[i]==='-'){const o=s[i++],r=t();v=o==='+'?v+r:v-r}return v};
   const v=e();if(i<s.length)throw 0;return v};
 
+/* Data for the Pi Decimal Finder and the Global Map */
+const PID=[1,4,1,5,9,2,6,5,3,5,8,9,7,9,3,2,3,8,4,6,2,6,4,3,3,8,3,2,7,9];
+const ISLANDS=[['Hawaii',-157.8],['Iceland',-19],['Madagascar',47],['Honshu, Japan',138],['New Zealand',174],['Tahiti',-149.4],['Guam',144.8],
+  ['Mauritius',57.5],['the Azores',-28],['Svalbard',16],['Sri Lanka',80.7],['Cuba',-79],['Sumatra',101],['Fiji',178]];
+let mapIsland=ISLANDS[0];
+const LAND=[
+ [[-168,66],[-140,70],[-110,72],[-80,72],[-62,60],[-55,50],[-66,44],[-76,35],[-81,25],[-97,26],[-105,22],[-117,32],[-125,42],[-125,50],[-140,60]],
+ [[-80,10],[-60,10],[-35,-6],[-40,-22],[-58,-38],[-68,-54],[-75,-45],[-71,-18],[-81,-5]],
+ [[-10,36],[-9,44],[0,50],[10,56],[25,70],[60,70],[100,76],[140,72],[180,68],[170,60],[142,52],[135,35],[122,30],[122,20],[108,10],[100,2],[80,8],[72,20],[58,24],[50,14],[36,28],[28,36],[10,38]],
+ [[-17,21],[-5,35],[10,37],[32,31],[43,12],[51,12],[40,-15],[33,-27],[19,-35],[12,-17],[9,4],[-8,5],[-17,14]],
+ [[114,-22],[130,-12],[142,-11],[153,-26],[146,-39],[130,-32],[115,-34]],
+ [[-55,60],[-20,70],[-20,82],[-60,82],[-70,76]],
+ [[-180,-70],[180,-70],[180,-90],[-180,-90]]];
+
 const CH=[
 {cat:'PHYSICS',tol:1,name:'The Slanted Slider',desc:'A slider on a slope. Let go and gravity drags it back to 0%. Hold on tight.',
  mount(root,api){
@@ -187,22 +226,21 @@ const CH=[
   mk('div','mid',root,'Hold the knob on target, then press ENTER to lock (you cannot click while holding).');
   let x=0,v=0,held=false;
   const offs=dragKnob(tr,kn,f=>{held=true;x=f;v=0;api.set(f*100)},()=>{held=false},-9*Math.PI/180);
-  return{tick(dt){if(!held){v+=.9*dt;v*=Math.pow(.55,dt);x=clamp(x-v*dt,0,1);if(x<=0)v=0;api.set(x*100)}
+  return{tick(dt){if(!held){v+=.9*HD()*dt;v*=Math.pow(.55,dt);x=clamp(x-v*dt,0,1);if(x<=0)v=0;api.set(x*100)}
     kn.style.left=x*100+'%'},cleanup(){offs.forEach(f=>f())}};
  }},
-{cat:'PHYSICS',tol:1,name:'The Bike Pump',desc:'Pump to build pressure. Stop and it deflates. Click the pump or press SPACE.',
+{cat:'PHYSICS',tol:1,name:'The Bike Pump',desc:'Pump to build pressure. Stop and it deflates. Click the pump button.',
  mount(root,api){
   const w=mk('div','mid',root);
   const bar=mk('div','track',w);bar.style.cssText+='height:26px;margin:20px auto';
   const fill=mk('div',null,bar);fill.style.cssText='height:100%;background:var(--good);border-radius:25px;width:0';
   const b=mk('button','btn',w,'PUMP (+0.8%)');
   const stroke=()=>{if(S.playing)api.set(S.volume+.8)};
-  const offs=[listen(b,'pointerdown',e=>{e.preventDefault();stroke()}),
-    listen(window,'keydown',e=>{if(e.code==='Space'&&!e.repeat&&!typing()){e.preventDefault();stroke()}})];
-  return{tick(dt){api.set(Math.max(0,S.volume-(1.1+S.volume*.02)*dt));fill.style.width=S.volume+'%'},cleanup(){offs.forEach(f=>f())}};
+  const offs=[listen(b,'pointerdown',e=>{e.preventDefault();stroke()})];
+  return{tick(dt){api.set(Math.max(0,S.volume-(1.3+S.volume*.025)*HD()*dt));fill.style.width=S.volume+'%'},cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'DATA ENTRY',tol:0,name:'The Pi Requirement',desc:'Type the digits of Pi. Each correct digit is +1%. One typo resets everything.',
- target(){return rand(5,30)},
+ target(){return rand(10,40)},
  mount(root,api){
   const PI='14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196';
   const w=mk('div','pi',root);mk('b',null,w,'3.');
@@ -219,7 +257,7 @@ const CH=[
  mount(root,api){
   const g=mk('div',null,root);g.id='grid';
   const labels=Array.from({length:1000},()=>rand(0,100));
-  for(let k=0;k<8;k++)labels[rand(0,999)]=S.target;
+  for(let k=0;k<3;k++)labels[rand(0,999)]=S.target;
   labels.forEach(n=>{const b=mk('button',null,g,n);b.onclick=()=>api.set(n)});
   return{};
  }},
@@ -260,12 +298,12 @@ const CH=[
   const b=mk('button','btn',w,'\u{1F40E} BEAT THE HORSE (+0.5%)');b.style.cssText+='font-size:20px;padding:22px 30px';
   const st=mk('div','mid',w);let clicks=[];
   const off=listen(b,'pointerdown',e=>{e.preventDefault();api.set(S.volume+.5);clicks.push(performance.now())});
-  return{tick(dt){api.set(Math.max(0,S.volume-(1.6+S.volume*.03)*dt));
+  return{tick(dt){api.set(Math.max(0,S.volume-(2.2+S.volume*.04)*HD()*dt));
     const n=performance.now();clicks=clicks.filter(t=>n-t<1000);
     st.textContent='click rate: '+clicks.length+'/sec \u2022 '+(clicks.length>=5?'the horse appreciates you':clicks.length>=2?'faster, the volume is fleeing':'the horse is disappointed')},cleanup:off};
  }},
 {cat:'SURVIVAL',tol:0,name:'The Car Window Crank',desc:'One full revolution = 1% volume. Grab the handle and wind.',
- target(){return rand(8,25)},
+ target(){return rand(10,28)},
  mount(root,api){
   const cv=mk('canvas',null,root);cv.width=cv.height=320;cv.style.maxWidth='320px';
   const c=cv.getContext('2d'),C=160,R=90;
@@ -285,7 +323,7 @@ const CH=[
    cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'SURVIVAL',tol:0,name:'The Dice Hold',desc:'Roll five dice, hold the ones you want, re-roll the rest. Volume is the sum of held dice.',
- target(){return rand(5,30)},
+ target(){return rand(8,28)},
  mount(root,api){
   const row=mk('div','dice',root),dice=[],holds=[];
   for(let i=0;i<5;i++){const d=mk('div',null,row),die=mk('div','die',d,rand(1,6)),l=mk('label',null,d),cb=mk('input',null,l);
@@ -298,13 +336,13 @@ const CH=[
     dice.forEach((d,i)=>{if(!holds[i].checked)d.textContent=rand(1,6)});if(++n>9){clearInterval(iv);upd()}},70)};
   upd();return{cleanup(){clearInterval(iv)}};
  }},
-{cat:'PHYSICS',tol:1,name:'The Shaking Bar',desc:'The higher you push the knob, the more violently it vibrates. Above 70% it also slips from sweaty fingers. Hold it and press ENTER to lock.',
+{cat:'PHYSICS',tol:1,name:'The Shaking Bar',desc:'The higher you push the knob, the more violently it vibrates. Above 60% it also slips from sweaty fingers. Hold it and press ENTER to lock.',
  mount(root,api){
   const tr=mk('div','track',root),kn=mk('div','knob',tr);let vol=0,held=false,t=0,slip=0;
   const offs=dragKnob(tr,kn,f=>{held=true;vol=f*100;api.set(vol)},()=>{held=false});
-  return{tick(dt){t+=dt;slip+=dt;const a=Math.pow(vol/100,1.5)*14;
+  return{tick(dt){t+=dt;slip+=dt;const a=Math.pow(vol/100,1.4)*20*Math.min(1.6,HD());
    kn.style.transform='translate('+(Math.sin(t*31)*a+(Math.random()-.5)*a*.5)+'px,'+(Math.cos(t*47)*a*.6)+'px)';kn.style.left=vol+'%';
-   if(vol>70&&!held&&slip>1.4){slip=0;vol=Math.max(0,vol-12);api.set(vol);api.toast('The knob slipped. Sweaty fingers.')}},
+   if(vol>60&&!held&&slip>1.1){slip=0;vol=Math.max(0,vol-14);api.set(vol);api.toast('The knob slipped. Sweaty fingers.')}},
    cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'PHYSICS',tol:3,name:'The Slingshot',desc:'Pull the ball back and release. Volume is the horizontal distance it travels. Yes, ballistics.',
@@ -320,11 +358,9 @@ const CH=[
    const b=ball||drag||{x:AX,y:AY};c.clearRect(0,0,640,340);
    c.fillStyle=k.line;c.fillRect(0,GR+10,640,40);
    c.lineCap='round';c.lineJoin='round';
-   /* handle + fork */
    c.strokeStyle='#8a5a2b';c.lineWidth=12;
    c.beginPath();c.moveTo(AX,GR+10);c.lineTo(AX,AY+34);c.stroke();
    c.beginPath();c.moveTo(AX,AY+34);c.lineTo(AX-24,AY-26);c.moveTo(AX,AY+34);c.lineTo(AX+24,AY-26);c.stroke();
-   /* elastic bands to the ball */
    c.strokeStyle=k.bad;c.lineWidth=4;
    c.beginPath();c.moveTo(AX-24,AY-26);c.lineTo(b.x,b.y);c.lineTo(AX+24,AY-26);c.stroke();
    c.fillStyle=k.dim;trail.forEach(q=>{c.fillRect(q[0],q[1],3,3)});
@@ -339,7 +375,7 @@ const CH=[
   const offs=[listen(b,'pointerdown',e=>{e.preventDefault();ch=true;pw=0;up=true;pr=null}),
    listen(window,'pointerup',()=>{if(!ch)return;ch=false;const s=pw*560;pr={x:BX+30,y:GR-110,vx:Math.cos(-Math.PI/4)*s,vy:Math.sin(-Math.PI/4)*s}})];
   return{tick(dt){
-   if(ch){pw+=(up?.4:-.4)*dt;if(pw>=1){pw=1;up=false}if(pw<=0){pw=0;up=true}}
+   if(ch){const sp=.55*Math.min(1.8,HD());pw+=(up?sp:-sp)*dt;if(pw>=1){pw=1;up=false}if(pw<=0){pw=0;up=true}}
    if(pr){pr.vy+=G*dt;pr.x+=pr.vx*dt;pr.y+=pr.vy*dt;if(pr.y>=GR){vol=clamp((pr.x-BX)/MAXD*100,0,100);api.set(vol);pr=null}}
    c.clearRect(0,0,640,340);c.fillStyle=k.line;c.fillRect(0,GR+10,640,40);
    const a=-Math.PI/4-pw*Math.PI/3.2;c.strokeStyle=k.dim;c.lineWidth=7;c.lineCap='round';
@@ -349,7 +385,7 @@ const CH=[
    cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'PHYSICS',tol:0,name:'The Pendulum / Metronome',desc:'Drag the bob back and release. Each swing through the bar adds 5%. Pass 100% and the speakers explode back to 0.',
- target(){return rand(1,20)*5},
+ target(){return rand(2,20)*5},
  mount(root,api){const cv=mkcv(root,640,320),c=cv.getContext('2d'),k=K();
   const PX=320,PY=30,L=215;let th=.6,om=0,drag=false,vol=0,cool=0,fl=0;
   const bob=()=>({x:PX+L*Math.sin(th),y:PY+L*Math.cos(th)});
@@ -376,8 +412,8 @@ const CH=[
    listen(fr,'pointerdown',e=>{e.preventDefault();drag=true;sx=e.clientX;st=tilt;fr.setPointerCapture(e.pointerId)}),
    listen(fr,'pointermove',e=>{if(drag)tilt=clamp(st+(e.clientX-sx)*.006,-.5,.5)}),
    listen(fr,'pointerup',()=>{drag=false}),listen(fr,'pointercancel',()=>{drag=false})];
-  return{tick(dt){if(!drag)tilt*=Math.pow(.6,dt);v+=1.2*Math.sin(tilt)*dt;v*=Math.pow(.35,dt);x+=v*dt;
-   if(x<0){x=0;v*=-.4}if(x>1){x=1;v*=-.4}api.set(x*100);ball.style.left=x*100+'%';fr.style.transform='rotate('+(tilt*.3)+'rad)'},
+  return{tick(dt){if(!drag)tilt*=Math.pow(.6,dt);v+=1.2*Math.sin(tilt)*dt;v*=Math.pow(.45,dt);x+=v*dt;
+   if(x<0){x=0;v*=-.6}if(x>1){x=1;v*=-.6}api.set(x*100);ball.style.left=x*100+'%';fr.style.transform='rotate('+(tilt*.3)+'rad)'},
    cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'DATA ENTRY',tol:0,name:'The Polka Dot Text Matcher',desc:'Drag the dots into the dotted outlines until they form the target number, then press APPLY. The scanner is strict.',
@@ -393,7 +429,7 @@ const CH=[
    listen(cv,'pointerup',()=>{drag=-1}),listen(cv,'pointercancel',()=>{drag=-1})];
   const b=mk('button','btn',mk('div','row',root),'APPLY (SCREENSHOT)');
   b.onclick=()=>{const used=new Set();let n=0;
-   for(const dt of dots){let best=-1,bd=26;slots.forEach((sl,j)=>{if(used.has(j))return;const q=Math.hypot(dt.x-sl.x,dt.y-sl.y);if(q<bd){bd=q;best=j}});if(best>=0){used.add(best);n++}}
+   for(const dt of dots){let best=-1,bd=22;slots.forEach((sl,j)=>{if(used.has(j))return;const q=Math.hypot(dt.x-sl.x,dt.y-sl.y);if(q<bd){bd=q;best=j}});if(best>=0){used.add(best);n++}}
    if(n===slots.length){api.set(S.target);api.toast('Pattern accepted. Somehow.')}
    else{api.set(Math.min(S.target-1,Math.round(n/slots.length*S.target)));api.toast('Scanner: pattern incomplete ('+n+'/'+slots.length+' dots).')}};
   return{tick(){c.clearRect(0,0,640,400);c.strokeStyle=k.dim;c.lineWidth=1.5;c.setLineDash([3,3]);
@@ -403,18 +439,18 @@ const CH=[
  }},
 {cat:'MINI-GAME',tol:1,name:'The Pong Volume',desc:'A working game of Pong. Where the ball hits your paddle shifts the volume. If the computer scores, volume drops.',
  mount(root,api){const cv=mkcv(root,640,400),c=cv.getContext('2d'),k=K();
-  const PH=80;let py=160,ay=160,sp=320,ball,last='';
+  const PH=70;let py=160,ay=160,sp=380,ball,last='';
   const reset=d=>{ball={x:320,y:200,vx:d*sp*.7,vy:(Math.random()*2-1)*sp*.5}};reset(1);
   const off=listen(cv,'pointermove',e=>{py=clamp(P(cv,e).y-PH/2,0,400-PH)});
   return{tick(dt){ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
    if(ball.y<6){ball.y=6;ball.vy=Math.abs(ball.vy)}if(ball.y>394){ball.y=394;ball.vy=-Math.abs(ball.vy)}
    if(ball.x<40&&ball.vx<0&&ball.y>py-8&&ball.y<py+PH+8){const f=(ball.y-(py+PH/2))/(PH/2);
-    ball.vx=Math.min(900,Math.abs(ball.vx)*1.06);ball.vy=clamp(ball.vy+f*130,-600,600);ball.x=40;sp=Math.min(700,sp*1.04);
+    ball.vx=Math.min(1000,Math.abs(ball.vx)*1.08);ball.vy=clamp(ball.vy+f*150,-650,650);ball.x=40;sp=Math.min(800,sp*1.05);
     api.set(S.volume+f*6);last=(f>=0?'+':'')+(f*6).toFixed(1)+'%'}
    if(ball.x>600&&ball.vx>0&&ball.y>ay-8&&ball.y<ay+PH+8){ball.vx=-Math.abs(ball.vx)*1.06;ball.x=600}
-   if(ball.x<-10){api.set(S.volume-8);api.toast('Computer scored. -8%. Rude.');reset(1)}
+   if(ball.x<-10){api.set(S.volume-10);api.toast('Computer scored. -10%. Rude.');reset(1)}
    if(ball.x>650)reset(-1);
-   const av=Math.min(260,165+S.round*4);ay=clamp(ay+clamp(ball.y-PH/2-ay,-av*dt,av*dt),0,400-PH);
+   const av=Math.min(330,215+S.round*6);ay=clamp(ay+clamp(ball.y-PH/2-ay,-av*dt,av*dt),0,400-PH);
    c.clearRect(0,0,640,400);c.fillStyle=k.acc;c.fillRect(30,py,10,PH);c.fillStyle=k.bad;c.fillRect(600,ay,10,PH);
    c.fillStyle=k.txt;c.beginPath();c.arc(ball.x,ball.y,7,0,7);c.fill();
    T(c,'move the pointer over the court'+(last?'  \u2022  last hit: '+last:''),180,388,k.dim)},cleanup:off};
@@ -429,7 +465,7 @@ const CH=[
    listen(cv,'pointerup',()=>{if(!drag)return;let vx=(SX-drag.x)*4.5,vy=(SY-drag.y)*4.5;const s=Math.hypot(vx,vy);if(s>620){vx*=620/s;vy*=620/s}
     drag=null;if(s<20)return;st={x:SX,y:SY,vx,vy,mv:true};vol=null})];
   return{tick(dt){
-   if(st.mv){const s=Math.hypot(st.vx,st.vy);if(s>5){const cu=14*(1-s/620)*dt,ux=st.vx,uy=st.vy;st.vx+=-uy/s*cu;st.vy+=ux/s*cu}
+   if(st.mv){const s=Math.hypot(st.vx,st.vy);if(s>5){const cu=18*(1-s/620)*dt,ux=st.vx,uy=st.vy;st.vx+=-uy/s*cu;st.vy+=ux/s*cu}
     const f=Math.pow(.35,dt);st.vx*=f;st.vy*=f;st.x+=st.vx*dt;st.y+=st.vy*dt;
     if(st.x<24){st.x=24;st.vx=Math.abs(st.vx)*.5}if(st.x>616){st.x=616;st.vx=-Math.abs(st.vx)*.5}
     if(st.y<24){st.y=24;st.vy=Math.abs(st.vy)*.5}if(st.y>396){st.y=396;st.vy=-Math.abs(st.vy)*.5}
@@ -468,7 +504,7 @@ const CH=[
    cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'MINI-GAME',tol:0,name:'The Snake Game',desc:'Play Snake. Every food is +5%. Hit a wall or yourself and the snake restarts and the volume drops 10%. Arrows, WASD or swipe.',
- target(){return rand(1,20)*5},
+ target(){return rand(2,20)*5},
  mount(root,api){const N=22,CS=20,cv=mkcv(root,N*CS,N*CS),c=cv.getContext('2d'),k=K();cv.style.maxWidth=N*CS+'px';
   const init=()=>[{x:5,y:11},{x:4,y:11},{x:3,y:11}];
   let sn=init(),dir={x:1,y:0},nd=dir,food={x:15,y:11},acc=0,dead=0,sx=0,sy=0;
@@ -479,8 +515,8 @@ const CH=[
    listen(cv,'pointerdown',e=>{sx=e.clientX;sy=e.clientY}),
    listen(cv,'pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<18)return;
     if(Math.abs(dx)>Math.abs(dy))turn(Math.sign(dx),0);else turn(0,Math.sign(dy))})];
-  return{tick(dt){dead=Math.max(0,dead-dt);acc+=dt;
-   while(acc>.13){acc-=.13;if(dead>0)continue;dir=nd;const h={x:sn[0].x+dir.x,y:sn[0].y+dir.y};
+  return{tick(dt){dead=Math.max(0,dead-dt);acc+=dt;const step=Math.max(.07,.11-S.done*.003);
+   while(acc>step){acc-=step;if(dead>0)continue;dir=nd;const h={x:sn[0].x+dir.x,y:sn[0].y+dir.y};
     if(h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(q=>q.x===h.x&&q.y===h.y)){dead=1;sn=init();dir={x:1,y:0};nd=dir;api.set(S.volume-10);api.toast('Snake died. Volume -10%.')}
     else{sn.unshift(h);if(h.x===food.x&&h.y===food.y){api.set(S.volume+5);do{food={x:rand(0,N-1),y:rand(0,N-1)}}while(sn.some(q=>q.x===food.x&&q.y===food.y))}else sn.pop()}}
    c.clearRect(0,0,N*CS,N*CS);c.fillStyle=k.bad;c.beginPath();c.arc(food.x*CS+10,food.y*CS+10,7,0,7);c.fill();
@@ -488,30 +524,29 @@ const CH=[
    T(c,'volume: '+Math.round(S.volume)+'%',6,14,k.dim,'12px Georgia')},
    cleanup(){offs.forEach(f=>f())}};
  }},
-{cat:'SURVIVAL',tol:2,name:'The Voice / Screaming Sensor',desc:'Volume is your real microphone level. Scream, clap, or blow. Go quiet and it bleeds away. Mic denied? Hold SPACE.',
+{cat:'SURVIVAL',tol:2,name:'The Voice / Screaming Sensor',desc:'Volume is your real microphone level. Scream, clap, or blow. Go quiet and it bleeds away. A working microphone is required: no mic, no round.',
  mount(root,api){const w=mk('div','mid',root),vu=mk('div',null,w);vu.style.cssText='display:flex;gap:3px;align-items:flex-end;justify-content:center;height:70px;margin:12px 0';
   const bars=[];for(let i=0;i<24;i++){const b=mk('i',null,vu);b.style.cssText='width:9px;height:8px;border-radius:2px;background:var(--line)';bars.push(b)}
   const st=mk('div','mid',w,'requesting microphone\u2026');
-  let an=null,data=null,stream=null,ac=null,space=false;
-  const offs=[listen(window,'keydown',e=>{if(e.code==='Space'&&!typing()){e.preventDefault();space=true}}),listen(window,'keyup',e=>{if(e.code==='Space')space=false})];
-  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
-   navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{if(!cur||!cur.__alive){s.getTracks().forEach(t=>t.stop());return}
-    stream=s;ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.resume)ac.resume();an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(s).connect(an);
-    data=new Uint8Array(an.frequencyBinCount);st.textContent='MIC LIVE \u2014 make noise.'}).catch(()=>{st.textContent='MIC DENIED \u2014 hold SPACE and scream at it.'});
-  }else st.textContent='NO MIC \u2014 hold SPACE and scream at it.';
+  let an=null,data=null,stream=null,ac=null;
   const o={__alive:true,tick(dt){let loud=0;
-   if(an){an.getByteTimeDomainData(data);let s=0;for(let i=0;i<data.length;i++){const v=(data[i]-128)/128;s+=v*v}loud=clamp(Math.sqrt(s/data.length)*900,0,100)}
-   else loud=space?78+Math.sin(performance.now()/90)*8:0;
-   if(loud>S.volume)api.set(loud);else api.set(Math.max(0,S.volume-(16+S.volume*.2)*dt));
+   if(an){an.getByteTimeDomainData(data);let s=0;for(let i=0;i<data.length;i++){const v=(data[i]-128)/128;s+=v*v}loud=clamp(Math.sqrt(s/data.length)*650,0,100)}
+   if(loud>S.volume)api.set(loud);else api.set(Math.max(0,S.volume-(24+S.volume*.3)*HD()*dt));
    const lv=Math.round(S.volume);bars.forEach((b,i)=>{const lit=(i+1)/bars.length*100<=lv+3;b.style.background=lit?(i>bars.length*.8?'var(--bad)':'var(--good)'):'var(--line)';b.style.height=lit?(10+Math.random()*8)+'px':'8px'})},
-   cleanup(){o.__alive=false;offs.forEach(f=>f());if(stream)stream.getTracks().forEach(t=>t.stop());if(ac)ac.close().catch(()=>{})}};
+   cleanup(){o.__alive=false;if(stream)stream.getTracks().forEach(t=>t.stop());if(ac)ac.close().catch(()=>{})}};
+  const noMic=msg=>{if(!o.__alive)return;st.textContent=msg;api.toast(msg);setTimeout(()=>{if(o.__alive)api.skip()},1200)};
+  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+   navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{if(!o.__alive){s.getTracks().forEach(t=>t.stop());return}
+    stream=s;ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.resume)ac.resume();an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(s).connect(an);
+    data=new Uint8Array(an.frequencyBinCount);st.textContent='MIC LIVE \u2014 make noise.'}).catch(()=>noMic('Microphone unavailable. Skipping this control.'));
+  }else noMic('No microphone found. Skipping this control.');
   return o;
  }},
 {cat:'SURVIVAL',tol:1,name:'The Firewood Survivalist',desc:'The volume is a campfire that constantly dies toward silence. Keep adding wood or lose your audio to the night.',
  mount(root,api){const cv=mkcv(root,640,300),c=cv.getContext('2d'),k=K();
   const b=mk('button','btn',mk('div','row',root),'ADD WOOD');
-  const off=listen(b,'pointerdown',e=>{e.preventDefault();api.set(S.volume+rand(3,6))});
-  return{tick(dt){api.set(Math.max(0,S.volume-(.85+S.volume*.018)*dt));const v=S.volume,t=performance.now()/1000;
+  const off=listen(b,'pointerdown',e=>{e.preventDefault();api.set(S.volume+rand(2,6))});
+  return{tick(dt){api.set(Math.max(0,S.volume-(1.2+S.volume*.025)*HD()*dt));const v=S.volume,t=performance.now()/1000;
    c.clearRect(0,0,640,300);
    if(v>2){const g=c.createRadialGradient(320,250,10,320,250,190*(.4+v/100));g.addColorStop(0,'rgba(255,140,50,'+(.12+v/100*.25)+')');g.addColorStop(1,'rgba(255,140,50,0)');c.fillStyle=g;c.fillRect(0,0,640,300)}
    c.fillStyle=k.line;c.fillRect(0,258,640,42);c.strokeStyle='#8a6a4a';c.lineWidth=13;c.lineCap='round';
@@ -549,6 +584,168 @@ const CH=[
     const p=xy(e);items.forEach(({r})=>{if(Math.hypot(p[0]-BX,p[1]-r.y)<30)r.on=!r.on});redraw()}),
    ...items.map(({g,r})=>listen(g,'click',()=>{r.on=!r.on;redraw()}))];
   redraw();return{cleanup(){offs.forEach(f=>f())}};
+ }},
+
+/* ===================== NEW CONTROLS ===================== */
+
+{cat:'PHYSICS',tol:2,name:'The Solar Eclipse',desc:'Drag the moon over the sun. Volume is the percent of the sun that is covered. The moon also hides the number, naturally.',
+ mount(root,api){const cv=mkcv(root,640,360),c=cv.getContext('2d'),k=K();
+  const SX=320,SY=180,SR=95,MR=95;let mx=90,my=90,drag=false,ox=0,oy=0,vol=0;
+  const stars=Array.from({length:40},()=>({x:rand(0,640),y:rand(0,360),r:Math.random()*1.5+.4}));
+  const overlap=d=>{if(d<1e-6)return 1;if(d>=SR+MR)return 0;
+   const a=MR*MR*Math.acos(clamp((d*d+MR*MR-SR*SR)/(2*d*MR),-1,1)),b=SR*SR*Math.acos(clamp((d*d+SR*SR-MR*MR)/(2*d*SR),-1,1)),
+   t=.5*Math.sqrt(Math.max(0,(-d+MR+SR)*(d+MR-SR)*(d-MR+SR)*(d+MR+SR)));return(a+b-t)/(Math.PI*SR*SR)};
+  const offs=[
+   listen(cv,'pointerdown',e=>{const p=P(cv,e);if(Math.hypot(p.x-mx,p.y-my)<MR){drag=true;ox=p.x-mx;oy=p.y-my;cv.setPointerCapture(e.pointerId)}}),
+   listen(cv,'pointermove',e=>{if(!drag)return;const p=P(cv,e);mx=clamp(p.x-ox,MR*.3,640-MR*.3);my=clamp(p.y-oy,MR*.3,360-MR*.3)}),
+   listen(cv,'pointerup',()=>{drag=false}),listen(cv,'pointercancel',()=>{drag=false})];
+  return{tick(){vol=overlap(Math.hypot(mx-SX,my-SY))*100;api.set(vol);
+   c.clearRect(0,0,640,360);c.fillStyle='#0b0d18';c.fillRect(0,0,640,360);c.fillStyle='#fff';stars.forEach(s=>{c.beginPath();c.arc(s.x,s.y,s.r,0,7);c.fill()});
+   c.fillStyle='#ffd166';c.beginPath();c.arc(SX,SY,SR,0,7);c.fill();
+   c.textAlign='center';T(c,vol.toFixed(2)+'%',SX,SY+10,'#5a3a00','bold 28px Georgia');c.textAlign='left';
+   c.fillStyle='#2b2f45';c.strokeStyle='#8a90b8';c.lineWidth=2;c.beginPath();c.arc(mx,my,MR,0,7);c.fill();c.stroke();
+   T(c,'drag the moon over the sun',14,24,'#cfd3ea')},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'PHYSICS',tol:1,name:'The Runaway Slider',desc:'The handle bolts away from your cursor. Corner it at an end, grab it and drag. It slips out of your fingers when you let go. Hold and press ENTER to lock.',
+ mount(root,api){
+  const tr=mk('div','track',root),kn=mk('div','knob',tr);
+  let x=0,held=false,lx=-9999,ly=-9999;
+  const offs=dragKnob(tr,kn,f=>{held=true;x=f;api.set(x*100)},()=>{held=false;x=clamp(x+(Math.random()-.5)*.14,0,1);api.set(x*100);api.toast('The handle slipped out of your fingers.')});
+  offs.push(listen(window,'pointermove',e=>{lx=e.clientX;ly=e.clientY}));
+  return{tick(dt){
+   if(!held){const r=tr.getBoundingClientRect(),cx=r.left+x*r.width,cy=r.top+r.height/2,dx=lx-cx,dy=ly-cy,pd=Math.hypot(dx,dy);
+    if(pd<100){const sgn=dx>=0?1:-1;x=clamp(x-sgn*(.9*HD()*(1-pd/100)+.35)*dt,0,1)}
+    api.set(x*100)}
+   kn.style.left=x*100+'%'},cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'PHYSICS',tol:1,name:'The Gravity Well',desc:'A heavy vertical slider. Drag up against gravity: the higher it climbs, the heavier it gets. Let go and it slams to zero. Hold and press ENTER to lock.',
+ mount(root,api){
+  const tr=mk('div','vtrack',root),kn=mk('div','knob',tr);let x=0,v=0,held=false,tf=0;
+  const f=e=>{const r=tr.getBoundingClientRect();return clamp(1-(e.clientY-r.top)/r.height,0,1)};
+  const offs=[listen(tr,'pointerdown',e=>{e.preventDefault();held=true;v=0;tf=f(e);tr.setPointerCapture(e.pointerId)}),
+   listen(tr,'pointermove',e=>{if(held)tf=f(e)}),
+   listen(tr,'pointerup',()=>{held=false}),listen(tr,'pointercancel',()=>{held=false})];
+  return{tick(dt){
+   if(held){const g=(.14+.6*x)*HD();x=clamp(x+(6*(tf-x)-g+(Math.random()-.5)*.35*x)*dt,0,1)}
+   else{v+=3*dt;x=Math.max(0,x-v*dt);if(x<=0)v=0}
+   api.set(x*100);kn.style.left='50%';kn.style.top=(100-x*100)+'%'},cleanup(){offs.forEach(fn=>fn())}};
+ }},
+{cat:'SURVIVAL',tol:1,name:'The Real Bicycle Pump',desc:'Grab the handle and pump it. Only the downstroke compresses air. The tire leaks the whole time.',
+ mount(root,api){const cv=mkcv(root,640,320),c=cv.getContext('2d'),k=K();
+  const TOP=50,BOT=190,PXC=200;let hy=TOP,drag=false,off=0;
+  const offs=[
+   listen(cv,'pointerdown',e=>{const p=P(cv,e);if(Math.abs(p.x-PXC)<90&&Math.abs(p.y-hy)<34){drag=true;off=p.y-hy;cv.setPointerCapture(e.pointerId)}}),
+   listen(cv,'pointermove',e=>{if(!drag)return;const ny=clamp(P(cv,e).y-off,TOP,BOT);if(ny>hy)api.set(S.volume+(ny-hy)*.05);hy=ny}),
+   listen(cv,'pointerup',()=>{drag=false}),listen(cv,'pointercancel',()=>{drag=false})];
+  return{tick(dt){api.set(Math.max(0,S.volume-(1+S.volume*.025)*HD()*dt));
+   c.clearRect(0,0,640,320);
+   c.fillStyle=k.dim;c.fillRect(PXC-22,100,44,160);c.fillStyle=k.line;c.fillRect(PXC-34,255,68,12);
+   c.strokeStyle=k.txt;c.lineWidth=7;c.lineCap='round';c.beginPath();c.moveTo(PXC,hy+10);c.lineTo(PXC,100);c.stroke();
+   c.fillStyle=drag?k.acc:k.txt;c.fillRect(PXC-60,hy-8,120,16);
+   c.strokeStyle=k.dim;c.lineWidth=5;c.beginPath();c.moveTo(PXC+22,235);c.bezierCurveTo(300,300,360,300,440,215);c.stroke();
+   c.strokeStyle=k.txt;c.lineWidth=14;c.beginPath();c.arc(500,170,70,0,7);c.stroke();
+   c.strokeStyle=S.volume>85?k.bad:k.good;c.lineWidth=8;c.beginPath();c.arc(500,170,70,-Math.PI/2,-Math.PI/2+Math.PI*2*S.volume/100);c.stroke();
+   c.textAlign='center';T(c,Math.round(S.volume)+'%',500,176,k.txt,'bold 20px Georgia');c.textAlign='left';
+   T(c,'pump the handle down. up does nothing.',14,24,k.dim)},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'DATA ENTRY',tol:0,name:'The Pi Decimal Finder',desc:'Type the digits of Pi (3.14159...). Each correct digit adds its own value to the volume. One wrong digit wipes the lot.',
+ target(){let s=0;const ps=[];PID.forEach(d=>{s+=d;ps.push(s)});return pick(ps.filter(v=>v>=15&&v<=94))},
+ mount(root,api){const w=mk('div','pi',root);mk('b',null,w,'3.');
+  const inp=mk('input','field',w);inp.inputMode='numeric';inp.autocomplete='off';inp.spellcheck=false;inp.placeholder='type decimals\u2026';inp.setAttribute('aria-label','Digits of pi');
+  const info=mk('div','mid',w,'Each correct digit adds its own value (a 4 adds 4%). One wrong digit wipes everything.');
+  const calc=n=>PID.slice(0,n).reduce((a,b)=>a+b,0);
+  const off=listen(inp,'input',()=>{
+   const val=inp.value.replace(/\D/g,'').slice(0,PID.length);inp.value=val;
+   const ok=PID.slice(0,val.length).join('')===val;
+   if(ok){api.set(calc(val.length))}
+   else{api.set(0);inp.value='';inp.classList.remove('err');void inp.offsetWidth;inp.classList.add('err');api.toast('WRONG DIGIT. Pi is disappointed.')}});
+  setTimeout(()=>inp.focus(),50);
+  return{cleanup:off};
+ }},
+{cat:'DATA ENTRY',tol:0,name:'The Advanced Radio Buttons',desc:'One hundred real radio buttons, 1 to 100, in a completely random order. Pick your exact number.',
+ mount(root,api){const g=mk('div','radios',root);
+  const nums=Array.from({length:100},(_,i)=>i+1).sort(()=>Math.random()-.5);
+  nums.forEach(n=>{const l=mk('label',null,g),r=mk('input',null,l);r.type='radio';r.name='volradio';r.onchange=()=>api.set(n);l.append(String(n))});
+  return{};
+ }},
+{cat:'MINI-GAME',tol:0,name:'The Slime Eater',desc:'Steer the slime with arrows or WASD (or hold the pointer). Black dots flee and give +1%. Red spikes bite for -4%.',
+ target(){return rand(8,30)},
+ mount(root,api){const W=640,H=380,cv=mkcv(root,W,H),c=cv.getContext('2d'),k=K();
+  const pl={x:320,y:190},keys={};let dots=[],spk=[],ptr=null,st=0,t=0;
+  const sd=()=>({x:rand(30,W-30),y:rand(30,H-30),vx:rand(-30,30),vy:rand(-30,30)});
+  for(let i=0;i<9;i++)dots.push(sd());
+  const MAP={arrowup:'u',w:'u',arrowdown:'d',s:'d',arrowleft:'l',a:'l',arrowright:'r',d:'r'};
+  const offs=[
+   listen(window,'keydown',e=>{const m=MAP[e.key.toLowerCase()];if(m&&!typing()){e.preventDefault();keys[m]=true}}),
+   listen(window,'keyup',e=>{const m=MAP[e.key.toLowerCase()];if(m)keys[m]=false}),
+   listen(cv,'pointerdown',e=>{ptr=P(cv,e);cv.setPointerCapture(e.pointerId)}),
+   listen(cv,'pointermove',e=>{if(ptr)ptr=P(cv,e)}),
+   listen(cv,'pointerup',()=>{ptr=null}),listen(cv,'pointercancel',()=>{ptr=null})];
+  return{tick(dt){t+=dt;st+=dt;
+   let dx=(keys.r?1:0)-(keys.l?1:0),dy=(keys.d?1:0)-(keys.u?1:0);
+   if(!dx&&!dy&&ptr){const ex=ptr.x-pl.x,ey=ptr.y-pl.y,d=Math.hypot(ex,ey);if(d>8){dx=ex/d;dy=ey/d}}
+   const m=Math.hypot(dx,dy)||1,spd=dx||dy?200:0;pl.x=clamp(pl.x+dx/m*spd*dt,16,W-16);pl.y=clamp(pl.y+dy/m*spd*dt,16,H-16);
+   for(let i=dots.length-1;i>=0;i--){const q=dots[i],ex=q.x-pl.x,ey=q.y-pl.y,d=Math.hypot(ex,ey)||1;
+    if(d<110){q.vx+=ex/d*260*dt;q.vy+=ey/d*260*dt}
+    const sp=Math.hypot(q.vx,q.vy);if(sp>110){q.vx*=110/sp;q.vy*=110/sp}
+    q.x+=q.vx*dt;q.y+=q.vy*dt;
+    if(q.x<8||q.x>W-8){q.vx*=-1;q.x=clamp(q.x,8,W-8)}if(q.y<8||q.y>H-8){q.vy*=-1;q.y=clamp(q.y,8,H-8)}
+    if(d<24){dots.splice(i,1);dots.push(sd());api.set(S.volume+1)}}
+   if(st>2&&spk.length<Math.min(8,3+Math.floor(S.done/2))){st=0;const a=Math.random()*6.28;spk.push({x:W/2+Math.cos(a)*300,y:H/2+Math.sin(a)*190,vx:-Math.cos(a)*70+rand(-30,30),vy:-Math.sin(a)*70+rand(-30,30)})}
+   for(let i=spk.length-1;i>=0;i--){const q=spk[i];q.x+=q.vx*dt;q.y+=q.vy*dt;
+    if(q.x<10||q.x>W-10){q.vx*=-1;q.x=clamp(q.x,10,W-10)}if(q.y<10||q.y>H-10){q.vy*=-1;q.y=clamp(q.y,10,H-10)}
+    if(Math.hypot(q.x-pl.x,q.y-pl.y)<24){spk.splice(i,1);api.set(S.volume-4);api.toast('Spiked. Volume -4%.')}}
+   c.clearRect(0,0,W,H);
+   c.fillStyle=k.txt;dots.forEach(q=>{c.beginPath();c.arc(q.x,q.y,6,0,7);c.fill()});
+   c.fillStyle=k.bad;spk.forEach(q=>{c.beginPath();for(let j=0;j<8;j++){const r=j%2?6:13,a=j*Math.PI/4+t*2;c.lineTo(q.x+Math.cos(a)*r,q.y+Math.sin(a)*r)}c.closePath();c.fill()});
+   const wob=Math.sin(t*8)*1.6;c.fillStyle=k.good;c.beginPath();c.ellipse(pl.x,pl.y,17+wob,15-wob,0,0,7);c.fill();
+   c.fillStyle='#fff';c.beginPath();c.arc(pl.x-5,pl.y-3,3.5,0,7);c.arc(pl.x+5,pl.y-3,3.5,0,7);c.fill();
+   c.fillStyle='#111';c.beginPath();c.arc(pl.x-5,pl.y-3,1.5,0,7);c.arc(pl.x+5,pl.y-3,1.5,0,7);c.fill();
+   T(c,'volume: '+Math.round(S.volume)+'%',8,16,k.dim,'12px Georgia')},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'PHYSICS',tol:2,name:'The Hand Gesture',desc:'Two hand emojis. The farther apart they are, the louder it is. Tired arms drift together when you let go. (Mouse: you only have one hand. Good luck.)',
+ mount(root,api){const cv=mkcv(root,640,300),c=cv.getContext('2d'),k=K();
+  const hs=[{x:160,y:150,id:-1},{x:480,y:150,id:-1}],MINX=40,MAXX=600;
+  const offs=[
+   listen(cv,'pointerdown',e=>{const p=P(cv,e);let bi=-1,bd=60;hs.forEach((h,i)=>{if(h.id!==-1)return;const d=Math.hypot(p.x-h.x,p.y-h.y);if(d<bd){bd=d;bi=i}});
+    if(bi>=0){hs[bi].id=e.pointerId;cv.setPointerCapture(e.pointerId)}}),
+   listen(cv,'pointermove',e=>{const h=hs.find(q=>q.id===e.pointerId);if(h){const p=P(cv,e);h.x=clamp(p.x,MINX,MAXX);h.y=clamp(p.y,40,260)}}),
+   listen(cv,'pointerup',e=>{hs.forEach(h=>{if(h.id===e.pointerId)h.id=-1})}),listen(cv,'pointercancel',e=>{hs.forEach(h=>{if(h.id===e.pointerId)h.id=-1})})];
+  return{tick(dt){
+   const dr=22*HD()*dt;
+   const a=hs[0],b=hs[1];
+   if(a.id===-1&&b.id===-1){const m=(a.x+b.x)/2;a.x+=clamp(m-a.x,-dr,dr);b.x+=clamp(m-b.x,-dr,dr)}
+   else if(a.id===-1)a.x+=clamp(b.x-a.x,-dr,dr);
+   else if(b.id===-1)b.x+=clamp(a.x-b.x,-dr,dr);
+   api.set(Math.abs(a.x-b.x)/(MAXX-MINX)*100);
+   c.clearRect(0,0,640,300);
+   c.strokeStyle=k.line;c.lineWidth=3;c.setLineDash([6,6]);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();c.setLineDash([]);
+   c.textAlign='center';c.font='64px serif';c.fillStyle=k.txt;
+   c.fillText('\u{1F590}\uFE0F',a.x,a.y+22);c.fillText('\u{1F590}\uFE0F',b.x,b.y+22);
+   c.textAlign='left';T(c,'spread wide = loud. arms get tired.',14,22,k.dim)},
+   cleanup(){offs.forEach(f=>f())}};
+ }},
+{cat:'MINI-GAME',tol:2,name:'The Global Map Coordinates',desc:'Your volume is the longitude of your cursor (far west = 0%, far east = 100%). Find the named island and click its longitude. Press ENTER to lock.',
+ target(){mapIsland=pick(ISLANDS);return clamp(Math.round((mapIsland[1]+180)/3.6),1,99)},
+ mount(root,api){const W=720,H=360,cv=mkcv(root,W,H),c=cv.getContext('2d'),k=K();
+  const pr=(lo,la)=>[(lo+180)/360*W,(90-la)/180*H];
+  let vol=0,down=false;
+  const set=e=>{vol=clamp(P(cv,e).x/W*100,0,100);api.set(vol)};
+  const offs=[listen(cv,'pointerdown',e=>{down=true;cv.setPointerCapture(e.pointerId);set(e)}),
+   listen(cv,'pointermove',e=>{if(down)set(e)}),
+   listen(cv,'pointerup',()=>{down=false}),listen(cv,'pointercancel',()=>{down=false})];
+  return{tick(){c.clearRect(0,0,W,H);
+   c.strokeStyle=k.line;c.lineWidth=.5;for(let lo=-180;lo<=180;lo+=30){const a=pr(lo,0);c.beginPath();c.moveTo(a[0],0);c.lineTo(a[0],H);c.stroke()}
+   for(let la=-60;la<=60;la+=30){const a=pr(0,la);c.beginPath();c.moveTo(0,a[1]);c.lineTo(W,a[1]);c.stroke()}
+   c.fillStyle=k.dim;LAND.forEach(poly=>{c.beginPath();poly.forEach((q,i)=>{const a=pr(q[0],q[1]);i?c.lineTo(a[0],a[1]):c.moveTo(a[0],a[1])});c.closePath();c.fill()});
+   c.fillStyle=k.txt;ISLANDS.forEach(is=>{const a=pr(is[1],is[0]==='Hawaii'?20:is[0]==='Iceland'?65:is[0]==='Madagascar'?-19:is[0]==='Honshu, Japan'?36:is[0]==='New Zealand'?-41:is[0]==='Tahiti'?-17.6:is[0]==='Guam'?13.4:is[0]==='Mauritius'?-20.3:is[0]==='the Azores'?38.7:is[0]==='Svalbard'?78:is[0]==='Sri Lanka'?7.8:is[0]==='Cuba'?21.5:is[0]==='Sumatra'?-0.6:-17.7);
+    c.beginPath();c.arc(a[0],a[1],3,0,7);c.fill()});
+   const vx=vol/100*W;c.strokeStyle=k.acc;c.lineWidth=2;c.beginPath();c.moveTo(vx,0);c.lineTo(vx,H);c.stroke();
+   T(c,'find: '+mapIsland[0],12,22,k.txt,'bold 16px Georgia');T(c,'volume = longitude. click or drag.',12,H-10,k.dim,'12px Georgia')},
+   cleanup(){offs.forEach(f=>f())}};
  }}
 ];
 const V=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
