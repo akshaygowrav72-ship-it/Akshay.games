@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Worst Volume Control: The Game</title>
+<title>Worst Volume Controls</title>
 <style>
 :root{--bg:#fff;--card:#fff;--field:#f3f1ea;--line:#c9c9c9;--txt:#111;--dim:#666;--acc:#9a6b00;--accfg:#fff;--good:#177a4c;--bad:#c9203f;color-scheme:light;
  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -74,7 +75,7 @@ button{font-family:inherit;color:var(--txt)}
 <body>
 <div id="toasts" aria-live="polite"></div>
 <div id="wrap">
-  <h1>WORST VOLUME CONTROL <span>THE GAME</span></h1>
+  <h1>WORST VOLUME <span>CONTROLS</span></h1>
   <p class="sub">Inspired by the r/ProgrammerHumor Worst Volume Control UI competition. Set the volume to the target. Good luck. You will need it.</p>
   <div id="hud">
     <div class="stat"><span class="label">TARGET</span><span class="big" id="target">--%</span></div>
@@ -113,7 +114,7 @@ const E={target:$('#target'),fill:$('#volfill'),mark:$('#volmark'),now:$('#volno
   lives:$('#lives'),rt:$('#rt'),
   mount:$('#mount'),lock:$('#lock'),cat:$('#ccat'),name:$('#cname'),desc:$('#cdesc'),
   ov:$('#overlay'),ovt:$('#ovtitle'),ovs:$('#ovsub'),ovb:$('#ovbtn')};
-let cur=null,bag=[],audio=null;
+let cur=null,curCh=null,bag=[],audio=null;
 
 /* Difficulty: decay and drift get stronger with every control you tame. */
 const HD=()=>1+Math.min(1.6,S.done*.12);
@@ -134,8 +135,8 @@ const hearts=()=>S.lives>0?'\u2665'.repeat(S.lives):'\u2014';
 function nextRound(){
   if(cur&&cur.cleanup)cur.cleanup();
   cur=null;E.mount.replaceChildren();
-  if(!bag.length)bag=CH.slice().sort(()=>Math.random()-.5);
-  const ch=bag.pop();
+  if(!bag.length){win();return}
+  const ch=bag.pop();curCh=ch;
   S.round++;
   /* much tighter tolerances: halve them, and exact stays exact */
   S.tol=ch.tol?Math.max(1,Math.ceil(ch.tol/2)):0;
@@ -145,18 +146,25 @@ function nextRound(){
   setVolume(0);
   E.target.textContent=S.target+'%';
   E.tol.textContent=S.tol?'(\u00b1'+S.tol+')':'(exact)';
-  E.cat.textContent=ch.cat+' \u2022 ROUND '+S.round;
+  E.cat.textContent=ch.cat+' \u2022 CONTROL '+(S.done+1)+' OF '+CH.length;
   E.name.textContent=ch.name;E.desc.textContent=ch.desc;
   E.done.textContent=S.done;E.lives.textContent=hearts();
   cur=ch.mount(E.mount,{set:setVolume,extra:ok=>{S.extraOK=ok},toast,skip:()=>{if(S.playing)nextRound()}})||{};
 }
-function start(){hideOverlay();S.playing=true;S.t0=performance.now();S.done=0;S.round=0;S.lives=3;bag=[];nextRound()}
+function start(){hideOverlay();S.playing=true;S.t0=performance.now();S.done=0;S.round=0;S.lives=3;bag=CH.slice().sort(()=>Math.random()-.5);nextRound()}
+function win(){
+  if(cur&&cur.cleanup)cur.cleanup();cur=null;E.mount.replaceChildren();
+  S.playing=false;beep(660);E.done.textContent=S.done;
+  overlay('YOU WIN','Every one of the '+CH.length+' controls has been tamed.\nTime: '+fmt(performance.now()-S.t0)+'   Lives left: '+S.lives+'\nThe volume is finally set. Go listen to something.','PLAY AGAIN',start);
+}
 function complete(){
   S.done++;S.playing=false;beep(220+S.target*8);
+  if(!bag.length){win();return}
   overlay('VOLUME SET: '+S.target+'%',pick(SNARK),'NEXT CONTROL',()=>{hideOverlay();S.playing=true;nextRound()});
 }
 function fail(){
   S.lives--;E.lives.textContent=hearts();beep(110);
+  if(curCh)bag.splice(rand(0,bag.length),0,curCh);
   if(S.lives<=0){
     S.playing=false;
     overlay('GAME OVER','You tamed '+S.done+' control'+(S.done===1?'':'s')+' in '+fmt(performance.now()-S.t0)+'.\nThe volume stays at 0%. As it should.','TRY AGAIN',start);
@@ -164,8 +172,8 @@ function fail(){
 }
 E.lock.onclick=()=>{if(inRange())complete()};
 window.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.repeat&&!typing()&&inRange()){e.preventDefault();complete()}});
-overlay('WORST VOLUME CONTROL',CH_INTRO(),'START',start);
-function CH_INTRO(){return 'A set of truly terrible volume controls.\nSet the volume exactly. Lock it in.\nEvery control has a time limit. Run out and you lose a life.\nThree lives. Controls get nastier the more you tame.'}
+overlay('WORST VOLUME CONTROLS',CH_INTRO(),'START',start);
+function CH_INTRO(){return 'A set of truly terrible volume controls.\nSet the volume exactly. Lock it in.\nEvery control has a time limit. Run out and you lose a life.\nThree lives. Controls get nastier the more you tame.\nTame all 31 controls to win.'}
 
 let last=performance.now();
 (function frame(t){
