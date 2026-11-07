@@ -34,7 +34,8 @@ h1{font:400 22px Impact,sans-serif;margin:0 0 14px;color:var(--brass)}
 /* Use a readable font for creature names so lowercase i cannot look like l. */
 .cell b,.card h2,.pv .cell b{font-family:Arial,Helvetica,sans-serif;letter-spacing:.2px}
 .ph{display:flex;justify-content:space-between;margin:4px 2px 8px;font-weight:700}.ph span{color:var(--mut);font-weight:500}
-.r0{--rc:#b8c0cc}.r1{--rc:#5fd38d}.r2{--rc:#4aa8ff}.r3{--rc:#b86bff}.r4{--rc:#ffb830}
+.r0{--rc:#b8c0cc}.r1{--rc:#5fd38d}.r2{--rc:#4aa8ff}.r3{--rc:#b86bff}.r4{--rc:#ffb830}.r6{--rc:#ff4b4b}.r7{--rc:#f5f5ff}
+.r7{--rc:#f5f5ff}.cell.r7{border:2px solid #fff;box-shadow:0 0 10px #fff,0 0 22px #8c7bff;animation:ultraPulse 1.8s ease-in-out infinite alternate}.card.r7{border-color:#fff;box-shadow:0 0 0 4px #ffffff66,0 0 28px 8px #a18bff,0 0 70px 18px #63dfff;animation:pop .45s cubic-bezier(.2,1.4,.4,1),ultraPulse 1.8s ease-in-out infinite alternate}.rl.r7 i{background:linear-gradient(100deg,#fff,#b9a5ff,#75e7ff,#fff);color:#20183d;text-shadow:none}@keyframes ultraPulse{from{filter:brightness(.9);box-shadow:0 0 8px #fff,0 0 16px #8c7bff}to{filter:brightness(1.25);box-shadow:0 0 18px #fff,0 0 34px #8c7bff,0 0 48px #63dfff}}
 #ov{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:9;padding:16px}
 #ov.on{display:flex}
 .card{position:relative;background:var(--cream);color:#1b1f1c;border-radius:24px;padding:20px;width:290px;text-align:center;border:6px solid var(--rc);animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
@@ -331,7 +332,7 @@ const PACKS=[
 {id:"mn",name:"Money Pack",cost:6000,ic:5,items:[["One Dollar",0,px(SPR.b1)],["Five Dollar",0,px(SPR.b5)],["Ten Dollar",1,px(SPR.b10)],["Twenty Dollar",2,px(SPR.b20)],["Fifty Dollar",3,px(SPR.b50)],["Hundred Dollar",4,px(SPR.b100)],["Prismatic Money Bag",5,px(SPR.cBill)]]},
 {id:"bl",name:"Ball Pack",cost:700,ic:2,items:[["Tennis Ball",0,px(SPR.tennis)],["Baseball",0,px(SPR.baseball)],["Soccer Ball",1,px(SPR.soccer)],["Basketball",2,px(SPR.basket)],["Bowling Ball",3,px(SPR.bowling)],["Golden Ball",4,px(SPR.golden)],["Disco Orb",5,px(SPR.cBall)]]}
 ];
-const RN=["Common","Uncommon","Rare","Epic","Legendary","Chroma"],RW=[55,25,12,6,2,0.5],RB=[.2,1,4,15,60,200];const DM=[1,1.25,1.5,2,3,4,6];
+const RN=["Common","Uncommon","Rare","Epic","Legendary","Chroma","Exotic","Ultra"],RW=[55,25,12,6,2,0.5],RB=[.2,1,4,15,60,200,750,2500];const DM=[1,1.25,1.5,2,3,4,6,10];
 const UPS=[
 {id:"f",n:"Sharper Finger",d:"+1 coin per click",c:15,k:1},
 {id:"h",n:"Strong Grip",d:"+5 coins per click",c:200,k:5},
@@ -657,6 +658,8 @@ XP.forEach(p=>PACKS.push(p));
 
 /* ---------- drop rates incl. exotic ---------- */
 function rarityChance(p,r){
+ // Ultra (7) is secret/keybind-only and is never rolled from a normal pack.
+ if(r===7)return 0;
  const ex=p.items.some(i=>i[1]===6)?(p.ex||0)/100:0;
  if(r===6)return ex;
  const rs=[...new Set(p.items.map(i=>i[1]).filter(q=>q!==6))];
@@ -725,6 +728,57 @@ save();
 ref();cl();
 
 </script></body></html>
-ref();cl();
 
-</script></body></html>
+<script>
+/* ---------- secret exotic: Kyle ---------- */
+const KYLE_ART = '<svg viewBox="0 0 18 18" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="0" width="18" height="18" fill="#171722"/><image x="1" y="1" width="16" height="16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAIAAACxN37FAAANdElEQVR42u2dzU+c1xXGX5wXQYfEE2YGBgaD40mLk4Y2oappVCVVumoqZdX/q1K76iZS1W666IfUKqnUrqI2iqNgybFCk5jWOOFjYDCMDQ2TscDQFZF1nte9x7fvgOv5/ZZH7/c8XN37cO45fW//5ldJkM0bJrCw3jKRm/OXTWTj7kHy8GwfDJjIyvJKkgeTU5MRZ5XTuyYyNpCayJ3ihInU0i+DVy6VKxHP018sB4/Z39k2kdb2VvCs9nYr+At+uLSZy1dVLk0VTWRm7lUT+eXv3gpe50wC8BiBoAFBAyBoAAQN8HCkcafpOlpRN0DRdbS6ColjHR3nhOi96rVRE6n0dYLXuXBhKnhM5Yy9V18p/F7V/rBT1Ny33/mWHuRwOQrlkg01rKfxUt1+n+2DmO+sXtaS3Kt04xNGaGDKAYCgARA0AIIGeBhcLoeuozU3QNfI6g9sHQ2ayJjkDyhjA/dMJMMbkdW3Zh3EUasMmci9oroTdhV/NrG5HIVqXc46yOUJ1QmpjotfkVy0v+nS9eCVB0fPm0hn8/OIJ1RPw4Mn/4QRGphyACBoAAQNgKAB7iMtDFdNqH27aSINx3/Vvz3yhMSsPzDYPpRDwvsvOm1xDMQt0d0WmnWgXoSSlblh30IdjEefkcpo8BjNz2k09+wvKL5HWXyPOE8j46yG+lThKzNCA1MOAAQNgKABEDT0MK5cDs9/1YeKtsrE3o49q1SI+vspWJ+hpk8obsmUeCOaSaIMFvoey5+5OnE+GFm4Nm8is1ID5Orisv1i4nskjQ1GaAAEDYCgAUEDIGiA0yDD5dDsjmrd7nfQKhPJqWY4ZPgnDm/kJGk3l+wDZuxhyYnRZyNO8uR7zEi+x4Lke3SPidqYiayJo8IIDUw5ABA0AIIGQNDQw7hyOXT9+1Rr0UQ0cwNODemJE+d7KBkdXsTl8HgRHjRLZHZ6KnhlRmhgygGAoAEQNACChh4msscKnsbD0sXMjZzQPSzNtc9zuXKc76HHzFSHGKGBKQcAggZA0AAIGuDBuFyOW1u2DmS/1hEVIqtwPKZsNNdNZKw6zmf5L6g34tkdg+aAKQcAggZA0AAIGnqYDJdDe6xo941+x6VbDidE6Z43os+T1712k69FnKW+R1/J9qjVLrGniyohL9TTUDwZIIzQwJQDAEEDIGgABA09jCuX40xr1UQ6UTcbLITdgNYJZonE+R5xnoainobS3I/ZUhTnjWRUnZVjNKsniao+6vE0PGdRlwOYcgAgaAAEDYCgAe4jVeehfftRf+i4LJHTRT2No9ZKxFl5oZ5G3DGM0AAIGgBBA4IGQNAAjwwpn+B+urerxeNpeOjeHhb1uzpt2x145sVLwetcXVzu0hNq9dHZ6TlGaGDKAYCgARA0AIIGOKaLLodnf8qjz+rhsIl0r2bo+u0v5F7WG2l6andI39i8sjL0OtpleEZqdyxE7WrxMDNeYoQGphwACBoAQQMgaIBj0r/9+be5XOjx8DQ8qBeR4QZ07Ep/de/IRNrbLRPZuGv9irEBa0MVyp+ZyNHXn7FnicsR93t5sjsuzMwFr7PQvBI8RitseHqszD7HCA1MOQAQNACCBkDQAF+R/uLXvzehySmbLfDj8wMmsrzVNpGpSrcesXv+SXuwbD0EcSfy8itcbzp63t49/TJ4lrouW9fmTWTutTdO7LeoTpyX2JWIe3l8D0ZoYMoBgKABEDQAgga4j1Q9jUtTRbtqtsv6ZOPuro2s7QZvppkJylSlYCKaP3CSeSMeT8PzpneKEyZSEwejVB6SK9lIf7Ec8RY3Fz4wEc3ByOur6q6W2ekpE9HaHZ7+KUq7ucQIDUw5ABA0AIIGQNAAx6QvDN0zoXNDfcGVvq7iPdkLrgwHyRIplG3thUo7nOEQt2bX7I5kbyv4PI0De6+nd9aCkSX5Guqf6L2Sbfs81frFx1Ka6nvMFW0H413pdssIDUw5ABA0AIIGQNDQw2QkVywub0dcyJOnEeeEjMnaX3t4eJyQON+jVLZbcbQ6RGfzc/sWcp3tgwGJPSHHyCF7OyZQTu+aiHoj56an7XWkRmj7dlNuVs3li+lZWqE0ierDsl+179VXGmWEBqYcAAgaAEEDIGiAYzKsCd0z8oHsRonL5fhwadNEdL+MruI9V1YnJJG30DyN8eEnTWTr0HoRzaXrJtLZ3Aw+j3oa+l6eszzHqDdSkHyP/mL4mavOWAh1OeIqdeg+F0X33TBCA1MOAAQNgKABEDT0MBkuh3oa6k68/nwteIyinobiuc5L9dGItfbksM2dKFRtV9i+fftB9qUv6lIj/ITqaXz3W980kb9cvWEiK8u2b+zLL18Krv1vzl+O+OFvbW06vIiTY6Y6FD7mxUvBX5kRGphyACBoAAQNgKChh0k1U8LjacQ5D/WarWv6h3cXIh7a84Slgv1bLVTr9kLScbXqcAPqNdn94ahHGodW4FQ34NL3vuO4knVd+kqTpyg79WrUTbr87t+Dx8z+4HVGaGDKAYCgARA0AIIGOCaN63uSgaNqaF6oo+J6wii0pkR/c9FEFh2FTM60Vk1Ee9loRNFdNh7GJGslSQ669MW0J452XdHOttoFJvnoYxNYXVxkhAamHAAIGgBBAyBogAeTkcuhHoKnCuWULdKZLG+FO4Z4skTiGCpWcrlOtd9+n6Nxu7Oj4Og2uywuUJKEfSHtd+Mhy9MQJI9F0d+94+hu47lOa+0z+51lv4wnZ6bQ2WaEBqYcAAgaAEEDIGiAY9K4/Re6HyQphOsqqO/hwZOnEdcNxIW4AWNyyNnErv1XxJ3ouLrf9gW/81DyZZdeVDMuPN85zvdortmuNEctW5Ok0mf7xmpF2adfeIURGphyACBoAAQNgKABjkln5l41ocaNT+xRnZjesrXKUMRZHr9CV9YZrouHTVv/05Ph4GFy3HpHeztbPSsyjxOys259jxe//0MTaUptWNUqIzQw5QBA0AAIGgBBQw+TanXN/qLtuLoqnUlLUWUw4nyPxtZe8Ji89qfA/45nf4qqbkSyMgoXbZfYRGp3vPnHdxihgSkHAIIGQNAACBrgmFSra+oKNGMPy8hIlx7I42nEuSUuNLtD0IyCO+vh3rKR2Sb/h3gyN5pL18MXEk/jzj/eZYQGphwACBoAQQMgaIAHk5HLoWT0Kt1ZibhZq30YsSI+yZobHpdD65FuON6ilcS8hXojuvMlrzyW7n1nrcJRrV8MnvVUy3ZU+dM/m4zQwJQDAEEDIGgABA3wYFLt6am0r79nItdufJrL7bM6j1i0e0tDThoU/6QonVD+LTkYiay+k8Qeo70/dM0eV0vEg8cbuVe0x+w2103E03VFnzDO92jftl5ERmVRGUi1guvlf9nrbB8MMEIDUw4ABA2AoAEQNMCDST0r2XZON/N5GoXgWdr9dmxAurJKd9dq3a6Rry4u25X+pnUwtAdNqSy2y6CtZDI+/KQ9Rqprrjr6z6rDo7/X+u0vgnfXXTZVhzuRdVQYdYG0sqh6ULvi5+h3/pFE3lxeYYQGphwACBoAQQMgaIBjUtdRsrNjeevtXG7v6RKbcYzH99BaIvXw87g8DSHD0xB0Xa++x6K0slGHp1AetAfthbu39B+G9yVp1ooH9Ub++t4VE+lsin/i2Huiv4UyOTXJCA1MOQAQNACCBkDQAMdkuByevRWFcsmudsVVyMq4SHN5aI/vodycv2wiNXkL9TS040zlzN1c3qItGSDnpm2kJd1t9Dvrb6FnleTutxxPWI16r5mqrQ3bSkcjruPxlzS7gxEamHIAIGgABA2AoKGHSX/+s58GD1prbASPeaFrbU90j4b6MOp7bB0N5nL3vDwNRf2T/Z3tiJW+x/foHro/Zfa5b5jI1U+7dXfNomGEBqYcAAgaAEEDIGjoYfqeqY3ncqGX6vb/9V3M3HDgqTeiHUzuFSdjPmIpfJb2slFPY6Fpu+jWUuvnqO+hmRse9Dq1Z58PnuWpxar9XjVrJQ7PmzJCA1MOAAQNgKABEDT0MKlWNlhZjukS++GSXcX/5JUZu9p17GpRNtZ2I55H65EqGTkPtz4zgcaBp89IuMqE7uNQT0NzZjppOJPEs8tGHZW80Coca407JvLGa9P2a4zbL78hfWG0qqr+Fu+/P88IDUw5ABA0AIIGQNAAx6RxnoaHpYb1PTLqSTbCVTHzyglxVSgVao7dH9X6RRMZqYQrUfQX7btr5ob6Qhrx7GpR30PRbBPPW6jPoLz1joRemzOBmXHNKbK+x5WPPmaEBqYcAAgaAEEDIGiAB5N279Ka3aHMTZwNHhPXfzbjmKi3OCyFMyU8joGHc0N9JlIaGTGR1cNhE/HUGvWg7xXXdUVRJ019j6u1MRPR7Bf1u+ixAkw5ABA0AIIGQNAA95Ge5M3y8j0y9rk4nBAPd4oTNiT7SjSi63GPE6J1Tc+O29yJ3cTu0ahJDRDNCfHsT9En9GRuaBWOONT30MiaOBgTNfvrTBQZoYEpBwCCBkDQAAga4CsyXI64Sh1xZ3l8D/0Pfl57WBRPtU+PYxDXmUU9DU9dU8/zKB5PozBse8neujZ/imLVuiUTkgHCCA1MOQAQNACCBkDQ0MP8B3UOLjJAI33QAAAAAElFTkSuQmCC" preserveAspectRatio="xMidYMid slice"/><rect x="0.5" y="0.5" width="17" height="17" fill="none" stroke="#f7d64a" stroke-width="1"/></svg>';
+const KYLE_PACK = {
+  id:"ky",
+  name:"Secret Pets",
+  cost:0,
+  ic:0,
+  items:[["Kyle",7,KYLE_ART]]
+};
+if(!PACKS.some(p=>p.id==="ky")) PACKS.push(KYLE_PACK);
+
+let kyleSequence = 0;
+let kyleSequenceTimer = null;
+function unlockKyle(){
+  if(!U) return;
+  if(S.own.ky0){
+    $("#sv").textContent="Kyle is already in your collection!";
+    return;
+  }
+  S.own.ky0=1;
+  ref();
+  cl();
+  save();
+  $("#ov").classList.add("on");
+  $("#rv").innerHTML=`<div class="card r7">${KYLE_ART}<h2>Kyle</h2><div class="rl r7"><i>Ultra</i></div><div class="bn">Secret pet unlocked! Kyle has joined your collection.</div><div class="btns"><button id="cx" class="g">Awesome!</button></div></div>`;
+  $("#cx").onclick=closeOv;
+}
+window.addEventListener("keydown",e=>{
+  const key=e.key.toLowerCase();
+  if(e.ctrlKey && key==="k"){
+    e.preventDefault();
+    kyleSequence=1;
+    clearTimeout(kyleSequenceTimer);
+    kyleSequenceTimer=setTimeout(()=>{kyleSequence=0},5000);
+    return;
+  }
+  if(!kyleSequence) return;
+  if(key===["","y","l","e"][kyleSequence]){
+    e.preventDefault();
+    kyleSequence++;
+    if(kyleSequence===4){
+      clearTimeout(kyleSequenceTimer);
+      kyleSequence=0;
+      unlockKyle();
+    }
+  }else if(key.length===1){
+    kyleSequence=0;
+    clearTimeout(kyleSequenceTimer);
+  }
+});
+</script>
+</body></html>
