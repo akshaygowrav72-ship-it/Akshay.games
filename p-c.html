@@ -741,6 +741,10 @@ const KYLE_PACK = {
 };
 if(!PACKS.some(p=>p.id==="ky")) PACKS.push(KYLE_PACK);
 
+// Always rebuild the collection when its tab is opened, so late-added secret pets appear.
+const collectionTab = document.querySelector('.tabs button[data-p="cl"]');
+if (collectionTab) collectionTab.addEventListener("click", () => cl(), true);
+
 let kyleSequence = 0;
 let kyleSequenceTimer = null;
 function unlockKyle(){
@@ -757,28 +761,43 @@ function unlockKyle(){
   $("#rv").innerHTML=`<div class="card r7">${KYLE_ART}<h2>Kyle</h2><div class="rl r7"><i>Ultra</i></div><div class="bn">Secret pet unlocked! Kyle has joined your collection.</div><div class="btns"><button id="cx" class="g">Awesome!</button></div></div>`;
   $("#cx").onclick=closeOv;
 }
-window.addEventListener("keydown",e=>{
-  const key=e.key.toLowerCase();
-  if(e.ctrlKey && key==="k"){
+// Capture the shortcut early so the browser/game does not consume Ctrl+K first.
+window.addEventListener("keydown", e => {
+  const code = e.code;
+
+  if (e.ctrlKey && !e.altKey && !e.metaKey && code === "KeyK") {
     e.preventDefault();
-    kyleSequence=1;
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    kyleSequence = 1;
     clearTimeout(kyleSequenceTimer);
-    kyleSequenceTimer=setTimeout(()=>{kyleSequence=0},5000);
+    kyleSequenceTimer = setTimeout(() => {
+      kyleSequence = 0;
+      kyleSequenceTimer = null;
+    }, 7000);
     return;
   }
-  if(!kyleSequence) return;
-  if(key===["","y","l","e"][kyleSequence]){
+
+  if (!kyleSequence) return;
+
+  const expected = ["", "KeyY", "KeyL", "KeyE"][kyleSequence];
+  if (code === expected && !e.altKey && !e.metaKey) {
     e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
     kyleSequence++;
-    if(kyleSequence===4){
+
+    if (kyleSequence === 4) {
       clearTimeout(kyleSequenceTimer);
-      kyleSequence=0;
+      kyleSequenceTimer = null;
+      kyleSequence = 0;
       unlockKyle();
     }
-  }else if(key.length===1){
-    kyleSequence=0;
+  } else if (code && code.startsWith("Key")) {
+    kyleSequence = 0;
     clearTimeout(kyleSequenceTimer);
+    kyleSequenceTimer = null;
   }
-});
+}, true);
 </script>
 </body></html>
