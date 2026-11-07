@@ -713,6 +713,7 @@ hn:["Prismatic Phantom","ghost"],md:["Rainbow Unicorn","quad"],sh:["Spectrum Shr
 cy:["Hologram Fox","quad"],el:["Prism Elemental","blob"],cs:["Rainbow Nebula Whale","fish"],su:["Rainbow Sunbeam","bird"],dg:["Prismatic Cerberus","quad"],ct:["Nebula Cat","quad"]};
 const xmig=()=>{if(S.chromaMig)return;PACKS.forEach(p=>{if(XCH[p.id]&&S.own[p.id+5]){S.own[p.id+6]=S.own[p.id+5];delete S.own[p.id+5]}});S.chromaMig=1};
 const xLogin=login;login=function(u){xLogin(u);xmig();save();try{ref();cl()}catch(e){}};
+xmig(); save();
 PACKS.forEach(p=>{
  const c=XCH[p.id];if(!c||p.items.some(i=>i[1]===5))return;
  const ei=p.items.findIndex(i=>i[1]===6);
@@ -727,7 +728,7 @@ delete XCH.xm;
 save();
 ref();cl();
 
-</script></body></html>
+</script>
 
 <script>
 /* ---------- secret exotic: Kyle ---------- */
@@ -745,58 +746,51 @@ if(!PACKS.some(p=>p.id==="ky")) PACKS.push(KYLE_PACK);
 const collectionTab = document.querySelector('.tabs button[data-p="cl"]');
 if (collectionTab) collectionTab.addEventListener("click", () => cl(), true);
 
-let kyleSequence = 0;
-let kyleSequenceTimer = null;
+/* ---------- Kyle unlock (more reliable) ---------- */
+let pendingKyle = false;
 function unlockKyle(){
-  if(!U) return;
+  if(!U){ pendingKyle = true; return; }
   if(S.own.ky0){
-    $("#sv").textContent="Kyle is already in your collection!";
+    $("#sv").textContent = "Kyle is already in your collection!";
+    cl();
     return;
   }
-  S.own.ky0=1;
-  ref();
-  cl();
-  save();
+  S.own.ky0 = 1;
+  ref(); cl(); save();
   $("#ov").classList.add("on");
-  $("#rv").innerHTML=`<div class="card r7">${KYLE_ART}<h2>Kyle</h2><div class="rl r7"><i>Ultra</i></div><div class="bn">Secret pet unlocked! Kyle has joined your collection.</div><div class="btns"><button id="cx" class="g">Awesome!</button></div></div>`;
-  $("#cx").onclick=closeOv;
+  $("#rv").innerHTML = `<div class="card r7">${KYLE_ART}<h2>Kyle</h2><div class="rl r7"><i>Ultra</i></div><div class="bn">Secret pet unlocked! Kyle has joined your collection.</div><div class="btns"><button id="cx" class="g">Awesome!</button></div></div>`;
+  $("#cx").onclick = closeOv;
 }
-// Capture the shortcut early so the browser/game does not consume Ctrl+K first.
+
+const kyleLogin = login;
+login = function(u){
+  kyleLogin(u);
+  if(pendingKyle){ pendingKyle = false; unlockKyle(); }
+  cl();
+};
+
+const KYLE_KEYS = ["KeyK","KeyY","KeyL","KeyE"];
+let kStep = 0, kTimer = null;
+const kReset = () => { kStep = 0; clearTimeout(kTimer); kTimer = null; };
+
 window.addEventListener("keydown", e => {
-  const code = e.code;
+  if (e.repeat) return;
+  if (["ControlLeft","ControlRight","ShiftLeft","ShiftRight","AltLeft","AltRight","MetaLeft","MetaRight"].includes(e.code)) return;
+  if (e.target && e.target.tagName === "INPUT") { kReset(); return; }
 
-  if (e.ctrlKey && !e.altKey && !e.metaKey && code === "KeyK") {
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    kyleSequence = 1;
-    clearTimeout(kyleSequenceTimer);
-    kyleSequenceTimer = setTimeout(() => {
-      kyleSequence = 0;
-      kyleSequenceTimer = null;
-    }, 7000);
-    return;
-  }
-
-  if (!kyleSequence) return;
-
-  const expected = ["", "KeyY", "KeyL", "KeyE"][kyleSequence];
-  if (code === expected && !e.altKey && !e.metaKey) {
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    kyleSequence++;
-
-    if (kyleSequence === 4) {
-      clearTimeout(kyleSequenceTimer);
-      kyleSequenceTimer = null;
-      kyleSequence = 0;
-      unlockKyle();
+  if (e.code === KYLE_KEYS[kStep]) {
+    if (kStep === 0 && !e.ctrlKey) return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    kStep++;
+    clearTimeout(kTimer);
+    kTimer = setTimeout(kReset, 10000);
+    if (kStep === KYLE_KEYS.length) { kReset(); unlockKyle(); }
+  } else if (kStep > 0) {
+    kReset();
+    if (e.ctrlKey && e.code === "KeyK") {
+      e.preventDefault(); e.stopImmediatePropagation();
+      kStep = 1; kTimer = setTimeout(kReset, 10000);
     }
-  } else if (code && code.startsWith("Key")) {
-    kyleSequence = 0;
-    clearTimeout(kyleSequenceTimer);
-    kyleSequenceTimer = null;
   }
 }, true);
 </script>
