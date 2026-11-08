@@ -58,6 +58,8 @@ button{font-family:inherit;color:var(--txt)}
 #ovtitle{font-size:24px;font-weight:800;margin-bottom:10px}
 #ovsub{color:var(--dim);font-size:14px;line-height:1.55;margin-bottom:20px;white-space:pre-line}
 .bigbtn{background:var(--acc);color:var(--accfg);font-weight:800;font-size:16px;border:none;border-radius:12px;padding:13px 32px;cursor:pointer}
+.bigbtn.alt{background:var(--field);color:var(--txt);border:1px solid var(--line)}
+.bigbtn small{display:block;font-weight:400;font-size:11px;margin-top:3px;opacity:.85}
 .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}
 .mid{text-align:center;color:var(--dim);font-size:13px;margin-top:8px}
 .field{width:min(360px,90%);font-size:22px;text-align:center;font-family:ui-monospace,Consolas,monospace;background:var(--field);color:var(--txt);caret-color:var(--txt);border:2px solid var(--line);border-radius:10px;padding:10px;outline:none}
@@ -107,7 +109,7 @@ button{font-family:inherit;color:var(--txt)}
     </div>
   </div>
 </div>
-<div id="overlay"><div id="ovbox"><div id="ovtitle"></div><div id="ovsub"></div><button class="bigbtn" id="ovbtn">START</button></div></div>
+<div id="overlay"><div id="ovbox"><div id="ovtitle"></div><div id="ovsub"></div><div class="row" id="ovbtns" style="margin-top:0"></div></div></div>
 
 <script>
 'use strict';
@@ -120,15 +122,30 @@ const listen=(el,ev,fn,o)=>{el.addEventListener(ev,fn,o);return()=>el.removeEven
 const typing=()=>/^(INPUT|TEXTAREA)$/.test(document.activeElement&&document.activeElement.tagName);
 const fmt=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 
-const S={target:0,volume:0,tol:0,round:0,done:0,lives:3,rt:0,playing:false,t0:0,extraOK:true};
+const S={idx:0,failed:[],skipped:[],diff:'medium',target:0,volume:0,tol:0,round:0,done:0,lives:3,rt:0,playing:false,t0:0,extraOK:true};
 const E={target:$('#target'),fill:$('#volfill'),mark:$('#volmark'),now:$('#volnow'),done:$('#done'),time:$('#time'),tol:$('#tolnote'),
   lives:$('#lives'),rt:$('#rt'),
   mount:$('#mount'),lock:$('#lock'),cat:$('#ccat'),name:$('#cname'),desc:$('#cdesc'),
-  ov:$('#overlay'),ovt:$('#ovtitle'),ovs:$('#ovsub'),ovb:$('#ovbtn')};
-let cur=null,curCh=null,bag=[],audio=null;
+  ov:$('#overlay'),ovt:$('#ovtitle'),ovs:$('#ovsub'),ovbs:$('#ovbtns')};
+let cur=null,curCh=null,audio=null,LEVELS=[];
 
-/* Difficulty: decay and drift get stronger with every control you tame. */
-const HD=()=>1+Math.min(1.6,S.done*.12);
+/* Levels are played in this fixed order, easiest to hardest. Each one is played once; there are no repeats. */
+const ORDER=['The Advanced Radio Buttons','The Binary Selector','The Radio Button Grid','The Dice Hold','The Electrical Circuit','The Calculation Slider',
+ 'The Pi Requirement','The Bike Pump','Beat a Dead Horse','The Firewood Survivalist','The Car Window Crank','The Tilted Device','The Slanted Slider',
+ 'The Solar Eclipse','The Slingshot','The Catapult','The Real Bicycle Pump','The Shaking Bar','The Gravity Well','The Pendulum / Metronome',
+ 'The Polka Dot Text Matcher','The Pi Decimal Finder','The Curling Slider','The Hand Gesture','The Voice / Screaming Sensor','The Runaway Slider',
+ 'The Seesaw / Balance','The Slime Eater','The Pong Volume','The Snake Game','The Global Map Coordinates'];
+function buildLevels(){LEVELS=ORDER.map(n=>CH.find(c=>c.name===n)).filter(Boolean);CH.forEach(c=>{if(!LEVELS.includes(c))LEVELS.push(c)})}
+
+/* Difficulty settings: easy = no clock, no lives, wide tolerances, gentle physics; hard = fewer hearts, tight clock, tight tolerances, mean physics */
+const DIFFS={
+ easy:{name:'EASY',timed:false,lives:Infinity,tolMul:2,exactTol:1,hd0:.5,hdStep:0,hdMax:0,scale:0,pong:140,rt0:0,rtStep:0,rtMin:0},
+ medium:{name:'MEDIUM',timed:true,lives:5,tolMul:1,exactTol:0,hd0:1,hdStep:.03,hdMax:.6,scale:.6,pong:190,rt0:100,rtStep:2,rtMin:45},
+ hard:{name:'HARD',timed:true,lives:3,tolMul:.5,exactTol:0,hd0:1.2,hdStep:.1,hdMax:1.6,scale:1,pong:215,rt0:80,rtStep:2.5,rtMin:30}};
+let DIFF=DIFFS.medium;
+/* Decay and drift strength, and a general 0..n difficulty scale, both grow with the level number. */
+const HD=()=>DIFF.hd0+Math.min(DIFF.hdMax,S.idx*DIFF.hdStep);
+const SC=()=>S.idx*DIFF.scale;
 
 function toast(m){const d=mk('div','toast',$('#toasts'),m);setTimeout(()=>d.remove(),2700)}
 function setVolume(v){S.volume=clamp(v,0,100)}
@@ -139,52 +156,86 @@ function beep(f){try{audio=audio||new(window.AudioContext||window.webkitAudioCon
 const SNARK=['Settings saved. Somewhere, a UX designer is crying.','Incredible. You fought the interface and won.','The volume is set. Was it worth it?',
  'Certified. You may proceed to the next abomination.','Your perseverance has been noted and will be used against you.','Achievement unlocked: Temporarily Defeated Bad Design.'];
 
-function overlay(title,sub,btn,fn){E.ovt.textContent=title;E.ovs.textContent=sub;E.ovb.textContent=btn;E.ovb.onclick=fn;E.ov.hidden=false;E.ov.style.display='flex';E.ovb.focus()}
+function overlay(title,sub,btns){
+  E.ovt.textContent=title;E.ovs.textContent=sub;E.ovbs.replaceChildren();
+  btns.forEach((b,i)=>{const el=mk('button','bigbtn'+(b.alt?' alt':''),E.ovbs);el.textContent=b.t;if(b.s)mk('small',null,el,b.s);el.onclick=b.fn;if(i===0)setTimeout(()=>el.focus(),0)});
+  E.ov.hidden=false;E.ov.style.display='flex'}
 function hideOverlay(){E.ov.style.display='none'}
-const hearts=()=>S.lives>0?'\u2665'.repeat(S.lives):'\u2014';
+const hearts=()=>DIFF.lives===Infinity?'\u221e':S.lives>0?'\u2665'.repeat(S.lives):'\u2014';
 
-function nextRound(){
+function showTitle(){
+  S.playing=false;
+  overlay('WORST VOLUME CONTROLS','A set of truly terrible volume controls.\nSet the volume exactly. Lock it in.\n'+ORDER.length+' controls, in a fixed order, easiest to hardest.\nEach one appears once. Choose your pain.',
+   [{t:'EASY',s:'no timer, no lives',fn:()=>start('easy')},{t:'MEDIUM',s:'5 hearts, timer',fn:()=>start('medium')},{t:'HARD',s:'3 hearts, tight timer',fn:()=>start('hard')}]);
+}
+function start(key){
+  DIFF=DIFFS[key];S.diff=key;hideOverlay();buildLevels();
+  S.playing=true;S.t0=performance.now();S.done=0;S.idx=0;S.round=0;S.lives=DIFF.lives;S.failed=[];S.skipped=[];
+  loadLevel();
+}
+function loadLevel(){
   if(cur&&cur.cleanup)cur.cleanup();
   cur=null;E.mount.replaceChildren();
-  if(!bag.length){win();return}
-  const ch=bag.pop();curCh=ch;
-  S.round++;
-  /* much tighter tolerances: halve them, and exact stays exact */
-  S.tol=ch.tol?Math.max(1,Math.ceil(ch.tol/2)):0;
+  if(S.idx>=LEVELS.length){ending();return}
+  const ch=LEVELS[S.idx];curCh=ch;
+  S.round=S.idx+1;
+  S.tol=ch.tol?Math.max(1,Math.ceil(ch.tol*DIFF.tolMul)):DIFF.exactTol;
   S.extraOK=true;
-  S.rt=Math.max(35,90-S.done*4);
+  S.rt=DIFF.timed?Math.max(DIFF.rtMin,DIFF.rt0-S.idx*DIFF.rtStep):0;
   S.target=ch.target?ch.target():rand(5,95);
   setVolume(0);
   E.target.textContent=S.target+'%';
   E.tol.textContent=S.tol?'(\u00b1'+S.tol+')':'(exact)';
-  E.cat.textContent=ch.cat+' \u2022 CONTROL '+(S.done+1)+' OF '+CH.length;
+  E.cat.textContent=ch.cat+' \u2022 CONTROL '+(S.idx+1)+' OF '+LEVELS.length+' \u2022 '+DIFF.name;
   E.name.textContent=ch.name;E.desc.textContent=ch.desc;
   E.done.textContent=S.done;E.lives.textContent=hearts();
-  cur=ch.mount(E.mount,{set:setVolume,extra:ok=>{S.extraOK=ok},toast,skip:()=>{if(S.playing)nextRound()}})||{};
+  cur=ch.mount(E.mount,{set:setVolume,extra:ok=>{S.extraOK=ok},toast,skip:()=>{if(S.playing){S.skipped.push(ch.name);advance()}}})||{};
 }
-function start(){hideOverlay();S.playing=true;S.t0=performance.now();S.done=0;S.round=0;S.lives=3;bag=CH.slice().sort(()=>Math.random()-.5);nextRound()}
-function win(){
-  if(cur&&cur.cleanup)cur.cleanup();cur=null;E.mount.replaceChildren();
-  S.playing=false;beep(660);E.done.textContent=S.done;
-  overlay('YOU WIN','Every one of the '+CH.length+' controls has been tamed.\nTime: '+fmt(performance.now()-S.t0)+'   Lives left: '+S.lives+'\nThe volume is finally set. Go listen to something.','PLAY AGAIN',start);
-}
+function advance(){S.idx++;loadLevel()}
 function complete(){
-  S.done++;S.playing=false;beep(220+S.target*8);
-  if(!bag.length){win();return}
-  overlay('VOLUME SET: '+S.target+'%',pick(SNARK),'NEXT CONTROL',()=>{hideOverlay();S.playing=true;nextRound()});
+  S.done++;S.playing=false;beep(220+S.target*8);E.done.textContent=S.done;
+  if(S.idx>=LEVELS.length-1){S.idx++;loadLevel();return}
+  overlay('VOLUME SET: '+S.target+'%',pick(SNARK)+'\n\nUp next: '+LEVELS[S.idx+1].name,[{t:'NEXT CONTROL',fn:()=>{hideOverlay();S.playing=true;advance()}}]);
 }
+/* Out of time: lose a heart and the control is gone for good. You move on to the next one. */
 function fail(){
   S.lives--;E.lives.textContent=hearts();beep(110);
-  if(curCh)bag.splice(rand(0,bag.length),0,curCh);
-  if(S.lives<=0){
-    S.playing=false;
-    overlay('GAME OVER','You tamed '+S.done+' control'+(S.done===1?'':'s')+' in '+fmt(performance.now()-S.t0)+'.\nThe volume stays at 0%. As it should.','TRY AGAIN',start);
-  }else{toast('Out of time. You lost a life.');nextRound()}
+  S.failed.push(curCh.name);
+  if(S.lives<=0){S.playing=false;gameOver();return}
+  toast('Out of time. You lost a heart and that control is gone for good.');
+  advance();
+}
+function gameOver(){
+  overlay('GAME OVER','You reached control '+(S.idx+1)+' of '+LEVELS.length+' ('+curCh.name+') on '+DIFF.name+'.\nControls tamed: '+S.done+'   Time: '+fmt(performance.now()-S.t0)+'\nThe volume stays at 0%. As it should.',
+   [{t:'TRY AGAIN',fn:()=>start(S.diff)},{t:'CHANGE DIFFICULTY',alt:true,fn:showTitle}]);
+}
+function ending(){
+  S.playing=false;beep(660);
+  const key=S.diff,total=LEVELS.length,lost=S.failed.length,time=fmt(performance.now()-S.t0),flawless=lost===0;
+  const ENDS={
+   easy:{t:'ENDING: THE CASUAL LISTENER',s:'No clock. No hearts. No pressure.\nYou took your time, and the interfaces eventually gave in.\nA designer somewhere feels a little less guilty.\n\n(The other difficulties will not be this kind.)'},
+   medium:flawless?{t:'ENDING: THE PERSISTENT',s:'Five hearts, and you never spent a single one.\nThe controls tried everything. You were simply more patient.\nThe volume knob salutes you.'}
+     :{t:'ENDING: SCARRED BUT SOUND',s:'You limped across the finish line with '+S.lives+' heart'+(S.lives===1?'':'s')+' left.\n'+lost+' control'+(lost===1?'':'s')+' got away from you, but the volume is set.\nIt counts. Mostly.'},
+   hard:flawless?{t:'TRUE ENDING: THE VOLUME WHISPERER',s:'Three hearts. Zero lost. Thirty-one controls, bent to your will.\nThe sliders go still. The pump exhales. The map folds itself away.\nA small dialog appears: "Settings saved."\nIt has never said that before.'}
+     :{t:'ENDING: BARELY AUDIBLE',s:'You survived Hard with '+S.lives+' heart'+(S.lives===1?'':'s')+' left.\nThe volume is set, and so are your nerves, apparently.\nFlawless, however, remains out of reach.'}};
+  const e=ENDS[key];
+  const rank=flawless?(key==='hard'?'S+':'S'):lost<=2?'A':lost<=5?'B':'C';
+  let st='Difficulty: '+DIFF.name+'\nControls tamed: '+S.done+' / '+total+'\nHearts left: '+(DIFF.lives===Infinity?'\u221e':S.lives)+'\nTime: '+time+'\nRank: '+rank;
+  if(S.skipped.length)st+='\nSkipped (no mic): '+S.skipped.length;
+  if(lost)st+='\nControls that beat you: '+S.failed.slice(0,4).join(', ')+(lost>4?' and '+(lost-4)+' more':'');
+  const pages=[
+   {t:'THE LAST CONTROL FALLS',s:'The final island is found.\nThe interface has nothing left to throw at you.\nFor a moment, the whole machine just hums.'},
+   {t:'PRESS PLAY',s:'You lean back and press play.\nThe volume sits exactly where you left it: '+S.target+'%.\nYou have honestly forgotten what you wanted to listen to.'},
+   e,
+   {t:'FINAL REPORT',s:st},
+   {t:'THANKS FOR PLAYING',s:'WORST VOLUME CONTROLS\nInspired by the r/ProgrammerHumor Worst Volume Control UI competition.\n\nNo sliders were harmed. Several were humiliated.\n\n'+(key==='hard'?'You have beaten the hardest setting. Go outside.':'Think that was rough? Try '+(key==='easy'?'Medium or Hard':'Hard')+'.'),
+    btns:[{t:'PLAY AGAIN',fn:()=>start(S.diff)},{t:'CHANGE DIFFICULTY',alt:true,fn:showTitle}]}];
+  const show=i=>{const pg=pages[i];overlay(pg.t,pg.s,pg.btns||[{t:'NEXT',fn:()=>show(i+1)}])};
+  show(0);
 }
 E.lock.onclick=()=>{if(inRange())complete()};
 window.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.repeat&&!typing()&&inRange()){e.preventDefault();complete()}});
-overlay('WORST VOLUME CONTROLS',CH_INTRO(),'START',start);
-function CH_INTRO(){return 'A set of truly terrible volume controls.\nSet the volume exactly. Lock it in.\nEvery control has a time limit. Run out and you lose a life.\nThree lives. Controls get nastier the more you tame.\nTame all 31 controls to win.'}
+showTitle();
 
 let last=performance.now();
 (function frame(t){
@@ -192,11 +243,10 @@ let last=performance.now();
   const dt=Math.min(.05,(t-last)/1000);last=t;
   if(S.playing){
     try{if(cur&&cur.tick)cur.tick(dt)}catch(err){console.error(err)}
-    S.rt-=dt;
-    if(S.rt<=0){S.rt=0;fail()}
+    if(DIFF.timed){S.rt-=dt;if(S.rt<=0){S.rt=0;fail()}}
     const ok=inRange();E.lock.disabled=!ok;E.lock.classList.toggle('ready',ok);
     E.time.textContent=fmt(performance.now()-S.t0);
-    E.rt.textContent=Math.ceil(S.rt);E.rt.style.color=S.rt<10?'var(--bad)':'';
+    E.rt.textContent=DIFF.timed?Math.ceil(S.rt):'\u221e';E.rt.style.color=DIFF.timed&&S.rt<10?'var(--bad)':'';
   }
   const shown=Math.round(S.volume);
   E.now.textContent=shown+'%';E.fill.style.width=S.volume+'%';
@@ -422,20 +472,41 @@ const CH=[
    T(c,vol?'distance: '+vol.toFixed(1)+'%':'drag the ball back and release',20,28,k.txt)},
    cleanup(){offs.forEach(f=>f())}};
  }},
-{cat:'PHYSICS',tol:3,name:'The Catapult',desc:'Hold LAUNCH to charge. It overcharges and drops back to zero, because of course it does. Release to fling.',
+{cat:'PHYSICS',tol:3,name:'The Catapult',desc:'Hold LAUNCH to wind back the arm. It overcharges and drops back to zero, because of course it does. Release to fling.',
  mount(root,api){const cv=mkcv(root,640,340),c=cv.getContext('2d'),k=K();
-  const BX=100,G=900,GR=300,MAXD=470;let ch=false,pw=0,up=true,pr=null,vol=0;
-  const b=mk('button','btn',mk('div','row',root),'HOLD TO CHARGE \u2014 RELEASE TO LAUNCH');
-  const offs=[listen(b,'pointerdown',e=>{e.preventDefault();ch=true;pw=0;up=true;pr=null}),
-   listen(window,'pointerup',()=>{if(!ch)return;ch=false;const s=pw*560;pr={x:BX+30,y:GR-110,vx:Math.cos(-Math.PI/4)*s,vy:Math.sin(-Math.PI/4)*s}})];
+  const G=900,GR=300,MAXD=470,PX=110,PY=225,AL=95,D=Math.PI/180,IDLE=-60*D,FIRE=-50*D,OX=PX+Math.cos(FIRE)*AL;
+  const WOOD='#8a5a2b',DARK='#5c3a1a';
+  let ch=false,pw=0,up=true,pr=null,vol=0,sw=null,rest=IDLE;
+  const b=mk('button','btn',mk('div','row',root),'HOLD TO WIND \u2014 RELEASE TO LAUNCH');
+  const offs=[listen(b,'pointerdown',e=>{e.preventDefault();ch=true;pw=0;up=true;pr=null;sw=null}),
+   listen(window,'pointerup',()=>{if(!ch)return;ch=false;sw={t:0,from:IDLE-pw*105*D,s:pw*560};pw=0;pr=null})];
+  const line=(x1,y1,x2,y2,col,w)=>{c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()};
+  const wheel=(x,y)=>{c.fillStyle=WOOD;c.strokeStyle=DARK;c.lineWidth=4;c.beginPath();c.arc(x,y,16,0,7);c.fill();c.stroke();
+   for(let i=0;i<4;i++){const t=i*Math.PI/4;line(x-Math.cos(t)*16,y-Math.sin(t)*16,x+Math.cos(t)*16,y+Math.sin(t)*16,DARK,2)}
+   c.fillStyle=DARK;c.beginPath();c.arc(x,y,4,0,7);c.fill()};
   return{tick(dt){
    if(ch){const sp=.55*Math.min(1.8,HD());pw+=(up?sp:-sp)*dt;if(pw>=1){pw=1;up=false}if(pw<=0){pw=0;up=true}}
-   if(pr){pr.vy+=G*dt;pr.x+=pr.vx*dt;pr.y+=pr.vy*dt;if(pr.y>=GR){vol=clamp((pr.x-BX)/MAXD*100,0,100);api.set(vol);pr=null}}
+   let a=(ch||pw>0)?IDLE-pw*105*D:rest;
+   if(sw){sw.t+=dt;const f=Math.min(1,sw.t/.14),e=1-Math.pow(1-f,3);a=sw.from+(FIRE-sw.from)*e;
+    if(f>=1){pr={x:PX+Math.cos(FIRE)*AL,y:PY+Math.sin(FIRE)*AL-8,vx:Math.cos(-Math.PI/4)*sw.s,vy:Math.sin(-Math.PI/4)*sw.s};sw=null;rest=FIRE;a=FIRE}}
+   if(pr){pr.vy+=G*dt;pr.x+=pr.vx*dt;pr.y+=pr.vy*dt;if(pr.y>=GR){vol=clamp((pr.x-OX)/MAXD*100,0,100);api.set(vol);pr=null}}
    c.clearRect(0,0,640,340);c.fillStyle=k.line;c.fillRect(0,GR+10,640,40);
-   const a=-Math.PI/4-pw*Math.PI/3.2;c.strokeStyle=k.dim;c.lineWidth=7;c.lineCap='round';
-   c.beginPath();c.moveTo(BX,GR-60);c.lineTo(BX+Math.cos(a)*54,GR-60+Math.sin(a)*54);c.stroke();
-   c.strokeRect(20,20,200,16);c.fillStyle=pw>.85?k.bad:k.acc;c.fillRect(20,20,200*pw,16);
-   if(pr){c.fillStyle=k.acc;c.beginPath();c.arc(pr.x,pr.y,12,0,7);c.fill()}else if(vol)T(c,'distance: '+vol.toFixed(1)+'%',20,60,k.txt)},
+   /* chassis, wheels, A-frame */
+   wheel(PX-48,GR-6);wheel(PX+48,GR-6);
+   c.fillStyle=WOOD;c.strokeStyle=DARK;c.lineWidth=3;c.fillRect(PX-72,GR-20,144,12);c.strokeRect(PX-72,GR-20,144,12);
+   line(PX-40,GR-20,PX,PY,WOOD,9);line(PX+40,GR-20,PX,PY,WOOD,9);
+   line(PX-20,254,PX+20,254,DARK,5);
+   /* throwing arm with counterweight tail and bucket */
+   const ca=Math.cos(a),sa=Math.sin(a),tx=PX+ca*AL,ty=PY+sa*AL,wx=PX-ca*26,wy=PY-sa*26;
+   line(wx,wy,tx,ty,DARK,10);line(wx,wy,tx,ty,WOOD,6);
+   c.fillStyle='#444';c.beginPath();c.arc(wx,wy,10,0,7);c.fill();
+   c.fillStyle=DARK;c.beginPath();c.arc(tx,ty,14,0,Math.PI);c.fill();line(tx-14,ty,tx+14,ty,WOOD,4);
+   c.fillStyle=k.dim;c.beginPath();c.arc(PX,PY,6,0,7);c.fill();
+   /* ball sits in the bucket until it is thrown */
+   if(pr){c.fillStyle=k.acc;c.beginPath();c.arc(pr.x,pr.y,12,0,7);c.fill()}
+   else if(!sw||sw.t<.14){c.fillStyle=k.acc;c.beginPath();c.arc(tx,ty-9,10,0,7);c.fill()}
+   c.strokeStyle=k.txt;c.lineWidth=1;c.strokeRect(20,20,200,16);c.fillStyle=pw>.85?k.bad:k.acc;c.fillRect(20,20,200*pw,16);
+   if(vol)T(c,'distance: '+vol.toFixed(1)+'%',20,60,k.txt)},
    cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'PHYSICS',tol:0,name:'The Pendulum / Metronome',desc:'Drag the bob back and release. Each swing through the bar adds 5%. Pass 100% and the speakers explode back to 0.',
@@ -470,25 +541,27 @@ const CH=[
    if(x<0){x=0;v*=-.6}if(x>1){x=1;v*=-.6}api.set(x*100);ball.style.left=x*100+'%';fr.style.transform='rotate('+(tilt*.3)+'rad)'},
    cleanup(){offs.forEach(f=>f())}};
  }},
-{cat:'DATA ENTRY',tol:0,name:'The Polka Dot Text Matcher',desc:'Drag the dots into the dotted outlines until they form the target number, then press APPLY. The scanner is strict.',
+{cat:'DATA ENTRY',tol:0,name:'The Polka Dot Text Matcher',desc:'Drag the dots into the dotted outlines (they snap into place) until they form the target number, then press APPLY. A faint ghost of the number is shown to help.',
  mount(root,api){const cv=mkcv(root,640,400),c=cv.getContext('2d'),k=K();
   const o=document.createElement('canvas');o.width=640;o.height=400;const oc=o.getContext('2d'),s=String(S.target);
   oc.fillStyle='#000';oc.font='bold '+(s.length>=3?170:230)+'px Arial';oc.textAlign='center';oc.textBaseline='middle';oc.fillText(s,320,190);
   const d=oc.getImageData(0,0,640,400).data,slots=[];
-  for(let y=0;y<400;y+=20)for(let x=0;x<640;x+=20)if(d[(y*640+x)*4+3]>128)slots.push({x,y});
+  for(let y=0;y<400;y+=28)for(let x=0;x<640;x+=28)if(d[(y*640+x)*4+3]>128)slots.push({x,y});
   const dots=slots.map((_,i)=>({x:30+(i*53)%580,y:i%2?rand(360,385):rand(18,40)}));let drag=-1;
   const offs=[
-   listen(cv,'pointerdown',e=>{const p=P(cv,e);for(let i=dots.length-1;i>=0;i--)if(Math.hypot(p.x-dots[i].x,p.y-dots[i].y)<22){drag=i;cv.setPointerCapture(e.pointerId);return}}),
+   listen(cv,'pointerdown',e=>{const p=P(cv,e);for(let i=dots.length-1;i>=0;i--)if(Math.hypot(p.x-dots[i].x,p.y-dots[i].y)<28){drag=i;cv.setPointerCapture(e.pointerId);return}}),
    listen(cv,'pointermove',e=>{if(drag>=0){const p=P(cv,e);dots[drag].x=p.x;dots[drag].y=p.y}}),
-   listen(cv,'pointerup',()=>{drag=-1}),listen(cv,'pointercancel',()=>{drag=-1})];
+   listen(cv,'pointerup',()=>{if(drag>=0){const q=dots[drag];let best=null,bd=34;slots.forEach(sl=>{const dd=Math.hypot(q.x-sl.x,q.y-sl.y);if(dd<bd&&!dots.some((o,j)=>j!==drag&&Math.hypot(o.x-sl.x,o.y-sl.y)<6)){bd=dd;best=sl}});if(best){q.x=best.x;q.y=best.y}}drag=-1}),listen(cv,'pointercancel',()=>{drag=-1})];
   const b=mk('button','btn',mk('div','row',root),'APPLY (SCREENSHOT)');
   b.onclick=()=>{const used=new Set();let n=0;
-   for(const dt of dots){let best=-1,bd=22;slots.forEach((sl,j)=>{if(used.has(j))return;const q=Math.hypot(dt.x-sl.x,dt.y-sl.y);if(q<bd){bd=q;best=j}});if(best>=0){used.add(best);n++}}
+   for(const dt of dots){let best=-1,bd=34;slots.forEach((sl,j)=>{if(used.has(j))return;const q=Math.hypot(dt.x-sl.x,dt.y-sl.y);if(q<bd){bd=q;best=j}});if(best>=0){used.add(best);n++}}
    if(n===slots.length){api.set(S.target);api.toast('Pattern accepted. Somehow.')}
    else{api.set(Math.min(S.target-1,Math.round(n/slots.length*S.target)));api.toast('Scanner: pattern incomplete ('+n+'/'+slots.length+' dots).')}};
-  return{tick(){c.clearRect(0,0,640,400);c.strokeStyle=k.dim;c.lineWidth=1.5;c.setLineDash([3,3]);
-   slots.forEach(q=>{c.beginPath();c.arc(q.x,q.y,9,0,7);c.stroke()});c.setLineDash([]);
-   dots.forEach((q,i)=>{c.fillStyle=i===drag?k.acc:k.txt;c.beginPath();c.arc(q.x,q.y,9,0,7);c.fill()})},
+  return{tick(){c.clearRect(0,0,640,400);
+   c.save();c.globalAlpha=.13;c.fillStyle=k.txt;c.font='bold '+(s.length>=3?170:230)+'px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(s,320,190);c.restore();
+   c.strokeStyle=k.dim;c.lineWidth=1.5;c.setLineDash([3,3]);
+   slots.forEach(q=>{c.beginPath();c.arc(q.x,q.y,12,0,7);c.stroke()});c.setLineDash([]);
+   dots.forEach((q,i)=>{c.fillStyle=i===drag?k.acc:k.txt;c.beginPath();c.arc(q.x,q.y,11,0,7);c.fill()})},
    cleanup(){offs.forEach(f=>f())}};
  }},
 {cat:'MINI-GAME',tol:1,name:'The Pong Volume',desc:'A working game of Pong. Where the ball hits your paddle shifts the volume. If the computer scores, volume drops.',
@@ -504,7 +577,7 @@ const CH=[
    if(ball.x>600&&ball.vx>0&&ball.y>ay-8&&ball.y<ay+PH+8){ball.vx=-Math.abs(ball.vx)*1.06;ball.x=600}
    if(ball.x<-10){api.set(S.volume-10);api.toast('Computer scored. -10%. Rude.');reset(1)}
    if(ball.x>650)reset(-1);
-   const av=Math.min(330,215+S.round*6);ay=clamp(ay+clamp(ball.y-PH/2-ay,-av*dt,av*dt),0,400-PH);
+   const av=Math.min(330,DIFF.pong+SC()*6);ay=clamp(ay+clamp(ball.y-PH/2-ay,-av*dt,av*dt),0,400-PH);
    c.clearRect(0,0,640,400);c.fillStyle=k.acc;c.fillRect(30,py,10,PH);c.fillStyle=k.bad;c.fillRect(600,ay,10,PH);
    c.fillStyle=k.txt;c.beginPath();c.arc(ball.x,ball.y,7,0,7);c.fill();
    T(c,'move the pointer over the court'+(last?'  \u2022  last hit: '+last:''),180,388,k.dim)},cleanup:off};
@@ -569,7 +642,7 @@ const CH=[
    listen(cv,'pointerdown',e=>{sx=e.clientX;sy=e.clientY}),
    listen(cv,'pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<18)return;
     if(Math.abs(dx)>Math.abs(dy))turn(Math.sign(dx),0);else turn(0,Math.sign(dy))})];
-  return{tick(dt){dead=Math.max(0,dead-dt);acc+=dt;const step=Math.max(.07,.11-S.done*.003);
+  return{tick(dt){dead=Math.max(0,dead-dt);acc+=dt;const step=DIFF===DIFFS.easy?.16:Math.max(.07,.11-SC()*.003);
    while(acc>step){acc-=step;if(dead>0)continue;dir=nd;const h={x:sn[0].x+dir.x,y:sn[0].y+dir.y};
     if(h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(q=>q.x===h.x&&q.y===h.y)){dead=1;sn=init();dir={x:1,y:0};nd=dir;api.set(S.volume-10);api.toast('Snake died. Volume -10%.')}
     else{sn.unshift(h);if(h.x===food.x&&h.y===food.y){api.set(S.volume+5);do{food={x:rand(0,N-1),y:rand(0,N-1)}}while(sn.some(q=>q.x===food.x&&q.y===food.y))}else sn.pop()}}
@@ -747,7 +820,7 @@ const CH=[
     q.x+=q.vx*dt;q.y+=q.vy*dt;
     if(q.x<8||q.x>W-8){q.vx*=-1;q.x=clamp(q.x,8,W-8)}if(q.y<8||q.y>H-8){q.vy*=-1;q.y=clamp(q.y,8,H-8)}
     if(d<24){dots.splice(i,1);dots.push(sd());api.set(S.volume+1)}}
-   if(st>2&&spk.length<Math.min(8,3+Math.floor(S.done/2))){st=0;const a=Math.random()*6.28;spk.push({x:W/2+Math.cos(a)*300,y:H/2+Math.sin(a)*190,vx:-Math.cos(a)*70+rand(-30,30),vy:-Math.sin(a)*70+rand(-30,30)})}
+   if(st>2&&spk.length<Math.min(8,(DIFF===DIFFS.easy?1:3)+Math.floor(SC()/2))){st=0;const a=Math.random()*6.28;spk.push({x:W/2+Math.cos(a)*300,y:H/2+Math.sin(a)*190,vx:-Math.cos(a)*70+rand(-30,30),vy:-Math.sin(a)*70+rand(-30,30)})}
    for(let i=spk.length-1;i>=0;i--){const q=spk[i];q.x+=q.vx*dt;q.y+=q.vy*dt;
     if(q.x<10||q.x>W-10){q.vx*=-1;q.x=clamp(q.x,10,W-10)}if(q.y<10||q.y>H-10){q.vy*=-1;q.y=clamp(q.y,10,H-10)}
     if(Math.hypot(q.x-pl.x,q.y-pl.y)<24){spk.splice(i,1);api.set(S.volume-4);api.toast('Spiked. Volume -4%.')}}
