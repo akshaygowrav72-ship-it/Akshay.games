@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,6 +13,8 @@
 </script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <title>Worst Volume Controls</title>
 <style>
 :root{--bg:#fff;--card:#fff;--field:#f3f1ea;--line:#c9c9c9;--txt:#111;--dim:#666;--acc:#9a6b00;--accfg:#fff;--good:#177a4c;--bad:#c9203f;color-scheme:light;
@@ -225,9 +226,27 @@ const safeEval=s=>{let i=0;
 
 /* Data for the Pi Decimal Finder and the Global Map */
 const PID=[1,4,1,5,9,2,6,5,3,5,8,9,7,9,3,2,3,8,4,6,2,6,4,3,3,8,3,2,7,9];
-const ISLANDS=[['Hawaii',-157.8],['Iceland',-19],['Madagascar',47],['Honshu, Japan',138],['New Zealand',174],['Tahiti',-149.4],['Guam',144.8],
-  ['Mauritius',57.5],['the Azores',-28],['Svalbard',16],['Sri Lanka',80.7],['Cuba',-79],['Sumatra',101],['Fiji',178]];
-let mapIsland=ISLANDS[0];
+
+/* Obscure islands: [name, longitude, latitude]. No markers are drawn on the map. */
+const ISLANDS=[
+ ['Kerguelen Islands',69.5,-49.3],['Tristan da Cunha',-12.3,-37.1],['Bouvet Island',3.4,-54.4],['Easter Island',-109.4,-27.1],
+ ['Socotra',54,12.5],['Chatham Islands',-176.5,-44],['Kiritimati',-157.4,1.9],['Nauru',166.9,-.5],['Funafuti, Tuvalu',179.2,-8.5],
+ ['Pitcairn Island',-130.1,-25.1],['South Georgia',-36.5,-54.3],['Jan Mayen',-8,71],['Heard Island',73.5,-53.1],['Saint Helena',-5.7,-15.9],
+ ['Ascension Island',-14.4,-7.9],['Rodrigues',63.4,-19.7],['Mahe, Seychelles',55.5,-4.7],['Male, Maldives',73.5,4.2],['Novaya Zemlya',57,74],
+ ['Kodiak Island',-153.5,57.5],['Espiritu Santo, Vanuatu',167,-15.4],['Upolu, Samoa',-171.7,-13.9],['Tongatapu, Tonga',-175.2,-21.2],
+ ['Santa Cruz, Galapagos',-90.4,-.6],['Falkland Islands',-59,-51.7],['Faroe Islands',-6.9,62],['Santiago, Cape Verde',-23.6,15],
+ ['Madeira',-16.9,32.7],['Sao Tome',6.6,.3],['Grande Comore',43.3,-11.7],['Andaman Islands',92.7,12],['Christmas Island',105.7,-10.5],
+ ['Cocos (Keeling) Islands',96.8,-12.1],['Palau',134.5,7.5],['Majuro, Marshall Islands',171.4,7.1],['Wake Island',166.6,19.3],
+ ['Midway Atoll',-177.4,28.2],['Lord Howe Island',159.1,-31.5],['Norfolk Island',168,-29],['Campbell Island',169.1,-52.5],
+ ['Macquarie Island',158.9,-54.6],['Prince Edward Islands',37.8,-46.9],['Crozet Islands',51.8,-46.4],['Amsterdam Island',77.5,-37.8],
+ ['Clipperton Island',-109.2,10.3],['Cocos Island, Costa Rica',-87,5.5],['Bermuda',-64.8,32.3],['Faial, Azores',-28.7,38.6],
+ ['Sakhalin',143,50],['Baffin Island',-73,68]];
+/* Shuffle bag: random every game, never the same island twice in a row, no repeats until all are used. */
+let mapIsland=ISLANDS[0],islandBag=[],lastIsland=null;
+const nextIsland=()=>{
+  if(!islandBag.length){islandBag=ISLANDS.slice().sort(()=>Math.random()-.5);
+    if(islandBag[islandBag.length-1]===lastIsland)islandBag.reverse()}
+  lastIsland=islandBag.pop();return lastIsland};
 const LAND=[
  [[-168,66],[-140,70],[-110,72],[-80,72],[-62,60],[-55,50],[-66,44],[-76,35],[-81,25],[-97,26],[-105,22],[-117,32],[-125,42],[-125,50],[-140,60]],
  [[-80,10],[-60,10],[-35,-6],[-40,-22],[-58,-38],[-68,-54],[-75,-45],[-71,-18],[-81,-5]],
@@ -235,7 +254,18 @@ const LAND=[
  [[-17,21],[-5,35],[10,37],[32,31],[43,12],[51,12],[40,-15],[33,-27],[19,-35],[12,-17],[9,4],[-8,5],[-17,14]],
  [[114,-22],[130,-12],[142,-11],[153,-26],[146,-39],[130,-32],[115,-34]],
  [[-55,60],[-20,70],[-20,82],[-60,82],[-70,76]],
- [[-180,-70],[180,-70],[180,-90],[-180,-90]]];
+ [[-180,-70],[180,-70],[180,-90],[-180,-90]],
+ /* extra coastline so it reads like a real map (and adds decoys) */
+ [[-5,50],[1,51],[2,53],[-2,58],[-6,57],[-3,54]],
+ [[44,-25],[47,-25],[50,-15],[49,-12],[44,-17]],
+ [[130,31],[135,34],[140,36],[142,40],[141,45],[137,37],[131,34]],
+ [[172,-34],[178,-38],[174,-41],[172,-41]],[[172,-41],[174,-42],[170,-46],[167,-46]],
+ [[95,5],[98,4],[106,-3],[104,-6],[99,0]],[[109,1],[117,7],[119,1],[116,-4],[110,-3]],
+ [[-24,65],[-14,66],[-14,64],[-22,63]]];
+
+/* Optional free MapTiler key (https://cloud.maptiler.com/account/keys/, free tier, no card).
+   Leave '' to use the key-less CARTO label-free tiles instead. Either way: NO place names on the map. */
+const MAPTILER_KEY='';
 
 const CH=[
 {cat:'PHYSICS',tol:1,name:'The Slanted Slider',desc:'A slider on a slope. Let go and gravity drags it back to 0%. Hold on tight.',
@@ -365,24 +395,30 @@ const CH=[
  }},
 {cat:'PHYSICS',tol:3,name:'The Slingshot',desc:'Pull the ball back and release. Volume is the horizontal distance it travels. Yes, ballistics.',
  mount(root,api){const cv=mkcv(root,640,340),c=cv.getContext('2d'),k=K();
-  const AX=110,AY=240,G=900,GR=300,MAXD=470;let drag=null,ball=null,trail=[],vol=0;
+  const AX=110,AY=240,G=900,GR=300,MAXD=470;let drag=null,ball=null,trail=[],vol=0,land=null;
   const offs=[
    listen(cv,'pointerdown',e=>{const p=P(cv,e);if(!ball&&Math.hypot(p.x-AX,p.y-AY)<60){drag={x:p.x,y:p.y};trail=[];cv.setPointerCapture(e.pointerId)}}),
    listen(cv,'pointermove',e=>{if(!drag)return;const p=P(cv,e),s=Math.min(1,120/Math.max(1,Math.hypot(p.x-AX,p.y-AY)));drag={x:AX+(p.x-AX)*s,y:AY+(p.y-AY)*s}}),
-   listen(cv,'pointerup',()=>{if(!drag)return;const b={x:drag.x,y:drag.y,vx:clamp((AX-drag.x)*5.5,-900,900),vy:clamp((AY-drag.y)*5.5,-900,900)};drag=null;if(Math.hypot(b.vx,b.vy)>=40)ball=b})];
+   listen(cv,'pointerup',()=>{if(!drag)return;
+    const b={x:drag.x,y:drag.y,vx:clamp((AX-drag.x)*5.5,-900,900),vy:clamp((AY-drag.y)*5.5,-900,900)};drag=null;
+    if(Math.hypot(b.vx,b.vy)>=40){ball=b;land=null}})];
   return{tick(dt){
    if(ball){ball.vy+=G*dt;ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;trail.push([ball.x,ball.y]);if(trail.length>90)trail.shift();
-    if(ball.y>=GR){vol=clamp((ball.x-AX)/MAXD*100,0,100);api.set(vol);ball=null}}
-   const b=ball||drag||{x:AX,y:AY};c.clearRect(0,0,640,340);
+    if(ball.y>=GR){vol=clamp((ball.x-AX)/MAXD*100,0,100);api.set(vol);land=ball.x;ball=null}}
+   /* the band only ever follows your hand; once the ball is gone it snaps back to rest */
+   const pull=drag||{x:AX,y:AY};
+   c.clearRect(0,0,640,340);
    c.fillStyle=k.line;c.fillRect(0,GR+10,640,40);
    c.lineCap='round';c.lineJoin='round';
    c.strokeStyle='#8a5a2b';c.lineWidth=12;
    c.beginPath();c.moveTo(AX,GR+10);c.lineTo(AX,AY+34);c.stroke();
    c.beginPath();c.moveTo(AX,AY+34);c.lineTo(AX-24,AY-26);c.moveTo(AX,AY+34);c.lineTo(AX+24,AY-26);c.stroke();
    c.strokeStyle=k.bad;c.lineWidth=4;
-   c.beginPath();c.moveTo(AX-24,AY-26);c.lineTo(b.x,b.y);c.lineTo(AX+24,AY-26);c.stroke();
+   c.beginPath();c.moveTo(AX-24,AY-26);c.lineTo(pull.x,pull.y);c.lineTo(AX+24,AY-26);c.stroke();
    c.fillStyle=k.dim;trail.forEach(q=>{c.fillRect(q[0],q[1],3,3)});
-   c.fillStyle=k.acc;c.beginPath();c.arc(b.x,b.y,13,0,7);c.fill();
+   if(land!==null){c.fillStyle=k.dim;c.beginPath();c.arc(clamp(land,10,630),GR+2,8,0,7);c.fill()}
+   const bp=ball||pull;               /* ball flies on its own; otherwise sits in the pouch */
+   c.fillStyle=k.acc;c.beginPath();c.arc(bp.x,bp.y,13,0,7);c.fill();
    T(c,vol?'distance: '+vol.toFixed(1)+'%':'drag the ball back and release',20,28,k.txt)},
    cleanup(){offs.forEach(f=>f())}};
  }},
@@ -746,24 +782,49 @@ const CH=[
    c.textAlign='left';T(c,'spread wide = loud. arms get tired.',14,22,k.dim)},
    cleanup(){offs.forEach(f=>f())}};
  }},
-{cat:'MINI-GAME',tol:2,name:'The Global Map Coordinates',desc:'Your volume is the longitude of your cursor (far west = 0%, far east = 100%). Find the named island and click its longitude. Press ENTER to lock.',
- target(){mapIsland=pick(ISLANDS);return clamp(Math.round((mapIsland[1]+180)/3.6),1,99)},
- mount(root,api){const W=720,H=360,cv=mkcv(root,W,H),c=cv.getContext('2d'),k=K();
-  const pr=(lo,la)=>[(lo+180)/360*W,(90-la)/180*H];
-  let vol=0,down=false;
-  const set=e=>{vol=clamp(P(cv,e).x/W*100,0,100);api.set(vol)};
-  const offs=[listen(cv,'pointerdown',e=>{down=true;cv.setPointerCapture(e.pointerId);set(e)}),
-   listen(cv,'pointermove',e=>{if(down)set(e)}),
-   listen(cv,'pointerup',()=>{down=false}),listen(cv,'pointercancel',()=>{down=false})];
-  return{tick(){c.clearRect(0,0,W,H);
-   c.strokeStyle=k.line;c.lineWidth=.5;for(let lo=-180;lo<=180;lo+=30){const a=pr(lo,0);c.beginPath();c.moveTo(a[0],0);c.lineTo(a[0],H);c.stroke()}
-   for(let la=-60;la<=60;la+=30){const a=pr(0,la);c.beginPath();c.moveTo(0,a[1]);c.lineTo(W,a[1]);c.stroke()}
-   c.fillStyle=k.dim;LAND.forEach(poly=>{c.beginPath();poly.forEach((q,i)=>{const a=pr(q[0],q[1]);i?c.lineTo(a[0],a[1]):c.moveTo(a[0],a[1])});c.closePath();c.fill()});
-   c.fillStyle=k.txt;ISLANDS.forEach(is=>{const a=pr(is[1],is[0]==='Hawaii'?20:is[0]==='Iceland'?65:is[0]==='Madagascar'?-19:is[0]==='Honshu, Japan'?36:is[0]==='New Zealand'?-41:is[0]==='Tahiti'?-17.6:is[0]==='Guam'?13.4:is[0]==='Mauritius'?-20.3:is[0]==='the Azores'?38.7:is[0]==='Svalbard'?78:is[0]==='Sri Lanka'?7.8:is[0]==='Cuba'?21.5:is[0]==='Sumatra'?-0.6:-17.7);
-    c.beginPath();c.arc(a[0],a[1],3,0,7);c.fill()});
-   const vx=vol/100*W;c.strokeStyle=k.acc;c.lineWidth=2;c.beginPath();c.moveTo(vx,0);c.lineTo(vx,H);c.stroke();
-   T(c,'find: '+mapIsland[0],12,22,k.txt,'bold 16px Georgia');T(c,'volume = longitude. click or drag.',12,H-10,k.dim,'12px Georgia')},
-   cleanup(){offs.forEach(f=>f())}};
+{cat:'MINI-GAME',tol:2,name:'The Global Map Coordinates',desc:'Your volume is the longitude of your pin (far west = 0%, far east = 100%). The map has no labels at all. Find the named island, tap to drop a pin, then press ENTER to lock. Drag to pan, scroll or pinch to zoom.',
+ target(){mapIsland=nextIsland();return clamp(Math.round((mapIsland[1]+180)/3.6),1,99)},
+ mount(root,api){
+  const wrap=mk('div',null,root);wrap.style.cssText='position:relative;max-width:720px;margin:0 auto';
+  const box=mk('div',null,wrap);box.style.cssText='height:380px;border-radius:12px;overflow:hidden;background:#a8d3f5;position:relative;z-index:0';
+  const pill=mk('div',null,wrap,'Find: '+mapIsland[0]);
+  pill.style.cssText='position:absolute;top:10px;left:10px;z-index:1000;background:var(--card);color:var(--txt);padding:7px 14px;border-radius:17px;font:600 14px -apple-system,"SF Pro Text",system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.3);pointer-events:none';
+  const out=mk('div','mid',root,'tap the map to drop a pin');
+  if(typeof L==='undefined'){
+   out.textContent='Map library failed to load. Skipping this control.';api.toast('Map library unavailable. Skipping.');
+   const o={__alive:true,cleanup(){o.__alive=false}};setTimeout(()=>{if(o.__alive)api.skip()},1200);return o}
+  const de=document.documentElement,dark=de.dataset.theme==='dark'||(de.dataset.theme!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches);
+  const map=L.map(box,{minZoom:2,maxZoom:9,worldCopyJump:false,maxBounds:[[-85,-180],[85,180]],maxBoundsViscosity:1,zoomSnap:.5}).setView([20,10],2);
+  const tiles=MAPTILER_KEY
+   ?L.tileLayer('https://api.maptiler.com/maps/'+(dark?'backdrop-dark':'backdrop')+'/{z}/{x}/{y}.png?key='+MAPTILER_KEY,{tileSize:512,zoomOffset:-1,noWrap:true,maxZoom:9,
+      attribution:'&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'})
+   :L.tileLayer('https://{s}.basemaps.cartocdn.com/'+(dark?'dark_nolabels':'voyager_nolabels')+'/{z}/{x}/{y}{r}.png',{subdomains:'abcd',noWrap:true,maxZoom:9,
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'});
+  tiles.addTo(map);
+  /* Continent names (never islands) so you can orient yourself */
+  const lc=dark?'#9aa3b2':'#6e6e73';
+  [['NORTH AMERICA',-100,46],['SOUTH AMERICA',-60,-14],['EUROPE',15,52],['ASIA',92,50],['AFRICA',20,4],['AUSTRALIA',134,-25],['ANTARCTICA',0,-78]].forEach(q=>
+   L.marker([q[2],q[1]],{interactive:false,keyboard:false,icon:L.divIcon({className:'',iconSize:[0,0],
+    html:'<span style="position:absolute;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;font:600 11px -apple-system,system-ui,sans-serif;letter-spacing:2px;color:'+lc+';text-shadow:0 0 3px '+(dark?'#000':'#fff')+'">'+q[0]+'</span>'})}).addTo(map));
+  /* If the tile server is blocked or offline, draw the built-in coastlines so the map is never blank */
+  let tileOK=false,fellBack=false;
+  tiles.on('tileload',()=>{tileOK=true});
+  const fallback=()=>{if(fellBack||tileOK)return;fellBack=true;
+   box.style.background=dark?'#1d2f45':'#a8d3f5';
+   LAND.forEach(poly=>L.polygon(poly.map(q=>[q[1],q[0]]),{color:dark?'#4a4d54':'#d6d0c2',weight:1,fillColor:dark?'#34363b':'#f2efe8',fillOpacity:1,interactive:false}).addTo(map))};
+  setTimeout(fallback,3500);
+  tiles.on('tileerror',()=>{if(!tileOK)setTimeout(fallback,800)});
+  const icon=L.divIcon({className:'',iconSize:[26,26],iconAnchor:[13,26],
+   html:'<div style="width:22px;height:22px;margin:2px;background:#ff3b30;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.45)"></div>'});
+  let pin=null,line=null;
+  map.on('click',e=>{
+   const lng=clamp(e.latlng.lng,-180,180),vol=clamp((lng+180)/3.6,0,100);
+   if(pin)map.removeLayer(pin);if(line)map.removeLayer(line);
+   pin=L.marker([e.latlng.lat,lng],{icon,interactive:false}).addTo(map);
+   line=L.polyline([[-85,lng],[85,lng]],{color:'#0a84ff',weight:2,opacity:.55,interactive:false}).addTo(map);
+   api.set(vol);out.textContent='pin longitude '+lng.toFixed(1)+'\u00b0 \u2192 volume '+vol.toFixed(1)+'%'});
+  setTimeout(()=>{try{map.invalidateSize()}catch(e){}},60);
+  return{cleanup(){try{map.remove()}catch(e){}}};
  }}
 ];
 const V=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
