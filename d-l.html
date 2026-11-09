@@ -129,19 +129,26 @@ const E={target:$('#target'),fill:$('#volfill'),mark:$('#volmark'),now:$('#volno
   ov:$('#overlay'),ovt:$('#ovtitle'),ovs:$('#ovsub'),ovbs:$('#ovbtns')};
 let cur=null,curCh=null,audio=null,LEVELS=[];
 
-/* Levels are played in this fixed order, easiest to hardest. Each one is played once; there are no repeats. */
-const ORDER=['The Advanced Radio Buttons','The Binary Selector','The Radio Button Grid','The Dice Hold','The Electrical Circuit','The Calculation Slider',
- 'The Pi Requirement','The Bike Pump','Beat a Dead Horse','The Firewood Survivalist','The Car Window Crank','The Tilted Device','The Slanted Slider',
- 'The Solar Eclipse','The Slingshot','The Catapult','The Real Bicycle Pump','The Shaking Bar','The Gravity Well','The Pendulum / Metronome',
- 'The Polka Dot Text Matcher','The Pi Decimal Finder','The Curling Slider','The Hand Gesture','The Voice / Screaming Sensor','The Runaway Slider',
- 'The Seesaw / Balance','The Slime Eater','The Pong Volume','The Snake Game','The Global Map Coordinates'];
+/* FIXED LEVEL ORDER (never shuffled, never changes): level 1 is the easiest, level 31 is the hardest.
+   Look-alike controls (the two pumps, the two pi levels, the two radio levels, the two launchers) are kept far apart. */
+const ORDER=[
+ /* 1-8: warm-up */
+ 'The Advanced Radio Buttons','The Binary Selector','The Dice Hold','The Electrical Circuit','The Bike Pump','The Tilted Device','The Pi Requirement','The Radio Button Grid',
+ /* 9-16: getting annoying */
+ 'Beat a Dead Horse','The Car Window Crank','The Firewood Survivalist','The Solar Eclipse','The Slanted Slider','The Slingshot','The Hand Gesture','The Curling Slider',
+ /* 17-24: properly nasty */
+ 'The Voice / Screaming Sensor','The Pendulum / Metronome','The Shaking Bar','The Catapult','The Polka Dot Text Matcher','The Gravity Well','The Real Bicycle Pump','The Calculation Slider',
+ /* 25-31: final gauntlet */
+ 'The Pi Decimal Finder','The Runaway Slider','The Seesaw / Balance','The Slime Eater','The Pong Volume','The Snake Game','The Global Map Coordinates'];
+const played=new Set();   /* safety net: a level that has been shown can never be loaded again in the same run */
 function buildLevels(){LEVELS=ORDER.map(n=>CH.find(c=>c.name===n)).filter(Boolean);CH.forEach(c=>{if(!LEVELS.includes(c))LEVELS.push(c)})}
 
-/* Difficulty settings: easy = no clock, no lives, wide tolerances, gentle physics; hard = fewer hearts, tight clock, tight tolerances, mean physics */
+/* Difficulty settings. EASY and MEDIUM play identically (same physics, same exact-number rule);
+   the only difference is that Easy has no timer and no hearts. HARD adds a tighter clock, 3 hearts and meaner physics. */
 const DIFFS={
- easy:{name:'EASY',timed:false,lives:Infinity,tolMul:2,exactTol:1,hd0:.5,hdStep:0,hdMax:0,scale:0,pong:140,rt0:0,rtStep:0,rtMin:0},
- medium:{name:'MEDIUM',timed:true,lives:5,tolMul:1,exactTol:0,hd0:1,hdStep:.03,hdMax:.6,scale:.6,pong:190,rt0:100,rtStep:2,rtMin:45},
- hard:{name:'HARD',timed:true,lives:3,tolMul:.5,exactTol:0,hd0:1.2,hdStep:.1,hdMax:1.6,scale:1,pong:215,rt0:80,rtStep:2.5,rtMin:30}};
+ easy:{name:'EASY',timed:false,lives:Infinity,hd0:1,hdStep:.03,hdMax:.6,scale:.6,pong:190,rt0:0,rtStep:0,rtMin:0},
+ medium:{name:'MEDIUM',timed:true,lives:5,hd0:1,hdStep:.03,hdMax:.6,scale:.6,pong:190,rt0:100,rtStep:2,rtMin:45},
+ hard:{name:'HARD',timed:true,lives:3,hd0:1.2,hdStep:.1,hdMax:1.6,scale:1,pong:215,rt0:80,rtStep:2.5,rtMin:30}};
 let DIFF=DIFFS.medium;
 /* Decay and drift strength, and a general 0..n difficulty scale, both grow with the level number. */
 const HD=()=>DIFF.hd0+Math.min(DIFF.hdMax,S.idx*DIFF.hdStep);
@@ -165,28 +172,29 @@ const hearts=()=>DIFF.lives===Infinity?'\u221e':S.lives>0?'\u2665'.repeat(S.live
 
 function showTitle(){
   S.playing=false;
-  overlay('WORST VOLUME CONTROLS','A set of truly terrible volume controls.\nSet the volume exactly. Lock it in.\n'+ORDER.length+' controls, in a fixed order, easiest to hardest.\nEach one appears once. Choose your pain.',
-   [{t:'EASY',s:'no timer, no lives',fn:()=>start('easy')},{t:'MEDIUM',s:'5 hearts, timer',fn:()=>start('medium')},{t:'HARD',s:'3 hearts, tight timer',fn:()=>start('hard')}]);
+  overlay('WORST VOLUME CONTROLS','A set of truly terrible volume controls.\nSet the volume to the EXACT number. Lock it in.\n'+ORDER.length+' controls, in a fixed order, easiest to hardest.\nEach one appears once. Choose your pain.',
+   [{t:'EASY',s:'same levels, no timer, no hearts',fn:()=>start('easy')},{t:'MEDIUM',s:'same levels, 5 hearts + timer',fn:()=>start('medium')},{t:'HARD',s:'3 hearts, tight timer, meaner levels',fn:()=>start('hard')}]);
 }
 function start(key){
   DIFF=DIFFS[key];S.diff=key;hideOverlay();buildLevels();
-  S.playing=true;S.t0=performance.now();S.done=0;S.idx=0;S.round=0;S.lives=DIFF.lives;S.failed=[];S.skipped=[];
+  S.playing=true;S.t0=performance.now();S.done=0;S.idx=0;S.round=0;S.lives=DIFF.lives;S.failed=[];S.skipped=[];played.clear();
   loadLevel();
 }
 function loadLevel(){
   if(cur&&cur.cleanup)cur.cleanup();
   cur=null;E.mount.replaceChildren();
+  while(S.idx<LEVELS.length&&played.has(LEVELS[S.idx].name))S.idx++;
   if(S.idx>=LEVELS.length){ending();return}
-  const ch=LEVELS[S.idx];curCh=ch;
+  const ch=LEVELS[S.idx];curCh=ch;played.add(ch.name);
   S.round=S.idx+1;
-  S.tol=ch.tol?Math.max(1,Math.ceil(ch.tol*DIFF.tolMul)):DIFF.exactTol;
+  S.tol=0;   /* every level, on every difficulty, needs the exact number */
   S.extraOK=true;
-  S.rt=DIFF.timed?Math.max(DIFF.rtMin,DIFF.rt0-S.idx*DIFF.rtStep):0;
+  S.rt=DIFF.timed?Math.max(DIFF.rtMin,DIFF.rt0-S.idx*DIFF.rtStep)+(ch.bonus||0):0;
   S.target=ch.target?ch.target():rand(5,95);
   setVolume(0);
   E.target.textContent=S.target+'%';
   E.tol.textContent=S.tol?'(\u00b1'+S.tol+')':'(exact)';
-  E.cat.textContent=ch.cat+' \u2022 CONTROL '+(S.idx+1)+' OF '+LEVELS.length+' \u2022 '+DIFF.name;
+  E.cat.textContent=ch.cat+' \u2022 LEVEL '+(S.idx+1)+' OF '+LEVELS.length+' \u2022 '+DIFF.name;
   E.name.textContent=ch.name;E.desc.textContent=ch.desc;
   E.done.textContent=S.done;E.lives.textContent=hearts();
   cur=ch.mount(E.mount,{set:setVolume,extra:ok=>{S.extraOK=ok},toast,skip:()=>{if(S.playing){S.skipped.push(ch.name);advance()}}})||{};
@@ -317,6 +325,67 @@ const LAND=[
    Leave '' to use the key-less CARTO label-free tiles instead. Either way: NO place names on the map. */
 const MAPTILER_KEY='';
 
+/* ===== SUPER HARD MATHS LEVEL: generators ===== */
+const GRK='αβγδεζηθικλμνξπρστφχψωΓΔΘΛΞΠΣΦΨΩϑϕϖϱς'.split('');
+const SYM='∇∂∮∯∑∏∫∬∭∞∈∉∀∃∄⊂⊃∩∪⊕⊗≈≡≅∝⊥∥∠∴∵ℵℏℓ'.split('');
+const gp=()=>pick(GRK),sy=()=>pick(SYM);
+const SUPD='⁰¹²³⁴⁵⁶⁷⁸⁹',sup=n=>String(n).split('').map(d=>SUPD[+d]).join('');
+const NOISE=[
+ ()=>`Let ${gp()} ⊂ ℝ³ be compact and ∀ε>0 ∃δ>0 : ‖${gp()}−${gp()}‖<δ ⇒ |${gp()}(${gp()})−${gp()}(${gp()})|<ε.`,
+ ()=>`Define ${gp()}ₙ := ∑ₖ ${gp()}ₖ ⊗ ${gp()}ₖ on ℓ², with ${gp()} ∈ C^∞(${gp()}) and ∮ ${gp()} d${gp()} ≡ ∅.`,
+ ()=>`Assume ${gp()} ⊥ ${gp()}, ${gp()} ∥ ${gp()}, ∇×${gp()} = ${gp()}${sy()}${gp()}, and ℏ→0 as ${gp()}→∞.`,
+ ()=>`Recall ${gp()}${sy()}${gp()} ≅ ${gp()}${sy()}${gp()} ∴ ${gp()} ∉ ${gp()} ∪ ${gp()}; discard ${sy()} ${gp()}${gp()}${gp()}.`,
+ ()=>`Let ${gp()} = ${gp()}(${gp()},${gp()},${gp()}) satisfy ∂${gp()}/∂${gp()} ∝ ${gp()}·${gp()}, where ${sy()} ${gp()} ∈ ℵ₀.`,
+ ()=>`Note ∑ ${gp()}ₖ ${sy()} ∏ ${gp()}ⱼ ≈ ${gp()}${gp()} as ${gp()}→${sy()}; ∃! ${gp()} ∈ ${gp()}${sy()}${gp()}.`,
+ ()=>`Fix ${gp()}, ${gp()}, ${gp()} ∈ ℂ with ∯ ${gp()} ⊕ ${gp()} = ${gp()}ℓ and ‖${gp()}‖∞ ≤ ${gp()}.`];
+const soup=()=>Array.from({length:16},()=>Math.random()<.5?gp():sy()).join(' ');
+const noise=n=>Array.from({length:n},()=>pick(NOISE)()).join('\n')+'\n'+soup();
+const MV=['ξ','η','ζ','φ','ψ','λ','μ','ρ','σ','τ','χ','ω'];
+const vars=n=>MV.slice().sort(()=>Math.random()-.5).slice(0,n);
+const lim=f=>{let r;for(let t=0;t<30000;t++){r=f();if(r&&r.a>=2&&r.a<=24&&Number.isInteger(r.a))return r}return r};
+const GEN_C={
+ mixed(){const[X,Y]=vars(2);return lim(()=>{const A=rand(1,3),p=rand(2,3),q=rand(2,3),B=rand(1,6),C=rand(1,5),x=rand(1,2),y=rand(1,2);
+  return{a:A*p*q*Math.pow(x,p-1)*Math.pow(y,q-1)+B,
+   q:`Let f(${X},${Y}) = ${A}${X}${sup(p)}${Y}${sup(q)} + ${B}${X}${Y} + ${C}${X}².\n▶ FIND: ∂²f/∂${X}∂${Y} evaluated at (${X},${Y}) = (${x},${y}).`}})},
+ dbl(){const[X,Y]=vars(2);return lim(()=>{const a=rand(1,4),b=rand(1,4),c=rand(1,6),d=rand(1,6),n=3*c*a*a*b*b+4*d*a*a*a*b;
+  return{a:n%12===0?n/12:NaN,q:`Let R = [0,${a}]×[0,${b}] ⊂ ℝ² with ${X} ∈ [0,${a}], ${Y} ∈ [0,${b}].\n▶ FIND: ∬_R (${c}${X}${Y} + ${d}${X}²) dA.`}})},
+ dir(){const[X,Y]=vars(2);return lim(()=>{const A=rand(1,4),B=rand(1,5),C=rand(1,4),x=rand(1,3),y=rand(1,3),u=pick([[3,4,5],[5,12,13]]),
+  n=u[0]*(2*A*x+B*y)+u[1]*(B*x+2*C*y);
+  return{a:n%u[2]===0?n/u[2]:NaN,q:`Let f(${X},${Y}) = ${A}${X}² + ${B}${X}${Y} + ${C}${Y}².\n▶ FIND: the directional derivative of f at (${x},${y}) in the direction of the vector ⟨${u[0]},${u[1]}⟩.`}})},
+ tri(){const[X,Y,Z]=vars(3);return lim(()=>{const a=rand(1,3),b=rand(1,3),c=rand(1,3),k=rand(1,4),n=k*a*a*b*b*c*c;
+  return{a:n%8===0?n/8:NaN,q:`Let B = [0,${a}]×[0,${b}]×[0,${c}] ⊂ ℝ³.\n▶ FIND: ∭_B ${k}${X}${Y}${Z} dV.`}})},
+ lag(){const[X,Y]=vars(2);return lim(()=>{const p=2*rand(1,6),q=2*rand(1,6);
+  return{a:p*q/4,q:`Maximize f(${X},${Y}) = ${X}${Y} subject to the constraint ${X}/${p} + ${Y}/${q} = 1 with ${X},${Y} > 0.\n▶ FIND: the maximum value of f.`}})}};
+const GEN_T={
+ prod(){const t=pick(['θ','φ','ψ','α','β']),P=[
+  {e:`cos(${t})·cos(2${t})·cos(3${t})`,den:8,th:'π/7'},{e:`sin(${t})·sin(5${t})·sin(7${t})`,den:8,th:'π/18'},
+  {e:`cos(${t})·cos(2${t})`,den:4,th:'π/5'},{e:`cos(${t})·cos(2${t})·cos(4${t})`,den:8,th:'π/9'},{e:`sin(${t})·sin(3${t})`,den:4,th:'π/10'}],
+  o=pick(P),k=rand(2,9);
+  return{a:k,q:`Let ${t} = ${o.th}.\n▶ FIND: ${o.den*k}·${o.e}.`}},
+ count(){const t=pick(['θ','φ','ψ']);
+  if(Math.random()<.5){const k=rand(1,5);return{a:4*k,q:`Consider ${t} ∈ [0,2π).\n▶ FIND: the number of solutions of 4·sin(${k}${t})·cos(${k}${t}) = 1.`}}
+  const k=rand(1,10);return{a:2*k,q:`Consider ${t} ∈ [0,2π).\n▶ FIND: the number of solutions of 2·cos(${k}${t}) = −1.`}},
+ cosl(){return lim(()=>{const p=rand(1,5),q=rand(1,5),g=pick([60,120]);
+  return{a:p*p+q*q+(g===120?p*q:-p*q),q:`In triangle ΔΑΒΓ, ∠Γ = ${g}°, |ΓΑ| = ${p}, |ΓΒ| = ${q}.\n▶ FIND: |ΑΒ|².`}})}};
+const GEN_S={
+ index(){const s=pick(['σ','τ','ς','ϱ']),pt=pick([
+  {f:(n,c)=>n*n+c,mk:c=>({n0:rand(6,22),c})},{f:n=>n*n*n-n,mk:()=>({n0:rand(6,12),c:0})},{f:n=>n*(n+1)*(n+2)/6,mk:()=>({n0:rand(6,16),c:0})}]),
+  m=pt.mk(rand(1,6)),terms=[1,2,3,4,5].map(n=>pt.f(n,m.c));
+  return{a:m.n0,q:`Consider the sequence (${s}ₙ): ${terms.join(', ')}, …\n▶ FIND: the index n for which ${s}ₙ = ${pt.f(m.n0,m.c)}.`}},
+ geo(){return lim(()=>{const[p,q]=pick([[1,2],[1,3],[2,3],[-1,2],[1,4],[3,4],[-1,3],[-2,3]]),a0=rand(1,40),n=a0*q;
+  return{a:n%(q-p)===0?n/(q-p):NaN,q:`Consider the series ∑ (n=0→∞) ${a0}·(${p}/${q})ⁿ.\n▶ FIND: its sum.`}})},
+ sumn(){const n0=rand(3,10),S=n0*(n0+1)*(n0+2)/3;
+  return{a:n0,q:`Suppose ∑ (k=1→n) k(k+1) = ${S}.\n▶ FIND: n.`}}};
+let MATHSET=[];
+const makeMathSet=()=>{
+ const pk=(o,n)=>Object.keys(o).sort(()=>Math.random()-.5).slice(0,n);let set=[];
+ for(let t=0;t<400;t++){set=[];
+  pk(GEN_C,2).forEach(k=>set.push({tag:'MULTIVARIABLE CALCULUS',...GEN_C[k]()}));
+  pk(GEN_T,2).forEach(k=>set.push({tag:'TRIGONOMETRY',...GEN_T[k]()}));
+  pk(GEN_S,2).forEach(k=>set.push({tag:'SERIES & SEQUENCES',...GEN_S[k]()}));
+  const sum=set.reduce((s,q)=>s+q.a,0);if(sum>=15&&sum<=99)return set}
+ return set};
+
 const CH=[
 {cat:'PHYSICS',tol:1,name:'The Slanted Slider',desc:'A slider on a slope. Let go and gravity drags it back to 0%. Hold on tight.',
  mount(root,api){
@@ -370,25 +439,39 @@ const CH=[
     out.textContent=bits.map(b=>+b).join('')+' = '+total+'%';api.set(total)};
   render();return{};
  }},
-{cat:'DATA ENTRY',tol:0,name:'The Calculation Slider',desc:'Type an expression that equals the target exactly. Plain numbers are rejected.',
- target(){return rand(3,97)},
+{cat:'DATA ENTRY',tol:0,bonus:600,name:'The Calculation Slider',desc:'SUPER HARD. Six college-level problems: multivariable calculus, trigonometry, and number series, buried in a landslide of pointless Greek. Each correct integer answer adds its value to the volume. All six correct = exactly the target. Wrong answers lock that problem for longer and longer. No calculators were harmed in the making of this level (bring one anyway).',
+ target(){MATHSET=makeMathSet();return clamp(MATHSET.reduce((t,q)=>t+q.a,0),1,99)},
  mount(root,api){
-  const w=mk('div','pi',root);
-  const inp=mk('input','field',w);inp.placeholder='e.g. (7*8)+1';inp.autocomplete='off';inp.spellcheck=false;inp.setAttribute('aria-label','Expression');
-  const res=mk('div','mid',w);
-  const go=()=>{
-    const s=inp.value.replace(/\s+/g,'');
-    if(!s)return res.textContent='Type some math.';
-    if(!/^[0-9+\-*/().]+$/.test(s))return res.textContent='Digits and + - * / ( ) only.';
-    if(!/[+\-*/]/.test(s.replace(/^-/,'')))return res.textContent='That is just a number. Make it earn the volume.';
-    try{const v=safeEval(s);
-      if(!Number.isFinite(v))return res.textContent='Not a number. A cry for help.';
-      if(!Number.isInteger(v))return res.textContent='Result '+v.toFixed(4)+' is not an integer.';
-      api.set(v);res.textContent='Result: '+v+'%'}catch(e){res.textContent='Syntax error.'}};
-  const b=mk('button','btn',mk('div','row',w),'EVALUATE');b.onclick=go;
-  const off=listen(inp,'keydown',e=>{if(e.key==='Enter')go()});
-  setTimeout(()=>inp.focus(),50);
-  return{cleanup:off};
+  const head=mk('div','mid',root);head.style.cssText+=';font-size:14px;font-weight:700;color:var(--txt)';
+  const wrap=mk('div',null,root);wrap.style.cssText='max-height:520px;overflow-y:auto;padding:4px;margin-top:8px';
+  const st=[];let sum=0;
+  const upd=()=>{const n=st.filter(x=>x.done).length;head.textContent=n+' / '+st.length+' solved'};
+  MATHSET.forEach((pr,i)=>{
+   const card=mk('div',null,wrap);card.style.cssText='border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px;background:var(--field);text-align:left';
+   mk('div','label',card,'PROBLEM '+(i+1)+' OF '+MATHSET.length+' \u2022 '+pr.tag);
+   const nz=mk('div',null,card,noise(3));nz.style.cssText='white-space:pre-wrap;color:var(--dim);font:13px/1.55 Georgia,serif;margin:8px 0';
+   const qq=mk('div',null,card,pr.q);qq.style.cssText='white-space:pre-wrap;color:var(--txt);font:600 16px/1.55 Georgia,serif;margin:6px 0 10px';
+   const row=mk('div','row',card);row.style.justifyContent='flex-start';
+   const inp=mk('input','field',row);inp.inputMode='numeric';inp.autocomplete='off';inp.spellcheck=false;inp.placeholder='integer answer';inp.style.cssText='width:170px;font-size:18px';
+   const bt=mk('button','btn',row,'SUBMIT');
+   const msg=mk('div','mid',card);msg.style.textAlign='left';
+   const o={done:false,wrong:0,until:0,inp,bt,msg};st.push(o);
+   const go=()=>{
+    if(o.done||Date.now()<o.until)return;
+    const v=inp.value.trim();
+    if(!/^-?\d+$/.test(v)){msg.style.color='var(--bad)';msg.textContent='Integer answers only.';return}
+    if(+v===pr.a){o.done=true;inp.disabled=bt.disabled=true;card.style.borderColor='var(--good)';msg.style.color='var(--good)';msg.textContent='Correct.';
+     sum+=pr.a;api.set(sum);upd();
+     if(st.every(x=>x.done)){inp.blur();api.toast('All six solved. Lock it in.');head.textContent='6 / 6 solved. Lock it in.'}}
+    else{o.wrong++;o.until=Date.now()+Math.min(30000,o.wrong*5000);inp.value='';msg.style.color='var(--bad)';api.toast('Wrong answer.')}};
+   listen(inp,'keydown',e=>{if(e.key==='Enter'){e.preventDefault();go()}});
+   bt.onclick=go;
+  });
+  upd();
+  return{tick(){const now=Date.now();st.forEach(o=>{if(o.done||!o.until)return;const rem=o.until-now;
+    if(rem>0){o.inp.disabled=o.bt.disabled=true;o.msg.textContent='Wrong. Locked for '+Math.ceil(rem/1000)+'s'}
+    else{o.inp.disabled=o.bt.disabled=false;o.msg.textContent='';o.until=0}})},
+   cleanup(){}};
  }},
 {cat:'SURVIVAL',tol:1,name:'Beat a Dead Horse',desc:'Click the button. Each click nudges the volume up. Stop and it plummets.',
  mount(root,api){
@@ -642,7 +725,7 @@ const CH=[
    listen(cv,'pointerdown',e=>{sx=e.clientX;sy=e.clientY}),
    listen(cv,'pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<18)return;
     if(Math.abs(dx)>Math.abs(dy))turn(Math.sign(dx),0);else turn(0,Math.sign(dy))})];
-  return{tick(dt){dead=Math.max(0,dead-dt);acc+=dt;const step=DIFF===DIFFS.easy?.16:Math.max(.07,.11-SC()*.003);
+  return{tick(dt){dead=Math.max(0,dead-dt);acc+=dt;const step=Math.max(.07,.11-SC()*.003);
    while(acc>step){acc-=step;if(dead>0)continue;dir=nd;const h={x:sn[0].x+dir.x,y:sn[0].y+dir.y};
     if(h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(q=>q.x===h.x&&q.y===h.y)){dead=1;sn=init();dir={x:1,y:0};nd=dir;api.set(S.volume-10);api.toast('Snake died. Volume -10%.')}
     else{sn.unshift(h);if(h.x===food.x&&h.y===food.y){api.set(S.volume+5);do{food={x:rand(0,N-1),y:rand(0,N-1)}}while(sn.some(q=>q.x===food.x&&q.y===food.y))}else sn.pop()}}
@@ -820,7 +903,7 @@ const CH=[
     q.x+=q.vx*dt;q.y+=q.vy*dt;
     if(q.x<8||q.x>W-8){q.vx*=-1;q.x=clamp(q.x,8,W-8)}if(q.y<8||q.y>H-8){q.vy*=-1;q.y=clamp(q.y,8,H-8)}
     if(d<24){dots.splice(i,1);dots.push(sd());api.set(S.volume+1)}}
-   if(st>2&&spk.length<Math.min(8,(DIFF===DIFFS.easy?1:3)+Math.floor(SC()/2))){st=0;const a=Math.random()*6.28;spk.push({x:W/2+Math.cos(a)*300,y:H/2+Math.sin(a)*190,vx:-Math.cos(a)*70+rand(-30,30),vy:-Math.sin(a)*70+rand(-30,30)})}
+   if(st>2&&spk.length<Math.min(8,3+Math.floor(SC()/2))){st=0;const a=Math.random()*6.28;spk.push({x:W/2+Math.cos(a)*300,y:H/2+Math.sin(a)*190,vx:-Math.cos(a)*70+rand(-30,30),vy:-Math.sin(a)*70+rand(-30,30)})}
    for(let i=spk.length-1;i>=0;i--){const q=spk[i];q.x+=q.vx*dt;q.y+=q.vy*dt;
     if(q.x<10||q.x>W-10){q.vx*=-1;q.x=clamp(q.x,10,W-10)}if(q.y<10||q.y>H-10){q.vy*=-1;q.y=clamp(q.y,10,H-10)}
     if(Math.hypot(q.x-pl.x,q.y-pl.y)<24){spk.splice(i,1);api.set(S.volume-4);api.toast('Spiked. Volume -4%.')}}
