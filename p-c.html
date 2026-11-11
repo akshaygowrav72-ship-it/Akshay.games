@@ -332,7 +332,7 @@ const PACKS=[
 {id:"mn",name:"Money Pack",cost:6000,ic:5,items:[["One Dollar",0,px(SPR.b1)],["Five Dollar",0,px(SPR.b5)],["Ten Dollar",1,px(SPR.b10)],["Twenty Dollar",2,px(SPR.b20)],["Fifty Dollar",3,px(SPR.b50)],["Hundred Dollar",4,px(SPR.b100)],["Prismatic Money Bag",5,px(SPR.cBill)]]},
 {id:"bl",name:"Ball Pack",cost:700,ic:2,items:[["Tennis Ball",0,px(SPR.tennis)],["Baseball",0,px(SPR.baseball)],["Soccer Ball",1,px(SPR.soccer)],["Basketball",2,px(SPR.basket)],["Bowling Ball",3,px(SPR.bowling)],["Golden Ball",4,px(SPR.golden)],["Disco Orb",5,px(SPR.cBall)]]}
 ];
-const RN=["Common","Uncommon","Rare","Epic","Legendary","Chroma","Exotic","Ultra"],RW=[55,25,12,6,2,0.5],RB=[.2,1,4,15,60,200,750,2500];const DM=[1,1.25,1.5,2,3,4,6,10];
+const RN=["Common","Uncommon","Rare","Epic","Legendary","Chroma","Exotic","Ultra"],RW=[55,25,12,6,2,0.5],RB=[.2,1,4,15,60,200,750,2500];const DM=[0,0,0,0,0,0,0,0];
 const UPS=[
 {id:"f",n:"Sharper Finger",d:"+1 coin per click",c:15,k:1},
 {id:"h",n:"Strong Grip",d:"+5 coins per click",c:200,k:5},
@@ -916,6 +916,30 @@ window.addEventListener("keydown", e => {
     normalizeUltras();
   };
   normalizeUltras();
+}
+</script>
+
+<style>
+/* Pack buttons live in a fixed bar so "Open pack" and "Back to pack" are always in the same spot */
+#pbar{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:center;z-index:10;pointer-events:none}
+#pbar .btns{pointer-events:auto;margin:0!important}
+#pbar .btns button{height:46px}
+#pbar .btns button:first-child{width:230px}
+#pbar .btns button.g{width:110px}
+#ov:has(#pbar .btns){padding-bottom:84px}
+#ov:has(#pbar .btns) .pv{max-height:calc(100vh - 110px)}
+</style>
+<script>
+{
+  const ov=$("#ov"),rv=$("#rv"),bar=document.createElement("div");
+  bar.id="pbar"; ov.appendChild(bar);
+  const obs=new MutationObserver(()=>{
+    const b=rv.querySelector(".btns:has(#ob), .btns:has(#ag)");
+    bar.innerHTML="";
+    if(b) bar.appendChild(b);
+    obs.takeRecords();
+  });
+  obs.observe(rv,{childList:true});
 }
 </script>
 
