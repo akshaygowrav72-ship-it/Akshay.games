@@ -887,4 +887,36 @@ window.addEventListener("keydown", e => {
 }
 </script>
 
+<script>
+/* ---------- one copy of each Ultra, no duplicates ---------- */
+{
+  const ULTRA_KEYS = ["ky0","ky1","ky2","ky3"]; // Kyle, Charlie, Sigma Akshay, Donald Trump Duck
+  function normalizeUltras(){
+    if(!U || !S || !S.own) return;
+    if(!ULTRA_KEYS.some(k => (S.own[k]||0) > 1)) return;
+    ULTRA_KEYS.forEach(k => { if((S.own[k]||0) > 1) S.own[k] = 1; });
+    ref(); cl(); save();
+  }
+  function guard(name, key){
+    const orig = window[name];
+    window[name] = function(){
+      if(!U) return orig.apply(this, arguments);   // queues until login
+      if((S.own[key]||0) > 0){
+        $("#sv").textContent = "You already have this Ultra!";
+        return;
+      }
+      return orig.apply(this, arguments);
+    };
+  }
+  guard("unlockKyle","ky0"); guard("unlockCharlie","ky1"); guard("unlockSigma","ky2"); guard("unlockDuck","ky3");
+
+  const prevLogin = login;
+  login = function(u){
+    prevLogin(u);
+    normalizeUltras();
+  };
+  normalizeUltras();
+}
+</script>
+
 </body></html>
