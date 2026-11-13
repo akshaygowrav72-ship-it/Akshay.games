@@ -1770,7 +1770,7 @@ function spawnUnit(type, x, y, opts){
     id: nextId++, type, x, y, hp: d.hp, maxHp: d.hp,
     age: 0, hunger: Math.random()*60,
     dir: Math.random()*Math.PI*2,
-    cooldown: (type==='human' ? 80 : 250) + Math.random()*(type==='human' ? 120 : 300),,
+    cooldown: (type==='human' ? 80 : 250) + Math.random()*(type==='human' ? 120 : 300),
     alive: true, infected:false, immune:false, infectionTimer:0,
     gender, name, traits, attacking:0,
     parents: opts.parents || [], children: [],
