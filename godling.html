@@ -432,7 +432,7 @@
 
 /* ============================= CONFIG ============================= */
 const COLS = 110, ROWS = 70, TPX = 8; // world tile grid + pixels-per-tile in offscreen buffer
-const MAX_UNITS = 650;
+const MAX_UNITS = 900;
 const POP_CAPS = { human:130, orc:130, elf:110, sheep:170, wolf:70, cow:80, chicken:100, fish:120, crab:90 };
 
 const BIOME_COLORS = {
@@ -1770,7 +1770,7 @@ function spawnUnit(type, x, y, opts){
     id: nextId++, type, x, y, hp: d.hp, maxHp: d.hp,
     age: 0, hunger: Math.random()*60,
     dir: Math.random()*Math.PI*2,
-    cooldown: 250 + Math.random()*300,
+    cooldown: (type==='human' ? 80 : 250) + Math.random()*(type==='human' ? 120 : 300),,
     alive: true, infected:false, immune:false, infectionTimer:0,
     gender, name, traits, attacking:0,
     parents: opts.parents || [], children: [],
@@ -5879,6 +5879,28 @@ for(const t of TRAIT_IDS) TRAITS[t].icon='◆';
 for(const [id,txt] of [['btnWar','Declare War'],['btnPeace','End War'],['btnAlly','Form Alliance'],['btnBreakAlly','Break Alliance']]) document.getElementById(id).textContent=txt;
 document.getElementById('hint').textContent='The land starts with wild life, plants and ore veins — spawn Humans, Orcs, or Elves to found a people. Build barracks to raise armies, ports for boats. Drag with the Pan tool (or right/middle-click, or two fingers) to move around · scroll or pinch to zoom.';
 })();
+  /* ===== FASTER, LARGER HUMAN REPRODUCTION ===== */
+POP_CAPS.human = 220;
+const o_spawnUnit = spawnUnit;
+let _spawningTwin = false;
+spawnUnit = function(type,x,y,opts){
+  const u = o_spawnUnit(type,x,y,opts);
+  if(u && type==='human' && opts && opts.parents && opts.parents.length===2){
+    u.cooldown = 60 + Math.random()*80;                 // newborns grow up fast
+    if(!_spawningTwin && Math.random()<0.2){            // 20% chance of twins
+      _spawningTwin = true;
+      const t = o_spawnUnit('human', x+(Math.random()-0.5), y+(Math.random()-0.5), { parents:opts.parents, traits:(opts.traits||[]).slice() });
+      _spawningTwin = false;
+      if(t) for(const pid of opts.parents){ const p = findUnitById(pid); if(p) p.children.push(t.id); }
+    }
+  }
+  return u;
+};
+const o_ulb_repro = updateLightningBolts;
+updateLightningBolts = function(){
+  o_ulb_repro();
+  for(const u of units) if(u.alive && u.type==='human' && u.cooldown>0) u.cooldown -= 2;   // 3x faster between children
+};
 /* ============================= MAIN LOOP ============================= */
 const STEP = 1000/16;
 let acc = 0, lastTime = performance.now();
