@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -119,7 +118,19 @@
       color: #000;
     }
 
-    #chemical-craft,
+    /* SkyForge */
+    #chemical-craft {
+      background: #8b0000;
+      color: #ffd700;
+      position: relative;
+      overflow: hidden;
+      text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+      border: 3px solid #d4af37;
+      box-shadow:
+        inset 0 0 0 3px #8b0000,
+        0 0 10px rgba(212, 175, 55, 0.5);
+    }
+
     #book-battle {
       background: #40e0d0;
       color: #000;
@@ -160,16 +171,12 @@
         0 10px 22px rgba(0, 0, 0, 0.18);
     }
 
+    /* City Sandbox */
     #godling {
-      background: #8b0000;
-      color: #ffd700;
-      position: relative;
-      overflow: hidden;
-      text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
-      border: 3px solid #d4af37;
-      box-shadow:
-        inset 0 0 0 3px #8b0000,
-        0 0 10px rgba(212, 175, 55, 0.5);
+      background: #40e0d0;
+      color: #000;
+      text-shadow: none;
+      border: 2px solid rgba(0, 0, 0, 0.2);
     }
 
     #pet-clicker {
@@ -235,12 +242,8 @@
         Volume Controls
       </a>
 
-      <a
-        href="https://www.spawn.co/@moonyaeo72/skyforge/play"
-        class="btn"
-        id="chemical-craft"
-      >
-        SkyForge
+      <a href="godling.html" class="btn" id="godling">
+        City Sandbox
       </a>
 
       <a href="m-l.html" class="btn" id="ml">
@@ -269,9 +272,12 @@
         Arcade
       </a>
 
-      <a href="godling.html" class="btn" id="godling">
-        City Sandbox
-        
+      <a
+        href="https://www.spawn.co/@moonyaeo72/skyforge/play"
+        class="btn"
+        id="chemical-craft"
+      >
+        SkyForge
       </a>
 
       <a href="p-c.html" class="btn" id="pet-clicker">
@@ -287,4 +293,3 @@
   <footer>© Akshay Gowrav, 2026</footer>
 </body>
 </html>
-```
